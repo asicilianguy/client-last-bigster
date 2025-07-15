@@ -3,7 +3,7 @@ import { apiSlice } from "../api/apiSlice"
 export const announcementsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getAnnouncementsBySelectionId: builder.query({
-      query: (selectionId) => `/announcements/selection/${selectionId}`,
+      query: (selectionId) => `/announcements?selezione_id=${selectionId}`,
       providesTags: (result, error, selectionId) =>
         result
           ? [

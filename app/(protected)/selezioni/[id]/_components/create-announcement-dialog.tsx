@@ -25,9 +25,9 @@ import { PlusCircle } from "lucide-react"
 import { useState } from "react"
 
 const announcementSchema = z.object({
-  titolo: z.string().min(5, "Il titolo deve contenere almeno 5 caratteri."),
-  descrizione: z.string().min(20, "La descrizione deve contenere almeno 20 caratteri."),
-  canale: z.enum(["LINKEDIN", "INDEED", "SITO_AZIENDALE"], { required_error: "Seleziona un canale." }),
+  titolo: z.string().min(5, "Il titolo deve contenere almeno 5 caratteri.").max(200),
+  descrizione: z.string().min(10, "La descrizione deve contenere almeno 10 caratteri."),
+  piattaforma: z.enum(["LINKEDIN", "INDEED", "SITO_AZIENDALE"], { required_error: "Seleziona un canale." }),
 })
 
 type AnnouncementFormValues = z.infer<typeof announcementSchema>
@@ -77,9 +77,9 @@ export function CreateAnnouncementDialog({ selectionId }: { selectionId: number 
             {errors.titolo && <p className="text-sm text-red-500">{errors.titolo.message}</p>}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="canale">Canale di Pubblicazione</Label>
+            <Label htmlFor="piattaforma">Canale di Pubblicazione</Label>
             <Controller
-              name="canale"
+              name="piattaforma"
               control={control}
               render={({ field }) => (
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -94,7 +94,7 @@ export function CreateAnnouncementDialog({ selectionId }: { selectionId: number 
                 </Select>
               )}
             />
-            {errors.canale && <p className="text-sm text-red-500">{errors.canale.message}</p>}
+            {errors.piattaforma && <p className="text-sm text-red-500">{errors.piattaforma.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="descrizione">Descrizione</Label>
