@@ -24,12 +24,18 @@ export function StatusIndicator({ statuses, counts, labels, color, className }: 
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="group flex w-full items-center gap-3 py-1">
-                  <motion.div
-                    className={cn("h-2.5 w-2.5 shrink-0 rounded-full", color, className)}
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{ delay: index * 0.05 }}
-                  />
+                  <div className="relative flex h-full flex-col items-center">
+                    {index < statuses.length - 1 && <div className="absolute top-3 h-full w-0.5 bg-border" />}
+                    <motion.div
+                      className={cn("z-10 h-2.5 w-2.5 rounded-full transition-colors", color, className, {
+                        "bg-primary": hasItems,
+                        "bg-border group-hover:bg-muted-foreground": !hasItems,
+                      })}
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: index * 0.05 }}
+                    />
+                  </div>
                   <div className="flex-grow text-xs font-medium text-muted-foreground group-hover:text-foreground">
                     {labels[status] || status}
                   </div>
