@@ -3,9 +3,10 @@ import { apiSlice } from "../api/apiSlice"
 export const announcementsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getAnnouncementsBySelectionId: builder.query({
+      // FIX: The backend route is /announcements with a query parameter, not /announcements/selection/:id
       query: (selectionId) => `/announcements?selezione_id=${selectionId}`,
       providesTags: (result, error, selectionId) =>
-        result
+        result && result.data // Add a check for result.data
           ? [
               ...result.data.map(({ id }: { id: number }) => ({ type: "Announcement" as const, id })),
               { type: "Announcement", id: `LIST_${selectionId}` },
