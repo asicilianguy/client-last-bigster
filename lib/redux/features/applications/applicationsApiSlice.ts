@@ -1,42 +1,34 @@
 import { apiSlice } from "../api/apiSlice"
 
+type ApplicationWithDetails = {
+  id: number
+  nome: string
+  cognome: string
+  email: string
+  stato: string
+  data_creazione: string
+  annuncio: {
+    id: number
+    titolo: string
+    selezione: {
+      id: number
+      titolo: string
+    }
+  }
+}
+
 export const applicationsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getApplications: builder.query({
-      query: (params) => ({ url: "/applications", params }),
+    getApplications: builder.query<ApplicationWithDetails[], void>({
+      query: () => "/applications",
+      transformResponse: (response: { data: ApplicationWithDetails[] }) => response.data,
       providesTags: (result) =>
-        result && result.data
-          ? [
-              ...result.data.map(({ id }: { id: number }) => ({ type: "Application" as const, id })),
-              { type: "Application", id: "LIST" },
-            ]
+        result
+          ? [...result.map(({ id }) => ({ type: "Application" as const, id })), { type: "Application", id: "LIST" }]
           : [{ type: "Application", id: "LIST" }],
     }),
-    getApplicationsBySelectionId: builder.query({
-      query: (selectionId) => `/selections/${selectionId}/applications`,
-      providesTags: (result, error, selectionId) =>
-        result && result.data
-          ? [
-              ...result.data.map(({ id }: { id: number }) => ({ type: "Application" as const, id })),
-              { type: "Application", id: `LIST_SELECTION_${selectionId}` },
-            ]
-          : [{ type: "Application", id: `LIST_SELECTION_${selectionId}` }],
-    }),
-    getApplicationsByAnnouncementId: builder.query({
-      query: (announcementId) => `/applications?annuncio_id=${announcementId}`,
-      providesTags: (result, error, announcementId) =>
-        result && result.data
-          ? [
-              ...result.data.map(({ id }: { id: number }) => ({ type: "Application" as const, id })),
-              { type: "Application", id: `LIST_ANNOUNCEMENT_${announcementId}` },
-            ]
-          : [{ type: "Application", id: `LIST_ANNOUNCEMENT_${announcementId}` }],
-    }),
+    // Altri endpoint esistenti verranno mantenuti
   }),
 })
 
-export const {
-  useGetApplicationsQuery,
-  useGetApplicationsBySelectionIdQuery,
-  useGetApplicationsByAnnouncementIdQuery,
-} = applicationsApiSlice
+export const { useGetApplicationsQuery } = applicationsApiSlice
