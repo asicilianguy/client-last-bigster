@@ -10,6 +10,7 @@ type ApplicationWithDetails = {
   annuncio: {
     id: number
     titolo: string
+    selezione_id: number
     selezione: {
       id: number
       titolo: string
@@ -27,7 +28,6 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
           ? [...result.map(({ id }) => ({ type: "Application" as const, id })), { type: "Application", id: "LIST" }]
           : [{ type: "Application", id: "LIST" }],
     }),
-    // Altri endpoint esistenti verranno mantenuti
   }),
 })
 

@@ -1,159 +1,138 @@
 "use client"
 
 import { useGetApplicationsQuery } from "@/lib/redux/features/applications/applicationsApiSlice"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge, type BadgeProps } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Terminal } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { Eye } from "lucide-react"
+import { motion } from "framer-motion"
 import { format } from "date-fns"
 import { it } from "date-fns/locale"
 
-const applicationStatusText: { [key: string]: string } = {
-  RICEVUTA: "Ricevuta",
-  TEST_INVIATO: "Test Inviato",
-  TEST_COMPLETATO: "Test Completato",
-  PRIMO_COLLOQUIO_PROGRAMMATO: "1° Colloquio Prog.",
-  PRIMO_COLLOQUIO_EFFETTUATO: "1° Colloquio Fatto",
-  COLLOQUIO_CEO_PROGRAMMATO: "Colloquio CEO Prog.",
-  COLLOQUIO_CEO_EFFETTUATO: "Colloquio CEO Fatto",
-  ASSUNTO: "Assunto",
-  SCARTATO: "Scartato",
-}
-
-const getApplicationStatusVariant = (status: string): BadgeProps["variant"] => {
-  const variants: { [key: string]: BadgeProps["variant"] } = {
-    RICEVUTA: "secondary",
-    TEST_INVIATO: "outline",
-    TEST_COMPLETATO: "outline",
-    PRIMO_COLLOQUIO_PROGRAMMATO: "default",
-    PRIMO_COLLOQUIO_EFFETTUATO: "default",
-    COLLOQUIO_CEO_PROGRAMMATO: "default",
-    COLLOQUIO_CEO_EFFETTUATO: "default",
-    ASSUNTO: "default",
-    SCARTATO: "destructive",
+const ApplicationStatusBadge = ({ status }: { status: string }) => {
+  const statusConfig = {
+    RICEVUTA: { label: "Ricevuta", color: "bg-blue-400/20 text-blue-600 border-blue-400/30" },
+    TEST_INVIATO: { label: "Test Inviato", color: "bg-cyan-400/20 text-cyan-600 border-cyan-400/30" },
+    TEST_COMPLETATO: { label: "Test Completato", color: "bg-indigo-400/20 text-indigo-600 border-indigo-400/30" },
+    PRIMO_COLLOQUIO_PROGRAMMATO: {
+      label: "1° Colloquio",
+      color: "bg-purple-400/20 text-purple-600 border-purple-400/30",
+    },
+    PRIMO_COLLOQUIO_EFFETTUATO: {
+      label: "1° Colloquio Fatto",
+      color: "bg-fuchsia-400/20 text-fuchsia-600 border-fuchsia-400/30",
+    },
+    COLLOQUIO_CEO_PROGRAMMATO: { label: "Colloquio CEO", color: "bg-pink-400/20 text-pink-600 border-pink-400/30" },
+    COLLOQUIO_CEO_EFFETTUATO: {
+      label: "Colloquio CEO Fatto",
+      color: "bg-rose-400/20 text-rose-600 border-rose-400/30",
+    },
+    ASSUNTO: { label: "Assunto", color: "bg-green-400/20 text-green-600 border-green-400/30" },
+    SCARTATO: { label: "Scartato", color: "bg-red-400/20 text-red-600 border-red-400/30" },
   }
-  return variants[status] || "secondary"
-}
 
-export default function CandidaturePage() {
-  const { data: applications, isLoading, isError, error } = useGetApplicationsQuery()
-
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Candidato</TableHead>
-              <TableHead>Annuncio</TableHead>
-              <TableHead>Selezione</TableHead>
-              <TableHead>Stato</TableHead>
-              <TableHead>Data candidatura</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {[...Array(5)].map((_, i) => (
-              <TableRow key={i}>
-                <TableCell>
-                  <Skeleton className="h-5 w-48" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-5 w-40" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-5 w-40" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-5 w-24" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-5 w-32" />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )
-    }
-
-    if (isError) {
-      return (
-        <Alert variant="destructive">
-          <Terminal className="h-4 w-4" />
-          <AlertTitle>Errore</AlertTitle>
-          <AlertDescription>
-            Impossibile caricare le candidature.
-            {/* @ts-ignore */}
-            <p className="mt-2 text-xs">{error?.data?.message || "Errore sconosciuto"}</p>
-          </AlertDescription>
-        </Alert>
-      )
-    }
-
-    if (!applications || applications.length === 0) {
-      return (
-        <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed">
-          <p className="text-muted-foreground">Nessuna candidatura trovata.</p>
-        </div>
-      )
-    }
-
-    return (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Candidato</TableHead>
-            <TableHead>Annuncio</TableHead>
-            <TableHead>Selezione</TableHead>
-            <TableHead>Stato</TableHead>
-            <TableHead>Data candidatura</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {applications.map((application) => (
-            <TableRow key={application.id}>
-              <TableCell>
-                <div className="font-medium">{`${application.nome} ${application.cognome}`}</div>
-                <div className="text-sm text-muted-foreground">{application.email}</div>
-              </TableCell>
-              <TableCell>
-                <Link href={`/selezioni/${application.annuncio.selezione.id}`} className="hover:underline">
-                  {application.annuncio.titolo}
-                </Link>
-              </TableCell>
-              <TableCell>
-                <Link
-                  href={`/selezioni/${application.annuncio.selezione.id}`}
-                  className="text-muted-foreground hover:underline"
-                >
-                  {application.annuncio.selezione.titolo}
-                </Link>
-              </TableCell>
-              <TableCell>
-                <Badge variant={getApplicationStatusVariant(application.stato)}>
-                  {applicationStatusText[application.stato] || application.stato}
-                </Badge>
-              </TableCell>
-              <TableCell>{format(new Date(application.data_creazione), "dd MMM yyyy", { locale: it })}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    )
+  const config = statusConfig[status as keyof typeof statusConfig] || {
+    label: status.replace(/_/g, " "),
+    color: "bg-gray-400/20 text-gray-600 border-gray-400/30",
   }
 
   return (
-    <div className="animate-fade-in-up">
-      <Card className="border-0 shadow-sm">
+    <Badge variant="outline" className={cn("font-medium whitespace-nowrap", config.color)}>
+      {config.label}
+    </Badge>
+  )
+}
+
+export default function ApplicationsPage() {
+  const { data: applications, error, isLoading } = useGetApplicationsQuery()
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="p-4 sm:p-6 lg:p-8"
+    >
+      <Card className="shadow-sm border-0">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold tracking-tight">Candidature</CardTitle>
-          <CardDescription>Visualizza e gestisci tutte le candidature ricevute.</CardDescription>
+          <CardTitle className="text-2xl">Tutte le Candidature</CardTitle>
         </CardHeader>
-        <CardContent>{renderContent()}</CardContent>
+        <CardContent>
+          {isLoading && (
+            <div className="flex justify-center p-8">
+              <Spinner className="text-primary" />
+            </div>
+          )}
+          {error && (
+            <Alert variant="destructive">
+              <AlertTitle>Errore</AlertTitle>
+              <AlertDescription>Impossibile caricare le candidature.</AlertDescription>
+            </Alert>
+          )}
+          {applications && (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Candidato</TableHead>
+                    <TableHead>Annuncio</TableHead>
+                    <TableHead>Data Invio</TableHead>
+                    <TableHead>Stato</TableHead>
+                    <TableHead className="text-right">Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {applications.length > 0 ? (
+                    applications.map((application) => (
+                      <TableRow key={application.id}>
+                        <TableCell className="font-medium">
+                          <div className="flex flex-col">
+                            <span>{`${application.nome} ${application.cognome}`}</span>
+                            <span className="text-xs text-muted-foreground">{application.email}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Link
+                            href={`/selezioni/${application.annuncio.selezione.id}`}
+                            className="text-primary hover:underline"
+                          >
+                            {application.annuncio.titolo}
+                          </Link>
+                        </TableCell>
+                        <TableCell>
+                          {format(new Date(application.data_creazione), "dd MMM yyyy", { locale: it })}
+                        </TableCell>
+                        <TableCell>
+                          <ApplicationStatusBadge status={application.stato} />
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link href={`/selezioni/${application.annuncio.selezione.id}`}>
+                              <Eye className="h-4 w-4" />
+                              <span className="sr-only">Vedi Dettagli Selezione</span>
+                            </Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center h-24">
+                        Nessuna candidatura trovata.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
       </Card>
-    </div>
+    </motion.div>
   )
 }

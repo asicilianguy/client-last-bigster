@@ -1,152 +1,117 @@
 "use client"
 
 import { useGetAnnouncementsQuery } from "@/lib/redux/features/announcements/announcementsApiSlice"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge, type BadgeProps } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Terminal } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 import Link from "next/link"
-import { format } from "date-fns"
-import { it } from "date-fns/locale"
+import { Eye } from "lucide-react"
+import { motion } from "framer-motion"
 
-const getStatusVariant = (status: "PUBBLICATO" | "BOZZA" | "CHIUSO" | "SCADUTO"): BadgeProps["variant"] => {
-  switch (status) {
-    case "PUBBLICATO":
-      return "default"
-    case "BOZZA":
-      return "secondary"
-    case "CHIUSO":
-      return "destructive"
-    case "SCADUTO":
-      return "outline"
-    default:
-      return "secondary"
+const AnnouncementStatusBadge = ({ status }: { status: string }) => {
+  const statusConfig = {
+    BOZZA: { label: "Bozza", color: "bg-gray-400/20 text-gray-600 border-gray-400/30" },
+    PUBBLICATO: { label: "Pubblicato", color: "bg-green-400/20 text-green-600 border-green-400/30" },
+    SCADUTO: { label: "Scaduto", color: "bg-orange-400/20 text-orange-600 border-orange-400/30" },
+    CHIUSO: { label: "Chiuso", color: "bg-red-400/20 text-red-600 border-red-400/30" },
   }
-}
 
-export default function AnnunciPage() {
-  const { data: announcements, isLoading, isError, error } = useGetAnnouncementsQuery()
-
-  const renderContent = () => {
-    if (isLoading) {
-      return (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Titolo</TableHead>
-              <TableHead>Selezione</TableHead>
-              <TableHead>Piattaforma</TableHead>
-              <TableHead>Stato</TableHead>
-              <TableHead className="text-center">Candidature</TableHead>
-              <TableHead>Creato il</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {[...Array(5)].map((_, i) => (
-              <TableRow key={i}>
-                <TableCell>
-                  <Skeleton className="h-5 w-48" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-5 w-40" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-5 w-24" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-5 w-20" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="mx-auto h-5 w-12" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-5 w-32" />
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      )
-    }
-
-    if (isError) {
-      return (
-        <Alert variant="destructive">
-          <Terminal className="h-4 w-4" />
-          <AlertTitle>Errore</AlertTitle>
-          <AlertDescription>
-            Impossibile caricare gli annunci.
-            {/* @ts-ignore */}
-            <p className="mt-2 text-xs">{error?.data?.message || "Errore sconosciuto"}</p>
-          </AlertDescription>
-        </Alert>
-      )
-    }
-
-    if (!announcements || announcements.length === 0) {
-      return (
-        <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed">
-          <p className="text-muted-foreground">Nessun annuncio trovato.</p>
-        </div>
-      )
-    }
-
-    return (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Titolo</TableHead>
-            <TableHead>Selezione</TableHead>
-            <TableHead>Piattaforma</TableHead>
-            <TableHead>Stato</TableHead>
-            <TableHead className="text-center">Candidature</TableHead>
-            <TableHead>Creato il</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {announcements.map((announcement) => (
-            <TableRow key={announcement.id}>
-              <TableCell className="font-medium">
-                <Link href={`/selezioni/${announcement.selezione.id}`} className="hover:underline">
-                  {announcement.titolo}
-                </Link>
-              </TableCell>
-              <TableCell>
-                <Link
-                  href={`/selezioni/${announcement.selezione.id}`}
-                  className="text-muted-foreground hover:underline"
-                >
-                  {announcement.selezione.titolo}
-                </Link>
-              </TableCell>
-              <TableCell>
-                <Badge variant="outline">{announcement.piattaforma}</Badge>
-              </TableCell>
-              <TableCell>
-                <Badge variant={getStatusVariant(announcement.stato)}>{announcement.stato}</Badge>
-              </TableCell>
-              <TableCell className="text-center">
-                <Badge variant="secondary">{announcement._count.candidature}</Badge>
-              </TableCell>
-              <TableCell>{format(new Date(announcement.data_creazione), "dd MMM yyyy", { locale: it })}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    )
+  const config = statusConfig[status as keyof typeof statusConfig] || {
+    label: status,
+    color: "bg-gray-400/20 text-gray-600 border-gray-400/30",
   }
 
   return (
-    <div className="animate-fade-in-up">
-      <Card className="border-0 shadow-sm">
+    <Badge variant="outline" className={cn("font-medium", config.color)}>
+      {config.label}
+    </Badge>
+  )
+}
+
+export default function AnnouncementsPage() {
+  const { data: announcements, error, isLoading } = useGetAnnouncementsQuery()
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="p-4 sm:p-6 lg:p-8"
+    >
+      <Card className="shadow-sm border-0">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold tracking-tight">Annunci</CardTitle>
-          <CardDescription>Visualizza e gestisci tutti gli annunci di lavoro.</CardDescription>
+          <CardTitle className="text-2xl">Tutti gli Annunci</CardTitle>
         </CardHeader>
-        <CardContent>{renderContent()}</CardContent>
+        <CardContent>
+          {isLoading && (
+            <div className="flex justify-center p-8">
+              <Spinner className="text-primary" />
+            </div>
+          )}
+          {error && (
+            <Alert variant="destructive">
+              <AlertTitle>Errore</AlertTitle>
+              <AlertDescription>Impossibile caricare gli annunci.</AlertDescription>
+            </Alert>
+          )}
+          {announcements && (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Titolo</TableHead>
+                    <TableHead>Selezione</TableHead>
+                    <TableHead>Piattaforma</TableHead>
+                    <TableHead>Stato</TableHead>
+                    <TableHead className="text-center">Candidature</TableHead>
+                    <TableHead className="text-right">Azioni</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {announcements.length > 0 ? (
+                    announcements.map((announcement) => (
+                      <TableRow key={announcement.id}>
+                        <TableCell className="font-medium">{announcement.titolo}</TableCell>
+                        <TableCell>
+                          <Link
+                            href={`/selezioni/${announcement.selezione.id}`}
+                            className="text-primary hover:underline"
+                          >
+                            {announcement.selezione.titolo}
+                          </Link>
+                        </TableCell>
+                        <TableCell>{announcement.piattaforma.replace(/_/g, " ")}</TableCell>
+                        <TableCell>
+                          <AnnouncementStatusBadge status={announcement.stato} />
+                        </TableCell>
+                        <TableCell className="text-center">{announcement._count.candidature}</TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" asChild>
+                            <Link href={`/selezioni/${announcement.selezione.id}`}>
+                              <Eye className="h-4 w-4" />
+                              <span className="sr-only">Vedi Dettagli</span>
+                            </Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center h-24">
+                        Nessun annuncio trovato.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
       </Card>
-    </div>
+    </motion.div>
   )
 }
