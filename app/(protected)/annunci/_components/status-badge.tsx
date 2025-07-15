@@ -1,22 +1,18 @@
 import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import type { Announcement } from "./columns"
 
 const statusConfig = {
-  BOZZA: { label: "Bozza", color: "bg-gray-400/20 text-gray-600 border-gray-400/30" },
-  PUBBLICATO: { label: "Pubblicato", color: "bg-blue-400/20 text-blue-600 border-blue-400/30" },
-  SCADUTO: { label: "Scaduto", color: "bg-orange-400/20 text-orange-600 border-orange-400/30" },
-  CHIUSO: { label: "Chiuso", color: "bg-red-400/20 text-red-600 border-red-400/30" },
+  BOZZA: { label: "Bozza", variant: "secondary" },
+  PUBBLICATO: { label: "Pubblicato", variant: "success" },
+  ARCHIVIATO: { label: "Archiviato", variant: "destructive" },
+} as const
+
+interface StatusBadgeProps {
+  status: Announcement["stato"]
 }
 
-export const StatusBadge = ({ status }: { status: keyof typeof statusConfig }) => {
-  const config = statusConfig[status] || {
-    label: status,
-    color: "bg-gray-400/20 text-gray-600 border-gray-400/30",
-  }
-
-  return (
-    <Badge variant="outline" className={cn("font-medium", config.color)}>
-      {config.label}
-    </Badge>
-  )
+export function StatusBadge({ status }: StatusBadgeProps) {
+  const config = statusConfig[status] || { label: status, variant: "default" }
+  // @ts-ignore
+  return <Badge variant={config.variant}>{config.label}</Badge>
 }

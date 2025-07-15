@@ -1,7 +1,7 @@
 "use client"
 
 import type { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal, ArrowUpDown } from "lucide-react"
+import { MoreHorizontal } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -11,96 +11,76 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import Link from "next/link"
 import { StatusBadge } from "./status-badge"
-import { Badge } from "@/components/ui/badge"
 
 export type Announcement = {
-  id: number
+  id: string
   titolo: string
-  piattaforma: string
-  stato: "BOZZA" | "PUBBLICATO" | "SCADUTO" | "CHIUSO"
-  data_creazione: string
-  selezione: {
-    id: number
-    titolo: string
-  }
-  _count: {
-    candidature: number
-  }
+  stato: "BOZZA" | "PUBBLICATO" | "ARCHIVIATO"
+  data_pubblicazione: string
+  data_scadenza: string
+  candidature_count: number
 }
 
 export const columns: ColumnDef<Announcement>[] = [
   {
     accessorKey: "titolo",
-    header: ({ column }) => {
-      return (
-        <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-          Titolo
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      )
-    },
-    cell: ({ row }) => {
-      const announcement = row.original
-      return (
-        <div className="flex flex-col">
-          <Link href={`/selezioni/${announcement.selezione.id}`} className="font-medium text-primary hover:underline">
-            {announcement.titolo}
-          </Link>
-          <span className="text-xs text-muted-foreground">{announcement.selezione.titolo}</span>
-        </div>
-      )
-    },
-  },
-  {
-    accessorKey: "piattaforma",
-    header: "Piattaforma",
-    cell: ({ row }) => {
-      return <Badge variant="outline">{row.original.piattaforma}</Badge>
-    },
+    header: "Titolo",
   },
   {
     accessorKey: "stato",
     header: "Stato",
-    cell: ({ row }) => <StatusBadge status={row.original.stato} />,
-  },
-  {
-    accessorKey: "_count.candidature",
-    header: "Candidature",
     cell: ({ row }) => {
-      return <div className="text-center font-medium">{row.original._count.candidature}</div>
+      const status = row.getValue("stato") as Announcement["stato"]
+      return <StatusBadge status={status} />
     },
   },
   {
-    accessorKey: "data_creazione",
-    header: "Creato il",
+    accessorKey: "data_pubblicazione",
+    header: "Data Pubblicazione",
     cell: ({ row }) => {
-      const date = new Date(row.getValue("data_creazione"))
-      return <div>{date.toLocaleDateString("it-IT")}</div>
+      const date = row.getValue("data_pubblicazione")
+      return date ? new Date(date as string).toLocaleDateString() : "N/A"
+    },
+  },
+  {
+    accessorKey: "data_scadenza",
+    header: "Data Scadenza",
+    cell: ({ row }) => {
+      const date = row.getValue("data_scadenza")
+      return date ? new Date(date as string).toLocaleDateString() : "N/A"
+    },
+  },
+  {
+    accessorKey: "candidature_count",
+    header: "Candidature",
+    cell: ({ row }) => {
+      return <div className="text-center">{row.getValue("candidature_count")}</div>
     },
   },
   {
     id: "actions",
     cell: ({ row }) => {
       const announcement = row.original
+
       return (
         <div className="text-right">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Apri menu</span>
+                <span className="sr-only">Open menu</span>
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Azioni</DropdownMenuLabel>
-              <DropdownMenuItem asChild>
-                <Link href={`/selezioni/${announcement.selezione.id}?tab=annunci`}>Vedi nella selezione</Link>
+              <DropdownMenuItem onClick={() => navigator.clipboard.writeText(announcement.id)}>
+                Copia ID Annuncio
               </DropdownMenuItem>
-              <DropdownMenuItem>Modifica</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-red-600">Elimina</DropdownMenuItem>
+              <DropdownMenuItem>Visualizza Dettagli</DropdownMenuItem>
+              <DropdownMenuItem>Modifica</DropdownMenuItem>
+              <DropdownMenuItem className="text-red-500">Archivia</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

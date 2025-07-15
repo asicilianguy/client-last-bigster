@@ -23,7 +23,7 @@ const selectionStatusOrder = [
   "CHIUSA",
 ]
 
-const selectionStatusConfig = {
+const selectionStatusConfig: { [key: string]: { label: string; color: string } } = {
   CREATA: { label: "Create", color: "bg-gray-400" },
   APPROVATA: { label: "Approvate", color: "bg-sky-500" },
   IN_CORSO: { label: "In Corso", color: "bg-blue-500" },
@@ -45,7 +45,7 @@ const applicationStatusOrder = [
   "ASSUNTO",
 ]
 
-const applicationStatusConfig = {
+const applicationStatusConfig: { [key: string]: { label: string; color: string } } = {
   RICEVUTA: { label: "Ricevute", color: "bg-gray-400" },
   TEST_INVIATO: { label: "Test Inviato", color: "bg-sky-500" },
   TEST_COMPLETATO: { label: "Test Completato", color: "bg-blue-500" },
