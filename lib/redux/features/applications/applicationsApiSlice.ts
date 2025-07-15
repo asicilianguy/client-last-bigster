@@ -2,6 +2,16 @@ import { apiSlice } from "../api/apiSlice"
 
 export const applicationsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
+    getApplications: builder.query({
+      query: (params) => ({ url: "/applications", params }),
+      providesTags: (result) =>
+        result && result.data
+          ? [
+              ...result.data.map(({ id }: { id: number }) => ({ type: "Application" as const, id })),
+              { type: "Application", id: "LIST" },
+            ]
+          : [{ type: "Application", id: "LIST" }],
+    }),
     getApplicationsBySelectionId: builder.query({
       query: (selectionId) => `/selections/${selectionId}/applications`,
       providesTags: (result, error, selectionId) =>
@@ -25,4 +35,8 @@ export const applicationsApiSlice = apiSlice.injectEndpoints({
   }),
 })
 
-export const { useGetApplicationsBySelectionIdQuery, useGetApplicationsByAnnouncementIdQuery } = applicationsApiSlice
+export const {
+  useGetApplicationsQuery,
+  useGetApplicationsBySelectionIdQuery,
+  useGetApplicationsByAnnouncementIdQuery,
+} = applicationsApiSlice
