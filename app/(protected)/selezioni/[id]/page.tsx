@@ -20,12 +20,17 @@ import { ArrowLeft, CheckCircle, UserPlus } from "lucide-react"
 import Link from "next/link"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState } from "react"
+import { AnnouncementsSection } from "./_components/announcements-section"
 
 const SelectionDetailsCard = ({ selection }: { selection: any }) => {
   const getStatusVariant = (status: string) => {
     switch (status) {
       case "APPROVATA":
       case "IN_CORSO":
+      case "ANNUNCI_PUBBLICATI":
+      case "CANDIDATURE_RICEVUTE":
+      case "COLLOQUI_IN_CORSO":
+      case "COLLOQUI_CEO":
         return "success"
       case "CHIUSA":
         return "secondary"
@@ -44,7 +49,7 @@ const SelectionDetailsCard = ({ selection }: { selection: any }) => {
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="text-2xl">{selection.titolo}</CardTitle>
-            <CardDescription>Dettagli della selezione e azioni rapide.</CardDescription>
+            <CardDescription>Dettagli della selezione e stato attuale.</CardDescription>
           </div>
           <Badge variant={getStatusVariant(selection.stato)} className="text-sm">
             {selection.stato.replace(/_/g, " ")}
@@ -63,7 +68,7 @@ const SelectionDetailsCard = ({ selection }: { selection: any }) => {
           <strong>Tipo:</strong> {selection.tipo}
         </div>
         <div>
-          <strong>Responsabile:</strong> {selection.responsabile.nome} {selection.responsabile.cognome}
+          <strong>Responsabile Reparto:</strong> {selection.responsabile.nome} {selection.responsabile.cognome}
         </div>
         <div>
           <strong>Data Creazione:</strong> {new Date(selection.data_creazione).toLocaleDateString()}
@@ -83,8 +88,7 @@ const SelectionDetailsCard = ({ selection }: { selection: any }) => {
   )
 }
 
-const SelectionActions = ({ selection }: { selection: any }) => {
-  const user = useSelector(selectCurrentUser)
+const SelectionActions = ({ selection, user }: { selection: any; user: any }) => {
   const [approveSelection, { isLoading: isApproving }] = useApproveSelectionMutation()
   const [assignHr, { isLoading: isAssigning }] = useAssignHrMutation()
   const { data: hrUsersData, isLoading: isLoadingHrUsers } = useGetUsersByRoleQuery("RISORSA_UMANA")
@@ -114,15 +118,21 @@ const SelectionActions = ({ selection }: { selection: any }) => {
 
   if (!user) return null
 
+  const showActions =
+    (user.ruolo === "CEO" && (selection.stato === "CREATA" || selection.stato === "APPROVATA")) ||
+    (user.ruolo === "RISORSA_UMANA" && selection.stato === "IN_CORSO")
+
+  if (!showActions) return null
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Azioni</CardTitle>
+        <CardTitle>Azioni Rapide</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {user.ruolo === "CEO" && selection.stato === "CREATA" && (
-          <div className="flex items-center gap-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="flex-1">Questa selezione è in attesa di approvazione.</p>
+          <div className="flex items-center gap-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="flex-1 font-medium">Questa selezione è in attesa di approvazione.</p>
             <Button onClick={handleApprove} disabled={isApproving}>
               {isApproving ? <Spinner /> : <CheckCircle className="mr-2" />}
               Approva Selezione
@@ -131,12 +141,12 @@ const SelectionActions = ({ selection }: { selection: any }) => {
         )}
 
         {user.ruolo === "CEO" && selection.stato === "APPROVATA" && !selection.risorsa_umana_id && (
-          <div className="flex items-center gap-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex-1 space-y-2">
-              <p>Assegna una risorsa umana per procedere.</p>
+              <p className="font-medium">Assegna una risorsa umana per avviare la selezione.</p>
               <Select onValueChange={setSelectedHr} disabled={isLoadingHrUsers}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Seleziona HR..." />
+                  <SelectValue placeholder="Seleziona un membro del team HR" />
                 </SelectTrigger>
                 <SelectContent>
                   {hrUsersData?.data.map((hr: any) => (
@@ -147,20 +157,23 @@ const SelectionActions = ({ selection }: { selection: any }) => {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={handleAssignHr} disabled={isAssigning || !selectedHr}>
+            <Button onClick={handleAssignHr} disabled={isAssigning || !selectedHr} className="w-full sm:w-auto">
               {isAssigning ? <Spinner /> : <UserPlus className="mr-2" />}
               Assegna HR
             </Button>
           </div>
         )}
 
-        {/* Placeholder for other actions */}
-        <Alert>
-          <AlertTitle>Prossimi Passi</AlertTitle>
-          <AlertDescription>
-            Qui verranno visualizzate le azioni per la creazione di annunci e la gestione delle candidature.
-          </AlertDescription>
-        </Alert>
+        {selection.stato === "APPROVATA" && selection.risorsa_umana_id && (
+          <Alert variant="success">
+            <CheckCircle className="h-4 w-4" />
+            <AlertTitle>Pronta per Iniziare!</AlertTitle>
+            <AlertDescription>
+              La risorsa umana {selection.risorsa_umana.nome} {selection.risorsa_umana.cognome} può ora procedere con la
+              creazione degli annunci.
+            </AlertDescription>
+          </Alert>
+        )}
       </CardContent>
     </Card>
   )
@@ -169,12 +182,13 @@ const SelectionActions = ({ selection }: { selection: any }) => {
 export default function SelezioneDetailPage() {
   const params = useParams()
   const id = params.id as string
+  const user = useSelector(selectCurrentUser)
 
-  const { data, error, isLoading } = useGetSelectionByIdQuery(id, {
+  const { data, error, isLoading, refetch } = useGetSelectionByIdQuery(id, {
     skip: !id,
   })
 
-  if (isLoading) {
+  if (isLoading || !user) {
     return (
       <div className="flex justify-center items-center h-full">
         <Spinner className="h-10 w-10" />
@@ -184,11 +198,22 @@ export default function SelezioneDetailPage() {
 
   if (error || !data) {
     return (
-      <div className="text-red-500 text-center">Errore nel caricamento della selezione o selezione non trovata.</div>
+      <div className="text-red-500 text-center">
+        <p>Errore nel caricamento della selezione o selezione non trovata.</p>
+        <Button onClick={() => refetch()} className="mt-4">
+          Riprova
+        </Button>
+      </div>
     )
   }
 
   const selection = data.data
+
+  const canManageAnnouncements =
+    (user.ruolo === "CEO" || user.id === selection.risorsa_umana_id) &&
+    ["IN_CORSO", "ANNUNCI_PUBBLICATI", "CANDIDATURE_RICEVUTE", "COLLOQUI_IN_CORSO", "COLLOQUI_CEO"].includes(
+      selection.stato,
+    )
 
   return (
     <div className="space-y-6">
@@ -200,7 +225,8 @@ export default function SelezioneDetailPage() {
       </Button>
 
       <SelectionDetailsCard selection={selection} />
-      <SelectionActions selection={selection} />
+      <SelectionActions selection={selection} user={user} />
+      {canManageAnnouncements && <AnnouncementsSection selectionId={selection.id} />}
     </div>
   )
 }
