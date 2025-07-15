@@ -2,17 +2,14 @@
 
 import { motion } from "framer-motion"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
 
 interface StatusIndicatorProps {
   statuses: string[]
   counts: { [key: string]: number }
   labels: { [key: string]: string }
-  color: string
-  className?: string
 }
 
-export function StatusIndicator({ statuses, counts, labels, color, className }: StatusIndicatorProps) {
+export function StatusIndicator({ statuses, counts, labels }: StatusIndicatorProps) {
   return (
     <div className="relative flex flex-col items-start">
       {statuses.map((status, index) => {
@@ -27,10 +24,9 @@ export function StatusIndicator({ statuses, counts, labels, color, className }: 
                   <div className="relative flex h-full flex-col items-center">
                     {index < statuses.length - 1 && <div className="absolute top-3 h-full w-0.5 bg-border" />}
                     <motion.div
-                      className={cn("z-10 h-2.5 w-2.5 rounded-full transition-colors", color, className, {
-                        "bg-primary": hasItems,
-                        "bg-border group-hover:bg-muted-foreground": !hasItems,
-                      })}
+                      className={`z-10 h-2.5 w-2.5 rounded-full transition-colors ${
+                        hasItems ? "bg-primary" : "bg-border group-hover:bg-muted-foreground"
+                      }`}
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: index * 0.05 }}

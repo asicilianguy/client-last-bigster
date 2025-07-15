@@ -1,33 +1,19 @@
-"use client"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
-import { useGetAnnouncementsQuery } from "@/lib/redux/features/announcements/announcementsApiSlice"
-import { DataTable } from "./_components/data-table"
-import { columns } from "./_components/columns"
-import { Skeleton } from "@/components/ui/skeleton"
-
-export default function AnnouncementsPage() {
-  const { data: announcementsData, isLoading, isError, error } = useGetAnnouncementsQuery({})
-
-  if (isLoading) {
-    return (
-      <div className="container mx-auto py-10">
-        <div className="space-y-4">
-          <Skeleton className="h-10 w-1/4" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-96 w-full" />
-        </div>
-      </div>
-    )
-  }
-
-  if (isError) {
-    return <div className="text-red-500">Error loading announcements: {JSON.stringify(error)}</div>
-  }
-
+export default function AnnunciPage() {
   return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold tracking-tight mb-6">Gestione Annunci</h1>
-      <DataTable columns={columns} data={announcementsData?.data || []} />
+    <div className="animate-fade-in-up">
+      <Card className="shadow-sm border-0">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold tracking-tight">Annunci</CardTitle>
+          <CardDescription>Visualizza e gestisci tutti gli annunci di lavoro.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed">
+            <p className="text-muted-foreground">La pagina di gestione annunci è in costruzione.</p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

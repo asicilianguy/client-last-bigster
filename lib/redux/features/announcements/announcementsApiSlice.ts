@@ -2,15 +2,16 @@ import { apiSlice } from "../api/apiSlice"
 
 export const announcementsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getAnnouncements: builder.query({
-      query: () => "/announcements",
-      providesTags: (result, error, arg) =>
-        result
+    getAnnouncementsBySelectionId: builder.query({
+      // FIX: Use the new RESTful route /selections/:id/announcements
+      query: (selectionId) => `selections/${selectionId}/announcements`,
+      providesTags: (result, error, selectionId) =>
+        result && result.data
           ? [
-              ...result.data.map(({ id }: { id: any }) => ({ type: "Announcement", id })),
-              { type: "Announcement", id: "LIST" },
+              ...result.data.map(({ id }: { id: number }) => ({ type: "Announcement" as const, id })),
+              { type: "Announcement", id: `LIST_SELECTION_${selectionId}` },
             ]
-          : [{ type: "Announcement", id: "LIST" }],
+          : [{ type: "Announcement", id: `LIST_SELECTION_${selectionId}` }],
     }),
     createAnnouncement: builder.mutation({
       query: (newAnnouncement) => ({
@@ -18,9 +19,23 @@ export const announcementsApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         body: newAnnouncement,
       }),
-      invalidatesTags: [{ type: "Announcement", id: "LIST" }],
+      invalidatesTags: (result, error, { selezione_id }) => [
+        { type: "Announcement", id: `LIST_SELECTION_${selezione_id}` },
+      ],
+    }),
+    publishAnnouncement: builder.mutation({
+      query: (id) => ({
+        url: `/announcements/${id}/publish`,
+        method: "POST",
+      }),
+      invalidatesTags: (result, error, id) => [
+        { type: "Announcement", id },
+        { type: "Selection", id: result?.data?.selezione_id },
+        { type: "Announcement", id: `LIST_SELECTION_${result?.data?.selezione_id}` },
+      ],
     }),
   }),
 })
 
-export const { useGetAnnouncementsQuery, useCreateAnnouncementMutation } = announcementsApiSlice
+export const { useGetAnnouncementsBySelectionIdQuery, useCreateAnnouncementMutation, usePublishAnnouncementMutation } =
+  announcementsApiSlice
