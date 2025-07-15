@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { cn } from "@/lib/utils"
 
 interface StatusIndicatorProps {
   statuses: string[]
@@ -24,9 +25,10 @@ export function StatusIndicator({ statuses, counts, labels }: StatusIndicatorPro
                   <div className="relative flex h-full flex-col items-center">
                     {index < statuses.length - 1 && <div className="absolute top-3 h-full w-0.5 bg-border" />}
                     <motion.div
-                      className={`z-10 h-2.5 w-2.5 rounded-full transition-colors ${
-                        hasItems ? "bg-primary" : "bg-border group-hover:bg-muted-foreground"
-                      }`}
+                      className={cn("z-10 h-2.5 w-2.5 rounded-full transition-colors", {
+                        "bg-primary": hasItems,
+                        "bg-border group-hover:bg-muted-foreground": !hasItems,
+                      })}
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: index * 0.05 }}

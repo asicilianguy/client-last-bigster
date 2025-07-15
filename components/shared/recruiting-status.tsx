@@ -1,15 +1,16 @@
 "use client"
 
-import type React from "react"
-
 import { useGetSelectionsQuery } from "@/lib/redux/features/selections/selectionsApiSlice"
+import { useGetAnnouncementsQuery } from "@/lib/redux/features/announcements/announcementsApiSlice"
 import { useGetApplicationsQuery } from "@/lib/redux/features/applications/applicationsApiSlice"
-import { StatusIndicator } from "@/components/ui/status-indicator"
+import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Briefcase, FileSignature, UserCheck } from "lucide-react"
+import { FileText, Users, Briefcase, ChevronDown } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { StatusIndicator } from "../ui/status-indicator"
+import { Badge } from "../ui/badge"
 
 const selectionStatusOrder = [
   "CREATA",
@@ -22,6 +23,17 @@ const selectionStatusOrder = [
   "CHIUSA",
 ]
 
+const selectionStatusConfig = {
+  CREATA: { label: "Create", color: "bg-gray-400" },
+  APPROVATA: { label: "Approvate", color: "bg-sky-500" },
+  IN_CORSO: { label: "In Corso", color: "bg-blue-500" },
+  ANNUNCI_PUBBLICATI: { label: "Annunci Pubblicati", color: "bg-indigo-500" },
+  CANDIDATURE_RICEVUTE: { label: "Candidature", color: "bg-purple-500" },
+  COLLOQUI_IN_CORSO: { label: "Colloqui", color: "bg-pink-500" },
+  COLLOQUI_CEO: { label: "Colloqui CEO", color: "bg-fuchsia-500" },
+  CHIUSA: { label: "Chiuse", color: "bg-green-500" },
+}
+
 const applicationStatusOrder = [
   "RICEVUTA",
   "TEST_INVIATO",
@@ -33,109 +45,108 @@ const applicationStatusOrder = [
   "ASSUNTO",
 ]
 
-const StatusLink = ({
-  href,
-  icon: Icon,
-  children,
-  count,
-}: { href: string; icon: React.ElementType; children: React.ReactNode; count: number }) => {
+const applicationStatusConfig = {
+  RICEVUTA: { label: "Ricevute", color: "bg-gray-400" },
+  TEST_INVIATO: { label: "Test Inviato", color: "bg-sky-500" },
+  TEST_COMPLETATO: { label: "Test Completato", color: "bg-blue-500" },
+  PRIMO_COLLOQUIO_PROGRAMMATO: { label: "1° Colloquio", color: "bg-indigo-500" },
+  PRIMO_COLLOQUIO_EFFETTUATO: { label: "1° Colloquio Fatto", color: "bg-purple-500" },
+  COLLOQUIO_CEO_PROGRAMMATO: { label: "Colloquio CEO", color: "bg-pink-500" },
+  COLLOQUIO_CEO_EFFETTUATO: { label: "Colloquio CEO Fatto", color: "bg-fuchsia-500" },
+  ASSUNTO: { label: "Assunti", color: "bg-green-500" },
+}
+
+const StatusFunnel = ({ title, icon: Icon, data, isLoading, statusOrder, statusConfig, link }: any) => {
   const pathname = usePathname()
-  const isActive = pathname === href
+  const isActive = pathname.startsWith(link)
+
+  const counts = data?.reduce((acc: any, item: any) => {
+    acc[item.stato] = (acc[item.stato] || 0) + 1
+    return acc
+  }, {})
+
   return (
-    <Link
-      href={href}
-      className={cn(
-        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-        isActive ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-      )}
-    >
-      <Icon className="h-5 w-5" />
-      <span className="flex-grow">{children}</span>
-      <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground">{count}</span>
-    </Link>
+    <Collapsible defaultOpen={isActive}>
+      <CollapsibleTrigger asChild>
+        <SidebarMenuItem>
+          <SidebarMenuButton isActive={isActive} className="w-full justify-start font-semibold">
+            <Icon className="h-5 w-5" />
+            <span className="group-data-[collapsible=icon]:hidden">{title}</span>
+            <ChevronDown className="ml-auto h-4 w-4 transition-transform group-data-[state=open]:rotate-180 group-data-[collapsible=icon]:hidden" />
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <div className="relative ml-8 mt-2 mb-4 space-y-1 pl-5 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-px before:bg-border group-data-[collapsible=icon]:hidden">
+          {isLoading
+            ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-6 w-full rounded-md" />)
+            : statusOrder.map((status: any) => {
+                const count = counts?.[status] || 0
+                if (count === 0) return null
+                const config = statusConfig[status]
+                return (
+                  <Link
+                    href={`${link}?status=${status}`}
+                    key={status}
+                    className="group flex items-center justify-between rounded-md px-2 py-1 text-sm hover:bg-accent"
+                  >
+                    <div className="flex items-center gap-2">
+                      <StatusIndicator color={config.color} />
+                      <span className="text-muted-foreground group-hover:text-accent-foreground">{config.label}</span>
+                    </div>
+                    <span className="font-medium text-foreground">{count}</span>
+                  </Link>
+                )
+              })}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
   )
 }
 
 export function RecruitingStatus() {
   const { data: selectionsData, isLoading: isLoadingSelections } = useGetSelectionsQuery({})
+  const { data: announcementsData, isLoading: isLoadingAnnouncements } = useGetAnnouncementsQuery({})
   const { data: applicationsData, isLoading: isLoadingApplications } = useGetApplicationsQuery({})
-
-  const selectionCounts = selectionsData?.data.reduce((acc: { [key: string]: number }, selection: any) => {
-    acc[selection.stato] = (acc[selection.stato] || 0) + 1
-    return acc
-  }, {})
-
-  const applicationCounts = applicationsData?.data.reduce((acc: { [key: string]: number }, application: any) => {
-    acc[application.stato] = (acc[application.stato] || 0) + 1
-    return acc
-  }, {})
-
-  if (isLoadingSelections || isLoadingApplications) {
-    return (
-      <div className="space-y-4 p-2">
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-20 w-full" />
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-20 w-full" />
-      </div>
-    )
-  }
+  const pathname = usePathname()
 
   return (
-    <div className="space-y-4 p-2">
-      <div>
-        <StatusLink href="/selezioni" icon={Briefcase} count={selectionsData?.data.length || 0}>
-          Selezioni
-        </StatusLink>
-        {selectionCounts && (
-          <div className="mt-2 pl-5">
-            <StatusIndicator
-              statuses={selectionStatusOrder}
-              counts={selectionCounts}
-              labels={{
-                CREATA: "Create",
-                APPROVATA: "Approvate",
-                IN_CORSO: "In Corso",
-                ANNUNCI_PUBBLICATI: "Annunci Pubblicati",
-                CANDIDATURE_RICEVUTE: "Candidature",
-                COLLOQUI_IN_CORSO: "Colloqui",
-                COLLOQUI_CEO: "Colloqui CEO",
-                CHIUSA: "Chiuse",
-              }}
-            />
-          </div>
-        )}
-      </div>
+    <SidebarMenu className="pl-6">
+      <StatusFunnel
+        title="Selezioni"
+        icon={Briefcase}
+        data={selectionsData?.data}
+        isLoading={isLoadingSelections}
+        statusOrder={selectionStatusOrder}
+        statusConfig={selectionStatusConfig}
+        link="/selezioni"
+      />
 
-      <div>
-        <StatusLink href="/annunci" icon={FileSignature} count={0}>
-          Annunci
-        </StatusLink>
-      </div>
+      <SidebarMenuItem>
+        <SidebarMenuButton asChild isActive={pathname.startsWith("/annunci")} className="justify-start font-semibold">
+          <Link href="/annunci">
+            <FileText className="h-5 w-5" />
+            <span className="group-data-[collapsible=icon]:hidden">Annunci</span>
+            {isLoadingAnnouncements ? (
+              <Skeleton className="ml-auto h-5 w-5 rounded-full" />
+            ) : (
+              <Badge variant="secondary" className="ml-auto group-data-[collapsible=icon]:hidden">
+                {announcementsData?.data?.length || 0}
+              </Badge>
+            )}
+          </Link>
+        </SidebarMenuButton>
+      </SidebarMenuItem>
 
-      <div>
-        <StatusLink href="/candidature" icon={UserCheck} count={applicationsData?.data.length || 0}>
-          Candidature
-        </StatusLink>
-        {applicationCounts && (
-          <div className="mt-2 pl-5">
-            <StatusIndicator
-              statuses={applicationStatusOrder}
-              counts={applicationCounts}
-              labels={{
-                RICEVUTA: "Ricevute",
-                TEST_INVIATO: "Test Inviato",
-                TEST_COMPLETATO: "Test Completato",
-                PRIMO_COLLOQUIO_PROGRAMMATO: "1° Colloquio",
-                PRIMO_COLLOQUIO_EFFETTUATO: "1° Colloquio Fatto",
-                COLLOQUIO_CEO_PROGRAMMATO: "Colloquio CEO",
-                COLLOQUIO_CEO_EFFETTUATO: "Colloquio CEO Fatto",
-                ASSUNTO: "Assunti",
-              }}
-            />
-          </div>
-        )}
-      </div>
-    </div>
+      <StatusFunnel
+        title="Candidature"
+        icon={Users}
+        data={applicationsData?.data}
+        isLoading={isLoadingApplications}
+        statusOrder={applicationStatusOrder}
+        statusConfig={applicationStatusConfig}
+        link="/candidature"
+      />
+    </SidebarMenu>
   )
 }

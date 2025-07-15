@@ -3,15 +3,27 @@ import { apiSlice } from "../api/apiSlice"
 export const announcementsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getAnnouncementsBySelectionId: builder.query({
-      // FIX: Use the new RESTful route /selections/:id/announcements
-      query: (selectionId) => `selections/${selectionId}/announcements`,
-      providesTags: (result, error, selectionId) =>
-        result && result.data
+      query: (selectionId) => `/selections/${selectionId}/announcements`,
+      providesTags: (result, error, arg) =>
+        result
           ? [
-              ...result.data.map(({ id }: { id: number }) => ({ type: "Announcement" as const, id })),
-              { type: "Announcement", id: `LIST_SELECTION_${selectionId}` },
+              ...result.data.map(({ id }: { id: any }) => ({ type: "Announcement" as const, id })),
+              { type: "Announcement", id: "LIST" },
             ]
-          : [{ type: "Announcement", id: `LIST_SELECTION_${selectionId}` }],
+          : [{ type: "Announcement", id: "LIST" }],
+    }),
+    getAnnouncements: builder.query({
+      query: (params) => ({
+        url: "/announcements",
+        params,
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.data.map(({ id }: { id: any }) => ({ type: "Announcement" as const, id })),
+              { type: "Announcement", id: "LIST" },
+            ]
+          : [{ type: "Announcement", id: "LIST" }],
     }),
     createAnnouncement: builder.mutation({
       query: (newAnnouncement) => ({
@@ -19,23 +31,36 @@ export const announcementsApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         body: newAnnouncement,
       }),
-      invalidatesTags: (result, error, { selezione_id }) => [
-        { type: "Announcement", id: `LIST_SELECTION_${selezione_id}` },
+      invalidatesTags: [{ type: "Announcement", id: "LIST" }],
+    }),
+    updateAnnouncement: builder.mutation({
+      query: ({ id, ...updatedAnnouncement }) => ({
+        url: `/announcements/${id}`,
+        method: "PUT",
+        body: updatedAnnouncement,
+      }),
+      invalidatesTags: (result, error, arg) => [
+        { type: "Announcement", id: arg.id },
+        { type: "Announcement", id: "LIST" },
       ],
     }),
-    publishAnnouncement: builder.mutation({
+    deleteAnnouncement: builder.mutation({
       query: (id) => ({
-        url: `/announcements/${id}/publish`,
-        method: "POST",
+        url: `/announcements/${id}`,
+        method: "DELETE",
       }),
-      invalidatesTags: (result, error, id) => [
-        { type: "Announcement", id },
-        { type: "Selection", id: result?.data?.selezione_id },
-        { type: "Announcement", id: `LIST_SELECTION_${result?.data?.selezione_id}` },
+      invalidatesTags: (result, error, arg) => [
+        { type: "Announcement", id: arg },
+        { type: "Announcement", id: "LIST" },
       ],
     }),
   }),
 })
 
-export const { useGetAnnouncementsBySelectionIdQuery, useCreateAnnouncementMutation, usePublishAnnouncementMutation } =
-  announcementsApiSlice
+export const {
+  useGetAnnouncementsBySelectionIdQuery,
+  useGetAnnouncementsQuery,
+  useCreateAnnouncementMutation,
+  useUpdateAnnouncementMutation,
+  useDeleteAnnouncementMutation,
+} = announcementsApiSlice
