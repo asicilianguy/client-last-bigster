@@ -1,7 +1,7 @@
 "use client"
 
 import { useGetAnnouncementsBySelectionIdQuery } from "@/lib/redux/features/announcements/announcementsApiSlice"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -34,11 +34,10 @@ export function AnnouncementsSection({ selectionId }: { selectionId: number }) {
   const { data, error, isLoading } = useGetAnnouncementsBySelectionIdQuery(selectionId)
 
   return (
-    <Card className="shadow-sm border-0 h-full">
+    <Card className="shadow-sm border-0 h-full mt-4">
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Annunci</CardTitle>
-          <CardDescription>Gestisci gli annunci per questa selezione.</CardDescription>
+          <CardTitle className="text-lg">Annunci</CardTitle>
         </div>
         <CreateAnnouncementDialog selectionId={selectionId}>
           <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm">

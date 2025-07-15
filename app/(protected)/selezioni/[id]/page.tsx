@@ -27,13 +27,17 @@ import {
   FileText,
   Info,
   AlertTriangle,
+  FileSignature,
+  Users,
 } from "lucide-react"
 import Link from "next/link"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState } from "react"
 import { AnnouncementsSection } from "./_components/announcements-section"
+import { ApplicationsSection } from "./_components/applications-section"
 import { cn } from "@/lib/utils"
 import React from "react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const StatusBadge = ({ status, className }: { status: string; className?: string }) => {
   const statusConfig = {
@@ -274,6 +278,12 @@ export default function SelezioneDetailPage() {
       selection.stato,
     )
 
+  const canViewApplications =
+    user.ruolo === "CEO" ||
+    user.ruolo === "DEVELOPER" ||
+    user.id === selection.risorsa_umana_id ||
+    user.id === selection.responsabile_id
+
   return (
     <div className="animate-fade-in-up space-y-6">
       <div className="flex items-center gap-4">
@@ -298,7 +308,40 @@ export default function SelezioneDetailPage() {
           <SelectionActions selection={selection} user={user} />
         </div>
         <div className="lg:col-span-2">
-          {canManageAnnouncements && <AnnouncementsSection selectionId={selection.id} />}
+          <Tabs defaultValue="announcements" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="announcements">
+                <FileSignature className="mr-2 h-4 w-4" />
+                Annunci
+              </TabsTrigger>
+              <TabsTrigger value="applications" disabled={!canViewApplications}>
+                <Users className="mr-2 h-4 w-4" />
+                Candidature
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="announcements">
+              {canManageAnnouncements ? (
+                <AnnouncementsSection selectionId={selection.id} />
+              ) : (
+                <Card className="shadow-sm border-0 mt-4">
+                  <CardContent className="pt-6 text-center text-muted-foreground">
+                    Non hai i permessi per gestire gli annunci.
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+            <TabsContent value="applications">
+              {canViewApplications ? (
+                <ApplicationsSection selectionId={selection.id} />
+              ) : (
+                <Card className="shadow-sm border-0 mt-4">
+                  <CardContent className="pt-6 text-center text-muted-foreground">
+                    Non hai i permessi per visualizzare le candidature.
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
