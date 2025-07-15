@@ -1,18 +1,15 @@
 import { Badge } from "@/components/ui/badge"
-import type { Announcement } from "./columns"
+import { cn } from "@/lib/utils"
 
-const statusConfig = {
-  BOZZA: { label: "Bozza", variant: "secondary" },
-  PUBBLICATO: { label: "Pubblicato", variant: "success" },
-  ARCHIVIATO: { label: "Archiviato", variant: "destructive" },
-} as const
+type Status = "BOZZA" | "PUBBLICATO" | "SCADUTO" | "ANNULLATO"
 
-interface StatusBadgeProps {
-  status: Announcement["stato"]
+const statusStyles: Record<Status, string> = {
+  BOZZA: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  PUBBLICATO: "bg-green-100 text-green-800 border-green-200",
+  SCADUTO: "bg-gray-100 text-gray-800 border-gray-200",
+  ANNULLATO: "bg-red-100 text-red-800 border-red-200",
 }
 
-export function StatusBadge({ status }: StatusBadgeProps) {
-  const config = statusConfig[status] || { label: status, variant: "default" }
-  // @ts-ignore
-  return <Badge variant={config.variant}>{config.label}</Badge>
+export function StatusBadge({ status }: { status: Status }) {
+  return <Badge className={cn("capitalize", statusStyles[status])}>{status.toLowerCase().replace("_", " ")}</Badge>
 }

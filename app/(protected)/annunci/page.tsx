@@ -6,7 +6,7 @@ import { columns } from "./_components/columns"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function AnnouncementsPage() {
-  const { data: announcementsData, isLoading, isError, error } = useGetAnnouncementsQuery({})
+  const { data: announcementsData, isLoading, isError } = useGetAnnouncementsQuery({})
 
   if (isLoading) {
     return (
@@ -20,14 +20,18 @@ export default function AnnouncementsPage() {
     )
   }
 
-  if (isError) {
-    return <div className="text-red-500">Error loading announcements: {JSON.stringify(error)}</div>
+  if (isError || !announcementsData) {
+    return (
+      <div className="container mx-auto flex h-full items-center justify-center py-10">
+        <p className="text-red-500">Impossibile caricare gli annunci.</p>
+      </div>
+    )
   }
 
   return (
     <div className="container mx-auto py-10">
-      <h1 className="text-3xl font-bold tracking-tight mb-6">Gestione Annunci</h1>
-      <DataTable columns={columns} data={announcementsData?.data || []} />
+      <h1 className="mb-8 text-3xl font-bold tracking-tight">Gestione Annunci</h1>
+      <DataTable columns={columns} data={announcementsData.data} />
     </div>
   )
 }

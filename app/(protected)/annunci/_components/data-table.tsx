@@ -1,16 +1,16 @@
 "use client"
 
-import * as React from "react"
+import { useState } from "react"
 import {
   type ColumnDef,
-  type ColumnFiltersState,
-  type SortingState,
   flexRender,
   getCoreRowModel,
-  getFilteredRowModel,
+  useReactTable,
   getPaginationRowModel,
   getSortedRowModel,
-  useReactTable,
+  type SortingState,
+  getFilteredRowModel,
+  type ColumnFiltersState,
 } from "@tanstack/react-table"
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -23,8 +23,8 @@ interface DataTableProps<TData, TValue> {
 }
 
 export function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
   const table = useReactTable({
     data,
