@@ -16,71 +16,101 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Spinner } from "@/components/ui/spinner"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { ArrowLeft, CheckCircle, UserPlus } from "lucide-react"
+import { ArrowLeft, CheckCircle, UserPlus, Briefcase, Building, Calendar, User, FileText } from "lucide-react"
 import Link from "next/link"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState } from "react"
 import { AnnouncementsSection } from "./_components/announcements-section"
+import { cn } from "@/lib/utils"
+import React from "react"
 
-const SelectionDetailsCard = ({ selection }: { selection: any }) => {
-  const getStatusVariant = (status: string) => {
-    switch (status) {
-      case "APPROVATA":
-      case "IN_CORSO":
-      case "ANNUNCI_PUBBLICATI":
-      case "CANDIDATURE_RICEVUTE":
-      case "COLLOQUI_IN_CORSO":
-      case "COLLOQUI_CEO":
-        return "success"
-      case "CHIUSA":
-        return "secondary"
-      case "ANNULLATA":
-        return "destructive"
-      case "CREATA":
-        return "outline"
-      default:
-        return "secondary"
-    }
+const StatusBadge = ({ status, className }: { status: string; className?: string }) => {
+  const statusConfig = {
+    CREATA: { label: "Creata", color: "bg-yellow-500", textColor: "text-yellow-500" },
+    APPROVATA: { label: "Approvata", color: "bg-sky-500", textColor: "text-sky-500" },
+    IN_CORSO: { label: "In Corso", color: "bg-blue-500", textColor: "text-blue-500" },
+    ANNUNCI_PUBBLICATI: { label: "Annunci Pubblicati", color: "bg-indigo-500", textColor: "text-indigo-500" },
+    CANDIDATURE_RICEVUTE: { label: "Candidature Ricevute", color: "bg-purple-500", textColor: "text-purple-500" },
+    COLLOQUI_IN_CORSO: { label: "Colloqui in Corso", color: "bg-pink-500", textColor: "text-pink-500" },
+    COLLOQUI_CEO: { label: "Colloqui CEO", color: "bg-fuchsia-500", textColor: "text-fuchsia-500" },
+    CHIUSA: { label: "Chiusa", color: "bg-green-500", textColor: "text-green-500" },
+    ANNULLATA: { label: "Annullata", color: "bg-red-500", textColor: "text-red-500" },
+  }
+
+  const config = statusConfig[status as keyof typeof statusConfig] || {
+    label: status.replace(/_/g, " "),
+    color: "bg-gray-500",
+    textColor: "text-gray-500",
   }
 
   return (
+    <Badge
+      variant="outline"
+      className={cn("border-0 bg-opacity-10 text-xs", config.textColor, config.color, className)}
+    >
+      <span className={cn("mr-2 h-2 w-2 rounded-full", config.color)}></span>
+      {config.label}
+    </Badge>
+  )
+}
+
+const DetailItem = ({ icon, label, value }: { icon: React.ElementType; label: string; value: React.ReactNode }) => (
+  <div className="flex items-start gap-4">
+    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">
+      {React.createElement(icon, { className: "h-5 w-5" })}
+    </div>
+    <div>
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="font-medium">{value || "N/A"}</p>
+    </div>
+  </div>
+)
+
+const SelectionDetailsCard = ({ selection }: { selection: any }) => {
+  return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-start">
+        <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <CardTitle className="text-2xl">{selection.titolo}</CardTitle>
             <CardDescription>Dettagli della selezione e stato attuale.</CardDescription>
           </div>
-          <Badge variant={getStatusVariant(selection.stato)} className="text-sm">
-            {selection.stato.replace(/_/g, " ")}
-          </Badge>
+          <StatusBadge status={selection.stato} className="text-sm" />
         </div>
       </CardHeader>
-      <CardContent className="grid gap-4 md:grid-cols-2">
-        <div>
-          <strong>Reparto:</strong> {selection.reparto.nome}
-        </div>
-        <div>
-          <strong>Figura Professionale:</strong> {selection.figura_professionale.nome} (
-          {selection.figura_professionale.seniority})
-        </div>
-        <div>
-          <strong>Tipo:</strong> {selection.tipo}
-        </div>
-        <div>
-          <strong>Responsabile Reparto:</strong> {selection.responsabile.nome} {selection.responsabile.cognome}
-        </div>
-        <div>
-          <strong>Data Creazione:</strong> {new Date(selection.data_creazione).toLocaleDateString()}
-        </div>
-        {selection.risorsa_umana && (
-          <div>
-            <strong>HR Assegnato:</strong> {selection.risorsa_umana.nome} {selection.risorsa_umana.cognome}
-          </div>
-        )}
+      <CardContent className="grid gap-6 sm:grid-cols-2">
+        <DetailItem icon={Building} label="Reparto" value={selection.reparto.nome} />
+        <DetailItem
+          icon={Briefcase}
+          label="Figura Professionale"
+          value={`${selection.figura_professionale.nome} (${selection.figura_professionale.seniority})`}
+        />
+        <DetailItem
+          icon={User}
+          label="Responsabile Reparto"
+          value={`${selection.responsabile.nome} ${selection.responsabile.cognome}`}
+        />
+        <DetailItem
+          icon={UserPlus}
+          label="HR Assegnato"
+          value={
+            selection.risorsa_umana
+              ? `${selection.risorsa_umana.nome} ${selection.risorsa_umana.cognome}`
+              : "Non assegnato"
+          }
+        />
+        <DetailItem
+          icon={Calendar}
+          label="Data Creazione"
+          value={new Date(selection.data_creazione).toLocaleDateString()}
+        />
+        <DetailItem icon={FileText} label="Tipo" value={selection.tipo} />
         {selection.note && (
-          <div className="md:col-span-2">
-            <strong>Note:</strong> <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selection.note}</p>
+          <div className="sm:col-span-2">
+            <p className="text-sm font-medium text-foreground">Note Aggiuntive</p>
+            <p className="mt-1 whitespace-pre-wrap rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
+              {selection.note}
+            </p>
           </div>
         )}
       </CardContent>
@@ -131,37 +161,45 @@ const SelectionActions = ({ selection, user }: { selection: any; user: any }) =>
       </CardHeader>
       <CardContent className="space-y-4">
         {user.ruolo === "CEO" && selection.stato === "CREATA" && (
-          <div className="flex items-center gap-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="flex-1 font-medium">Questa selezione è in attesa di approvazione.</p>
-            <Button onClick={handleApprove} disabled={isApproving}>
-              {isApproving ? <Spinner /> : <CheckCircle className="mr-2" />}
-              Approva Selezione
-            </Button>
-          </div>
+          <Alert variant="warning">
+            <CheckCircle className="h-4 w-4" />
+            <AlertTitle>In attesa di approvazione</AlertTitle>
+            <AlertDescription>
+              Questa selezione deve essere approvata per procedere.
+              <Button onClick={handleApprove} disabled={isApproving} size="sm" className="mt-2">
+                {isApproving ? <Spinner /> : <CheckCircle />}
+                Approva Selezione
+              </Button>
+            </AlertDescription>
+          </Alert>
         )}
 
         {user.ruolo === "CEO" && selection.stato === "APPROVATA" && !selection.risorsa_umana_id && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex-1 space-y-2">
-              <p className="font-medium">Assegna una risorsa umana per avviare la selezione.</p>
-              <Select onValueChange={setSelectedHr} disabled={isLoadingHrUsers}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleziona un membro del team HR" />
-                </SelectTrigger>
-                <SelectContent>
-                  {hrUsersData?.data.map((hr: any) => (
-                    <SelectItem key={hr.id} value={hr.id.toString()}>
-                      {hr.nome} {hr.cognome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={handleAssignHr} disabled={isAssigning || !selectedHr} className="w-full sm:w-auto">
-              {isAssigning ? <Spinner /> : <UserPlus className="mr-2" />}
-              Assegna HR
-            </Button>
-          </div>
+          <Alert variant="info">
+            <UserPlus className="h-4 w-4" />
+            <AlertTitle>Assegna una Risorsa Umana</AlertTitle>
+            <AlertDescription>
+              <div className="flex flex-col gap-2">
+                <p>Seleziona un membro del team HR per avviare la selezione.</p>
+                <Select onValueChange={setSelectedHr} disabled={isLoadingHrUsers}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleziona HR" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hrUsersData?.data.map((hr: any) => (
+                      <SelectItem key={hr.id} value={hr.id.toString()}>
+                        {hr.nome} {hr.cognome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleAssignHr} disabled={isAssigning || !selectedHr} size="sm">
+                  {isAssigning ? <Spinner /> : <UserPlus />}
+                  Assegna HR
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
         )}
 
         {selection.stato === "APPROVATA" && selection.risorsa_umana_id && (
@@ -190,7 +228,7 @@ export default function SelezioneDetailPage() {
 
   if (isLoading || !user) {
     return (
-      <div className="flex justify-center items-center h-full">
+      <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Spinner className="h-10 w-10" />
       </div>
     )
@@ -198,11 +236,16 @@ export default function SelezioneDetailPage() {
 
   if (error || !data) {
     return (
-      <div className="text-red-500 text-center">
-        <p>Errore nel caricamento della selezione o selezione non trovata.</p>
-        <Button onClick={() => refetch()} className="mt-4">
-          Riprova
-        </Button>
+      <div className="text-center">
+        <Alert variant="destructive">
+          <AlertTitle>Errore</AlertTitle>
+          <AlertDescription>
+            Errore nel caricamento della selezione o selezione non trovata.
+            <Button onClick={() => refetch()} variant="secondary" size="sm" className="mt-2">
+              Riprova
+            </Button>
+          </AlertDescription>
+        </Alert>
       </div>
     )
   }
@@ -217,16 +260,31 @@ export default function SelezioneDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Button variant="outline" size="sm" asChild>
-        <Link href="/selezioni">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Torna alle Selezioni
-        </Link>
-      </Button>
+      <div className="flex items-center gap-4">
+        <Button variant="outline" size="icon" asChild>
+          <Link href="/selezioni">
+            <ArrowLeft />
+            <span className="sr-only">Torna alle Selezioni</span>
+          </Link>
+        </Button>
+        <h1 className="text-xl font-semibold text-muted-foreground">
+          <Link href="/selezioni" className="hover:underline">
+            Selezioni
+          </Link>
+          <span className="mx-2">/</span>
+          <span className="text-foreground">{selection.titolo}</span>
+        </h1>
+      </div>
 
-      <SelectionDetailsCard selection={selection} />
-      <SelectionActions selection={selection} user={user} />
-      {canManageAnnouncements && <AnnouncementsSection selectionId={selection.id} />}
+      <div className="grid gap-6 lg:grid-cols-5">
+        <div className="space-y-6 lg:col-span-3">
+          <SelectionDetailsCard selection={selection} />
+          <SelectionActions selection={selection} user={user} />
+        </div>
+        <div className="lg:col-span-2">
+          {canManageAnnouncements && <AnnouncementsSection selectionId={selection.id} />}
+        </div>
+      </div>
     </div>
   )
 }
