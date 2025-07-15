@@ -8,7 +8,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
   return (
     <ProtectedRoute>
       <SidebarProvider>
-        <div className="flex min-h-screen w-full bg-muted/40">
+        <div className="flex min-h-screen w-full bg-secondary">
           <AppSidebar />
           <div className="flex flex-1 flex-col">
             <Header />

@@ -15,7 +15,7 @@ export default function GestioneFigureProfessionaliPage() {
   if (isLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
-        <Spinner className="h-10 w-10" />
+        <Spinner className="h-10 w-10 text-primary" />
       </div>
     )
   }
@@ -25,21 +25,21 @@ export default function GestioneFigureProfessionaliPage() {
   }
 
   return (
-    <Card>
+    <Card className="shadow-sm border-0 animate-fade-in-up">
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4">
         <div>
           <CardTitle className="text-2xl font-bold tracking-tight">Figure Professionali</CardTitle>
           <CardDescription>Crea, visualizza e modifica le figure professionali aziendali.</CardDescription>
         </div>
         <FigureFormDialog>
-          <Button>
+          <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm">
             <PlusCircle />
             Crea Figura
           </Button>
         </FigureFormDialog>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md border">
+        <div className="rounded-lg border">
           <Table>
             <TableHeader>
               <TableRow>
