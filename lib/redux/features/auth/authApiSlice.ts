@@ -1,5 +1,5 @@
-import { apiSlice } from "../api/apiSlice"
-import { setCredentials, logOut } from "./authSlice"
+import { apiSlice } from "../api/apiSlice";
+import { setCredentials, logOut } from "./authSlice";
 
 export const authApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -11,28 +11,29 @@ export const authApiSlice = apiSlice.injectEndpoints({
       }),
       async onQueryStarted(arg, { dispatch, queryFulfilled }) {
         try {
-          const { data } = await queryFulfilled
-          dispatch(setCredentials(data))
-        } catch (error) {
-          console.error(error)
-        }
+          const { data } = await queryFulfilled;
+          dispatch(setCredentials(data));
+        } catch (error) {}
       },
     }),
     verifyToken: builder.query({
       query: () => "/auth/verify",
       async onQueryStarted(arg, { dispatch, queryFulfilled }) {
         try {
-          const { data } = await queryFulfilled
-          const token = typeof window !== "undefined" ? localStorage.getItem("token") : null
+          const { data } = await queryFulfilled;
+          const token =
+            typeof window !== "undefined"
+              ? localStorage.getItem("token")
+              : null;
           if (token) {
-            dispatch(setCredentials({ user: data.user, token }))
+            dispatch(setCredentials({ user: data.user, token }));
           }
         } catch (error) {
-          dispatch(logOut())
+          dispatch(logOut());
         }
       },
     }),
   }),
-})
+});
 
-export const { useLoginMutation, useVerifyTokenQuery } = authApiSlice
+export const { useLoginMutation, useVerifyTokenQuery } = authApiSlice;

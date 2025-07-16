@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation"
 import toast from "react-hot-toast"
 import { useCreateSelectionMutation } from "@/lib/redux/features/selections/selectionsApiSlice"
 import { useGetDepartmentsQuery } from "@/lib/redux/features/departments/departmentsApiSlice"
-import { useGetProfessionalFiguresQuery } from "@/lib/redux/features/professional-figures/professionalFiguresApiSlice"
+import { useGetProfessionalFiguresByDepartmentQuery } from "@/lib/redux/features/professional-figures/professionalFiguresApiSlice"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -37,7 +37,7 @@ export default function NuovaSelezionePage() {
 
   const [selectedDepartment, setSelectedDepartment] = useState<number | null>(null)
 
-  const { data: figuresData, isLoading: isLoadingFigures } = useGetProfessionalFiguresQuery(selectedDepartment, {
+  const { data: figuresData, isLoading: isLoadingFigures } = useGetProfessionalFiguresByDepartmentQuery(selectedDepartment, {
     skip: !selectedDepartment,
   })
 
