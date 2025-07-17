@@ -1,45 +1,69 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { useForm, Controller } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { useRouter } from "next/navigation"
-import toast from "react-hot-toast"
-import { useCreateSelectionMutation } from "@/lib/redux/features/selections/selectionsApiSlice"
-import { useGetDepartmentsQuery } from "@/lib/redux/features/departments/departmentsApiSlice"
-import { useGetProfessionalFiguresByDepartmentQuery } from "@/lib/redux/features/professional-figures/professionalFiguresApiSlice"
+import { useState } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { useCreateSelectionMutation } from "@/lib/redux/features/selections/selectionsApiSlice";
+import { useGetDepartmentsQuery } from "@/lib/redux/features/departments/departmentsApiSlice";
+import { useGetProfessionalFiguresByDepartmentQuery } from "@/lib/redux/features/professional-figures/professionalFiguresApiSlice";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Spinner } from "@/components/ui/spinner"
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Spinner } from "@/components/ui/spinner";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { useRoleProtection } from "@/hooks/use-role-protection";
 
 const createSelectionSchema = z.object({
   titolo: z.string().min(5, "Il titolo deve contenere almeno 5 caratteri"),
-  reparto_id: z.coerce.number({ required_error: "Seleziona un reparto" }).positive(),
-  figura_professionale_id: z.coerce.number({ required_error: "Seleziona una figura professionale" }).positive(),
+  reparto_id: z.coerce
+    .number({ required_error: "Seleziona un reparto" })
+    .positive(),
+  figura_professionale_id: z.coerce
+    .number({ required_error: "Seleziona una figura professionale" })
+    .positive(),
   tipo: z.enum(["INTERNO", "ESTERNO"], { required_error: "Seleziona un tipo" }),
   note: z.string().optional(),
-})
+});
 
-type CreateSelectionFormValues = z.infer<typeof createSelectionSchema>
+type CreateSelectionFormValues = z.infer<typeof createSelectionSchema>;
 
 export default function NuovaSelezionePage() {
-  const router = useRouter()
-  const [createSelection, { isLoading: isCreating }] = useCreateSelectionMutation()
-  const { data: departmentsData, isLoading: isLoadingDepartments } = useGetDepartmentsQuery({})
+  useRoleProtection(["CEO", "RESPONSABILE_REPARTO", "DEVELOPER"]);
 
-  const [selectedDepartment, setSelectedDepartment] = useState<number | null>(null)
+  const router = useRouter();
+  const [createSelection, { isLoading: isCreating }] =
+    useCreateSelectionMutation();
+  const { data: departmentsData, isLoading: isLoadingDepartments } =
+    useGetDepartmentsQuery({});
 
-  const { data: figuresData, isLoading: isLoadingFigures } = useGetProfessionalFiguresByDepartmentQuery(selectedDepartment, {
-    skip: !selectedDepartment,
-  })
+  const [selectedDepartment, setSelectedDepartment] = useState<number | null>(
+    null
+  );
+
+  const { data: figuresData, isLoading: isLoadingFigures } =
+    useGetProfessionalFiguresByDepartmentQuery(selectedDepartment, {
+      skip: !selectedDepartment,
+    });
 
   const {
     register,
@@ -49,25 +73,29 @@ export default function NuovaSelezionePage() {
     formState: { errors },
   } = useForm<CreateSelectionFormValues>({
     resolver: zodResolver(createSelectionSchema),
-  })
+  });
 
-  const departmentId = watch("reparto_id")
+  const departmentId = watch("reparto_id");
 
   useState(() => {
     if (departmentId) {
-      setSelectedDepartment(departmentId)
+      setSelectedDepartment(departmentId);
     }
-  })
+  });
 
   const onSubmit = async (data: CreateSelectionFormValues) => {
     try {
-      await createSelection(data).unwrap()
-      toast.success("Selezione creata con successo! In attesa di approvazione.")
-      router.push("/selezioni")
+      await createSelection(data).unwrap();
+      toast.success(
+        "Selezione creata con successo! In attesa di approvazione."
+      );
+      router.push("/selezioni");
     } catch (err: any) {
-      toast.error(err.data?.message || "Errore nella creazione della selezione.")
+      toast.error(
+        err.data?.message || "Errore nella creazione della selezione."
+      );
     }
-  }
+  };
 
   return (
     <Card className="max-w-4xl mx-auto">
@@ -80,7 +108,9 @@ export default function NuovaSelezionePage() {
           </Button>
           <div>
             <CardTitle>Crea Nuova Selezione</CardTitle>
-            <CardDescription>Compila i campi per avviare un nuovo processo di selezione.</CardDescription>
+            <CardDescription>
+              Compila i campi per avviare un nuovo processo di selezione.
+            </CardDescription>
           </div>
         </div>
       </CardHeader>
@@ -88,8 +118,14 @@ export default function NuovaSelezionePage() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="titolo">Titolo Selezione</Label>
-            <Input id="titolo" placeholder="Es. Ricerca Sviluppatore Senior" {...register("titolo")} />
-            {errors.titolo && <p className="text-sm text-red-500">{errors.titolo.message}</p>}
+            <Input
+              id="titolo"
+              placeholder="Es. Ricerca Sviluppatore Senior"
+              {...register("titolo")}
+            />
+            {errors.titolo && (
+              <p className="text-sm text-red-500">{errors.titolo.message}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -101,8 +137,8 @@ export default function NuovaSelezionePage() {
                 render={({ field }) => (
                   <Select
                     onValueChange={(value) => {
-                      field.onChange(value)
-                      setSelectedDepartment(Number(value))
+                      field.onChange(value);
+                      setSelectedDepartment(Number(value));
                     }}
                     defaultValue={field.value?.toString()}
                   >
@@ -125,11 +161,17 @@ export default function NuovaSelezionePage() {
                   </Select>
                 )}
               />
-              {errors.reparto_id && <p className="text-sm text-red-500">{errors.reparto_id.message}</p>}
+              {errors.reparto_id && (
+                <p className="text-sm text-red-500">
+                  {errors.reparto_id.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="figura_professionale_id">Figura Professionale</Label>
+              <Label htmlFor="figura_professionale_id">
+                Figura Professionale
+              </Label>
               <Controller
                 name="figura_professionale_id"
                 control={control}
@@ -159,7 +201,9 @@ export default function NuovaSelezionePage() {
                 )}
               />
               {errors.figura_professionale_id && (
-                <p className="text-sm text-red-500">{errors.figura_professionale_id.message}</p>
+                <p className="text-sm text-red-500">
+                  {errors.figura_professionale_id.message}
+                </p>
               )}
             </div>
           </div>
@@ -170,7 +214,10 @@ export default function NuovaSelezionePage() {
               name="tipo"
               control={control}
               render={({ field }) => (
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleziona il tipo" />
                   </SelectTrigger>
@@ -181,7 +228,9 @@ export default function NuovaSelezionePage() {
                 </Select>
               )}
             />
-            {errors.tipo && <p className="text-sm text-red-500">{errors.tipo.message}</p>}
+            {errors.tipo && (
+              <p className="text-sm text-red-500">{errors.tipo.message}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -191,7 +240,9 @@ export default function NuovaSelezionePage() {
               placeholder="Inserisci eventuali dettagli o requisiti aggiuntivi..."
               {...register("note")}
             />
-            {errors.note && <p className="text-sm text-red-500">{errors.note.message}</p>}
+            {errors.note && (
+              <p className="text-sm text-red-500">{errors.note.message}</p>
+            )}
           </div>
 
           <div className="flex justify-end">
@@ -203,5 +254,5 @@ export default function NuovaSelezionePage() {
         </form>
       </CardContent>
     </Card>
-  )
+  );
 }
