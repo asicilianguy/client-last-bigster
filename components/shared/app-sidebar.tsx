@@ -1,14 +1,21 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { LayoutDashboard, Briefcase, Users, Menu, FileText, ClipboardCheck } from "lucide-react"
-import { cn } from "@/lib/utils"
-import Image from "next/image"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  LayoutDashboard,
+  Briefcase,
+  Users,
+  Menu,
+  FileText,
+  ClipboardCheck,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -20,31 +27,36 @@ const navItems = [
     label: "Gestione",
     icon: Users,
   },
-]
+];
 
 function NavLink({
   href,
   label,
   icon: Icon,
   isActive,
-}: { href: string; label: string; icon: React.ElementType; isActive: boolean }) {
+}: {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  isActive: boolean;
+}) {
   return (
     <Link href={href} legacyBehavior passHref>
       <a
         className={cn(
           "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-          isActive && "bg-muted text-primary",
+          isActive && "bg-muted text-primary"
         )}
       >
         <Icon className="h-4 w-4" />
         {label}
       </a>
     </Link>
-  )
+  );
 }
 
 function SidebarNav() {
-  const pathname = usePathname()
+  const pathname = usePathname();
 
   return (
     <nav className="grid items-start gap-2 px-2 text-sm font-medium lg:px-4">
@@ -58,7 +70,7 @@ function SidebarNav() {
         />
       ))}
     </nav>
-  )
+  );
 }
 
 export function AppSidebar() {
@@ -69,13 +81,16 @@ export function AppSidebar() {
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
             <Link href="/" className="flex items-center gap-2 font-semibold">
-              <Image src="/logo.png" alt="Bigster Logo" width={24} height={24} />
+              <Image
+                src="/logo.png"
+                alt="Bigster Logo"
+                width={24}
+                height={24}
+              />
               <span className="">Bigster</span>
             </Link>
           </div>
-          <div className="flex-1">
-            <SidebarNav />
-          </div>
+          <div className="flex-1"></div>
         </div>
       </div>
       {/* Mobile Sheet */}
@@ -90,16 +105,18 @@ export function AppSidebar() {
           <SheetContent side="left" className="flex flex-col p-0">
             <div className="flex h-14 items-center border-b px-4">
               <Link href="/" className="flex items-center gap-2 font-semibold">
-                <Image src="/logo.png" alt="Bigster Logo" width={24} height={24} />
+                <Image
+                  src="/logo.png"
+                  alt="Bigster Logo"
+                  width={24}
+                  height={24}
+                />
                 <span className="">Bigster</span>
               </Link>
-            </div>
-            <div className="mt-4">
-              <SidebarNav />
             </div>
           </SheetContent>
         </Sheet>
       </header>
     </>
-  )
+  );
 }

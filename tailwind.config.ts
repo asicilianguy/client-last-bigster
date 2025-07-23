@@ -1,5 +1,5 @@
-import type { Config } from "tailwindcss"
-import { fontFamily } from "tailwindcss/defaultTheme"
+import type { Config } from "tailwindcss";
+import { fontFamily } from "tailwindcss/defaultTheme";
 
 const config = {
   darkMode: ["class"],
@@ -26,6 +26,16 @@ const config = {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
+
+        // BigSter palette
+        "bigster-primary": "#fef19a",
+        "bigster-primary-text": "#6c4e06",
+        "bigster-surface": "#ffffff",
+        "bigster-text": "#333333",
+        "bigster-text-muted": "#666666",
+        "bigster-border": "#d8d8d8",
+        "bigster-star": "#e4d72b",
+
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
@@ -59,9 +69,18 @@ const config = {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        bigster: "6px", // BigSter standard border radius
       },
       fontFamily: {
-        sans: ["var(--font-sans)", ...fontFamily.sans],
+        sans: ["var(--font-sans)", "Inter", ...fontFamily.sans],
+      },
+      boxShadow: {
+        "bigster-card": "0px 4px 20px rgba(0, 0, 0, 0.05)",
+        "bigster-hover": "0px 8px 30px rgba(0, 0, 0, 0.08)",
+      },
+      backgroundImage: {
+        "bigster-gradient": "linear-gradient(180deg, #fdf5c1 0%, #fffef0 100%)",
+        "bigster-logo": "linear-gradient(180deg, #000000 0%, #666666 100%)",
       },
       keyframes: {
         "accordion-down": {
@@ -82,15 +101,55 @@ const config = {
             transform: "translateY(0)",
           },
         },
+        "fade-in-right": {
+          "0%": {
+            opacity: "0",
+            transform: "translateX(-10px)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translateX(0)",
+          },
+        },
+        "fade-in": {
+          "0%": {
+            opacity: "0",
+          },
+          "100%": {
+            opacity: "1",
+          },
+        },
+        "pulse-soft": {
+          "0%, 100%": {
+            opacity: "1",
+          },
+          "50%": {
+            opacity: "0.8",
+          },
+        },
+        "scale-in": {
+          "0%": {
+            opacity: "0",
+            transform: "scale(0.95)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "scale(1)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in-up": "fade-in-up 0.4s ease-out",
+        "fade-in-right": "fade-in-right 0.4s ease-out",
+        "fade-in": "fade-in 0.3s ease-out",
+        "pulse-soft": "pulse-soft 2s infinite",
+        "scale-in": "scale-in 0.3s ease-out",
       },
     },
   },
   plugins: [require("tailwindcss-animate")],
-} satisfies Config
+} satisfies Config;
 
-export default config
+export default config;

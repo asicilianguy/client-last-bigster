@@ -2,26 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-}
-
 @layer base {
   :root {
+    /* Sistema di colori esistente */
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 45 93% 47%; /* Modificato per allinearsi con il colore #fef19a */
+    --primary-foreground: 40 93% 22%; /* Modificato per allinearsi con #6c4e06 */
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
     --muted: 0 0% 96.1%;
@@ -30,15 +21,21 @@ body {
     --accent-foreground: 0 0% 9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
+    --border: 0 0% 89.8%; /* Allineato a #d8d8d8 */
     --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --ring: 45 93% 47%; /* Allineato al colore primario */
     --radius: 0.5rem;
+
+    /* BigSter CSS variables */
+    --color-primary: #fef19a;
+    --color-primary-text: #6c4e06;
+    --color-surface: #ffffff;
+    --color-text: #333333;
+    --color-text-muted: #666666;
+    --color-border: #d8d8d8;
+    --color-star: #e4d72b;
+
+    /* Sidebar variables */
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -48,6 +45,7 @@ body {
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
+
   .dark {
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
@@ -55,8 +53,8 @@ body {
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
+    --primary: 45 93% 47%;
+    --primary-foreground: 40 93% 22%;
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 14.9%;
@@ -90,5 +88,210 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply tracking-tight;
+  }
+
+  h1 {
+    @apply text-3xl font-bold;
+  }
+
+  h2 {
+    @apply text-2xl font-semibold;
+  }
+
+  h3 {
+    @apply text-xl font-medium;
+  }
+}
+
+/* BigSter Component Styles */
+@layer components {
+  .bigster-card {
+    @apply bg-white rounded-bigster shadow-bigster-card border border-bigster-border transition-all hover:shadow-bigster-hover;
+  }
+
+  .bigster-button-primary {
+    @apply bg-bigster-primary text-bigster-primary-text font-medium py-2 px-4 rounded-bigster hover:opacity-90 transition-opacity flex items-center justify-center gap-2;
+  }
+
+  .bigster-input {
+    @apply w-full px-3 py-2 text-sm border border-bigster-border rounded-bigster focus:ring-2 focus:ring-bigster-primary focus:border-transparent outline-none;
+  }
+
+  .bigster-label {
+    @apply block text-sm font-medium text-bigster-text mb-1;
+  }
+
+  .bigster-badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold;
+  }
+
+  .bigster-nav-item {
+    @apply px-4 py-2 text-sm font-medium rounded-bigster transition-colors;
+  }
+
+  .bigster-nav-item-active {
+    @apply bg-bigster-primary text-bigster-primary-text font-bold;
+  }
+
+  .bigster-background-gradient {
+    @apply bg-bigster-gradient;
+  }
+
+  .bigster-logo-text {
+    @apply text-3xl font-bold bg-bigster-logo text-transparent bg-clip-text;
+  }
+
+  /* Additional utility classes */
+  .bigster-page-container {
+    @apply p-6 sm:p-8 mx-auto max-w-7xl;
+  }
+
+  .bigster-page-header {
+    @apply mb-6 space-y-2;
+  }
+
+  .bigster-page-title {
+    @apply text-3xl font-bold tracking-tight;
+  }
+
+  .bigster-page-description {
+    @apply text-muted-foreground;
+  }
+
+  .bigster-section {
+    @apply space-y-6 mb-8;
+  }
+
+  .bigster-section-title {
+    @apply text-xl font-semibold flex items-center gap-2;
+  }
+
+  .bigster-grid {
+    @apply grid gap-6;
+  }
+
+  .bigster-grid-cols-1 {
+    @apply bigster-grid grid-cols-1;
+  }
+
+  .bigster-grid-cols-2 {
+    @apply bigster-grid grid-cols-1 md:grid-cols-2;
+  }
+
+  .bigster-grid-cols-3 {
+    @apply bigster-grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3;
+  }
+
+  .bigster-grid-cols-4 {
+    @apply bigster-grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4;
+  }
+
+  .bigster-kpi-value {
+    @apply text-3xl font-bold mt-1 tabular-nums;
+  }
+
+  .bigster-kpi-title {
+    @apply text-sm font-medium text-muted-foreground;
+  }
+
+  .bigster-kpi-description {
+    @apply text-xs text-muted-foreground mt-1;
+  }
+
+  .bigster-hover-card {
+    @apply transition-all hover:-translate-y-1 hover:shadow-md;
+  }
+}
+
+/* Animation utilities */
+.animate-fade-in-up {
+  animation: fade-in-up 0.4s ease-out;
+}
+
+.animate-fade-in-right {
+  animation: fade-in-right 0.4s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.3s ease-out;
+}
+
+.animate-stagger-children > * {
+  opacity: 0;
+}
+
+.animate-stagger-children.animate-visible > *:nth-child(1) {
+  animation: fade-in-up 0.4s 0.1s forwards;
+}
+.animate-stagger-children.animate-visible > *:nth-child(2) {
+  animation: fade-in-up 0.4s 0.2s forwards;
+}
+.animate-stagger-children.animate-visible > *:nth-child(3) {
+  animation: fade-in-up 0.4s 0.3s forwards;
+}
+.animate-stagger-children.animate-visible > *:nth-child(4) {
+  animation: fade-in-up 0.4s 0.4s forwards;
+}
+.animate-stagger-children.animate-visible > *:nth-child(5) {
+  animation: fade-in-up 0.4s 0.5s forwards;
+}
+.animate-stagger-children.animate-visible > *:nth-child(6) {
+  animation: fade-in-up 0.4s 0.6s forwards;
+}
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-right {
+  0% {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }

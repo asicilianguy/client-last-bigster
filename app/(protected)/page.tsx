@@ -1,22 +1,26 @@
 "use client";
 
-import React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "@/lib/redux/features/auth/authSlice";
-import { Spinner } from "@/components/ui/spinner";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { AreaChart, LineChart, BarChart, PieChart } from "lucide-react";
 import Link from "next/link";
+import { motion } from "framer-motion";
+
+// Redux hooks
+import {
+  useGetSelectionsQuery,
+  useApproveSelectionMutation,
+} from "@/lib/redux/features/selections/selectionsApiSlice";
+import { useGetApplicationsQuery } from "@/lib/redux/features/applications/applicationsApiSlice";
+import { useGetAnnouncementsQuery } from "@/lib/redux/features/announcements/announcementsApiSlice";
+
+// UI Components
+import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@/components/ui/button";
+import toast from "react-hot-toast";
+
+// Icons
 import {
   AlertTriangle,
   CheckCircle,
@@ -28,17 +32,13 @@ import {
   Briefcase,
   TrendingUp,
   Calendar,
-  ArrowRight,
   PlusCircle,
+  BarChart,
+  LineChart,
+  PieChart,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import {
-  useGetSelectionsQuery,
-  useApproveSelectionMutation,
-} from "@/lib/redux/features/selections/selectionsApiSlice";
-import { useGetApplicationsQuery } from "@/lib/redux/features/applications/applicationsApiSlice";
-import { useGetAnnouncementsQuery } from "@/lib/redux/features/announcements/announcementsApiSlice";
-import toast from "react-hot-toast";
+
+// Types
 import {
   User,
   Selection,
@@ -48,145 +48,23 @@ import {
   ApplicationStatus,
   Announcement,
   AnnouncementStatus,
-  Department,
-  InterviewOutcome,
 } from "@/types";
 
-// KPI Card Component
-function KpiCard({
-  title,
-  value,
-  icon: Icon,
-  description,
-  color = "primary",
-  className = "",
-}: {
-  title: string;
-  value: string | number;
-  icon: React.ComponentType<{ className?: string }>;
-  description?: string;
-  color?: string;
-  className?: string;
-}) {
-  return (
-    <Card
-      className={`shadow-sm hover:shadow-md transition-shadow ${className}`}
-    >
-      <CardContent className="p-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <h3 className="text-3xl font-bold mt-1">{value}</h3>
-            {description && (
-              <p className="text-xs text-muted-foreground mt-1">
-                {description}
-              </p>
-            )}
-          </div>
-          <div className={`p-3 rounded-full bg-${color}-100 text-${color}-600`}>
-            <Icon className="h-6 w-6" />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+// Custom Components
+import { KpiCard } from "@/components/ui/bigster/KpiCard";
+import { ChartCard } from "@/components/ui/bigster/ChartCard";
+import { SelectionCard } from "@/components/ui/bigster/SelectionCard";
+import { SelectionApprovalCard } from "@/components/ui/bigster/SelectionApprovalCard";
+import { SectionHeader } from "@/components/ui/bigster/SectionHeader";
+import { EmptyState } from "@/components/ui/bigster/EmptyState";
+import { ProgressBar } from "@/components/ui/bigster/ProgressBar";
 
-// ChartCard Component
-function ChartCard({
-  title,
-  icon: Icon,
-  children,
-  className = "",
-}: {
-  title: string;
-  icon: React.ComponentType<{ className?: string }>;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <Card className={`shadow-sm ${className}`}>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-medium">{title}</CardTitle>
-          <Icon className="h-4 w-4 text-muted-foreground" />
-        </div>
-      </CardHeader>
-      <CardContent>{children}</CardContent>
-    </Card>
-  );
-}
-
-// Interfaccia per i dati estesi di Selection con conteggi
+// Interface for data with counts
 interface SelectionWithCounts extends SelectionWithRelations {
   _count?: {
     annunci?: number;
     candidature?: number;
   };
-}
-
-// SelectionApprovalCard Component for CEO
-function SelectionApprovalCard({
-  selection,
-  onApprove,
-}: {
-  selection: SelectionWithRelations;
-  onApprove: (id: number) => Promise<any>;
-}) {
-  const [isApproving, setIsApproving] = useState(false);
-
-  const handleApprove = async () => {
-    setIsApproving(true);
-    try {
-      await onApprove(selection.id);
-      toast.success(`Selezione "${selection.titolo}" approvata con successo!`);
-    } catch (error) {
-      toast.error("Errore durante l'approvazione della selezione");
-    } finally {
-      setIsApproving(false);
-    }
-  };
-
-  return (
-    <Card className="shadow-sm border-l-4 border-l-yellow-500">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <h4 className="font-medium">{selection.titolo}</h4>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge
-                variant="outline"
-                className="bg-yellow-100 text-yellow-800 border-yellow-300"
-              >
-                In attesa
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                Reparto: {selection.reparto.nome}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Creata da: {selection.responsabile.nome}{" "}
-              {selection.responsabile.cognome} il{" "}
-              {new Date(selection.data_creazione).toLocaleDateString()}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="outline" asChild>
-              <Link href={`/selezioni/${selection.id}`}>Dettagli</Link>
-            </Button>
-            <Button size="sm" onClick={handleApprove} disabled={isApproving}>
-              {isApproving ? (
-                <Spinner className="h-4 w-4 mr-1" />
-              ) : (
-                <CheckCircle className="h-4 w-4 mr-1" />
-              )}
-              Approva
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
 }
 
 // CEO Dashboard
@@ -213,9 +91,8 @@ function CEODashboard() {
     ).length || 0;
   const totalApplications = applicationsData?.length || 0;
   const hiredApplications =
-    applicationsData?.filter(
-      (a: any) => a.stato === ApplicationStatus.ASSUNTO
-    ).length || 0;
+    applicationsData?.filter((a: any) => a.stato === ApplicationStatus.ASSUNTO)
+      .length || 0;
   const hiringRate =
     totalApplications > 0
       ? Math.round((hiredApplications / totalApplications) * 100)
@@ -230,130 +107,139 @@ function CEODashboard() {
 
   if (isLoadingSelections || isLoadingApplications) {
     return (
-      <div className="flex justify-center p-12">
+      <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Spinner className="h-12 w-12" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
+    <motion.div
+      className="bigster-page-container"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="bigster-page-header">
+        <motion.h1
+          className="bigster-page-title"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           Dashboard Direzionale
-        </h1>
-        <p className="text-muted-foreground">
+        </motion.h1>
+        <motion.p
+          className="bigster-page-description"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
           Panoramica completa del processo di selezione aziendale.
-        </p>
+        </motion.p>
       </div>
 
       {/* KPI Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <motion.div
+        className="bigster-grid-cols-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
         <KpiCard
           title="Selezioni Attive"
           value={activeSelections}
           description={`Su un totale di ${totalSelections} selezioni`}
           icon={Briefcase}
-          color="blue"
+          colorScheme="blue"
+          index={0}
         />
         <KpiCard
           title="In Attesa di Approvazione"
           value={pendingSelections.length}
           icon={AlertTriangle}
-          color="yellow"
+          colorScheme="yellow"
+          index={1}
         />
         <KpiCard
           title="Candidature Totali"
           value={totalApplications}
           icon={Users}
-          color="indigo"
+          colorScheme="indigo"
+          index={2}
         />
         <KpiCard
           title="Tasso di Assunzione"
           value={`${hiringRate}%`}
           description={`${hiredApplications} candidati assunti`}
           icon={TrendingUp}
-          color="green"
+          colorScheme="green"
+          index={3}
         />
-      </div>
+      </motion.div>
 
       {/* Pending Approvals Section */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">
-            Selezioni in attesa di approvazione
-          </h2>
-          {pendingSelections.length > 0 && (
-            <Link href="/selezioni?filter=pending">
-              <Button variant="ghost" size="sm">
-                Visualizza tutte <ArrowRight className="ml-1 h-4 w-4" />
-              </Button>
-            </Link>
-          )}
-        </div>
+      <div className="bigster-section">
+        <SectionHeader
+          title="Selezioni in attesa di approvazione"
+          viewAllLink={
+            pendingSelections.length > 0
+              ? "/selezioni?filter=pending"
+              : undefined
+          }
+        />
 
         {pendingSelections.length > 0 ? (
           <div className="space-y-3">
             {pendingSelections
               .slice(0, 3)
-              .map((selection: SelectionWithRelations) => (
+              .map((selection: SelectionWithRelations, index: number) => (
                 <SelectionApprovalCard
                   key={selection.id}
                   selection={selection}
                   onApprove={approveSelection}
+                  index={index}
                 />
               ))}
             {pendingSelections.length > 3 && (
-              <p className="text-sm text-center text-muted-foreground">
+              <motion.p
+                className="text-sm text-center text-muted-foreground"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.6 }}
+              >
                 + altre {pendingSelections.length - 3} selezioni in attesa
-              </p>
+              </motion.p>
             )}
           </div>
         ) : (
-          <Card className="bg-muted/50">
-            <CardContent className="p-6 text-center">
-              <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-3" />
-              <h3 className="text-lg font-medium">
-                Nessuna selezione in attesa
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Tutte le selezioni sono state approvate o assegnate.
-              </p>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={CheckCircle}
+            title="Nessuna selezione in attesa"
+            description="Tutte le selezioni sono state approvate o assegnate."
+          />
         )}
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <ChartCard title="Selezioni per Reparto" icon={BarChart}>
-          <div className="h-60 flex items-center justify-center">
-            {/* Placeholder per il grafico */}
-            <div className="space-y-2 w-full">
-              {Object.entries(departmentSelections).map(([dept, count]) => (
-                <div key={dept} className="flex items-center">
-                  <div className="w-24 text-sm">{dept}</div>
-                  <div className="flex-1 h-5 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="bg-primary h-full rounded-full"
-                      style={{
-                        width: `${Math.min(
-                          100,
-                          (count / totalSelections) * 100
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                  <div className="w-8 text-right text-sm font-medium">
-                    {count}
-                  </div>
-                </div>
-              ))}
-            </div>
+      <div className="bigster-grid-cols-2">
+        <ChartCard title="Selezioni per Reparto" icon={BarChart} index={0}>
+          <div className="h-60 flex flex-col justify-center space-y-2 w-full">
+            {Object.entries(departmentSelections).map(
+              ([dept, count], index) => (
+                <ProgressBar
+                  key={dept}
+                  label={dept}
+                  value={count}
+                  max={totalSelections}
+                  colorClass="bg-primary"
+                />
+              )
+            )}
           </div>
         </ChartCard>
 
-        <ChartCard title="Andamento Selezioni" icon={LineChart}>
+        <ChartCard title="Andamento Selezioni" icon={LineChart} index={1}>
           <div className="h-60 flex items-center justify-center text-muted-foreground">
             <p className="text-center text-sm">
               Grafico andamento selezioni attive e concluse negli ultimi 6 mesi
@@ -361,7 +247,7 @@ function CEODashboard() {
           </div>
         </ChartCard>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -394,136 +280,112 @@ function ResponsabileDashboard({ user }: { user: User }) {
 
   if (isLoadingSelections) {
     return (
-      <div className="flex justify-center p-12">
+      <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Spinner className="h-12 w-12" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">
+    <motion.div
+      className="bigster-page-container"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="bigster-page-header">
+        <motion.h1
+          className="bigster-page-title"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           Dashboard Responsabile
-        </h1>
-        <p className="text-muted-foreground">
+        </motion.h1>
+        <motion.p
+          className="bigster-page-description"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
           Gestione delle selezioni per il reparto {user.reparto?.nome || ""}
-        </p>
+        </motion.p>
       </div>
 
       {/* KPI Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <motion.div
+        className="bigster-grid-cols-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
         <KpiCard
           title="Selezioni Attive"
           value={activeSelections}
           icon={Briefcase}
-          color="blue"
+          colorScheme="blue"
+          index={0}
         />
         <KpiCard
           title="In Attesa di Approvazione"
           value={pendingSelections}
           icon={Clock}
-          color="yellow"
+          colorScheme="yellow"
+          index={1}
         />
         <KpiCard
           title="Candidature Ricevute"
           value={totalCandidatures}
           icon={Users}
-          color="purple"
+          colorScheme="purple"
+          index={2}
         />
         <KpiCard
           title="Selezioni Completate"
           value={closedSelections}
           icon={CheckCircle}
-          color="green"
+          colorScheme="green"
+          index={3}
         />
-      </div>
+      </motion.div>
 
       {/* Recent Selections Section */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Le mie selezioni recenti</h2>
-          <Link href="/selezioni">
-            <Button variant="ghost" size="sm">
-              Visualizza tutte <ArrowRight className="ml-1 h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
+      <div className="bigster-section">
+        <SectionHeader
+          title="Le mie selezioni recenti"
+          viewAllLink="/selezioni"
+        />
 
         {mySelections.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {mySelections.slice(0, 6).map((selection: SelectionWithCounts) => (
-              <Card key={selection.id} className="shadow-sm">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-base">
-                      {selection.titolo}
-                    </CardTitle>
-                    <Badge
-                      variant="outline"
-                      className={
-                        selection.stato === SelectionStatus.CREATA
-                          ? "bg-yellow-100 text-yellow-800"
-                          : selection.stato === SelectionStatus.CHIUSA
-                          ? "bg-green-100 text-green-800"
-                          : "bg-blue-100 text-blue-800"
-                      }
-                    >
-                      {selection.stato.replace(/_/g, " ")}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-2">
-                  <div className="text-sm space-y-1">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Figura:</span>
-                      <span>{selection.figura_professionale?.nome}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Annunci:</span>
-                      <span>{selection._count?.annunci || 0}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        Candidature:
-                      </span>
-                      <span>{selection._count?.candidature || 0}</span>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-2">
-                  <Button variant="ghost" size="sm" className="w-full" asChild>
-                    <Link href={`/selezioni/${selection.id}`}>Dettagli</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
+          <div className="bigster-grid-cols-3">
+            {mySelections
+              .slice(0, 6)
+              .map((selection: SelectionWithCounts, index: number) => (
+                <SelectionCard
+                  key={selection.id}
+                  selection={selection}
+                  index={index}
+                />
+              ))}
           </div>
         ) : (
-          <Card className="bg-muted/50">
-            <CardContent className="p-6 text-center">
-              <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
-              <h3 className="text-lg font-medium">Nessuna selezione attiva</h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Inizia creando una nuova selezione per il tuo reparto.
-              </p>
-              <Button className="mt-4" asChild>
+          <EmptyState
+            icon={FileText}
+            title="Nessuna selezione attiva"
+            description="Inizia creando una nuova selezione per il tuo reparto."
+            action={
+              <Button asChild>
                 <Link href="/selezioni/nuova">
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Nuova Selezione
                 </Link>
               </Button>
-            </CardContent>
-          </Card>
+            }
+          />
         )}
       </div>
-    </div>
+    </motion.div>
   );
-}
-
-// Interfaccia estesa per gli annunci con relazioni nidificate
-interface AnnouncementWithNested extends Announcement {
-  selezione?: Selection;
 }
 
 // HR Dashboard
@@ -581,144 +443,112 @@ function HRDashboard({ user }: { user: User }) {
 
   if (isLoadingSelections || isLoadingAnnouncements || isLoadingApplications) {
     return (
-      <div className="flex justify-center p-12">
+      <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Spinner className="h-12 w-12" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard HR</h1>
-        <p className="text-muted-foreground">
+    <motion.div
+      className="bigster-page-container"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <div className="bigster-page-header">
+        <motion.h1
+          className="bigster-page-title"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          Dashboard HR
+        </motion.h1>
+        <motion.p
+          className="bigster-page-description"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
           Gestione delle selezioni, annunci e candidature assegnate
-        </p>
+        </motion.p>
       </div>
 
       {/* KPI Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <motion.div
+        className="bigster-grid-cols-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+      >
         <KpiCard
           title="Selezioni Assegnate"
           value={activeSelections}
           icon={Briefcase}
-          color="blue"
+          colorScheme="blue"
+          index={0}
         />
         <KpiCard
           title="Annunci Pubblicati"
           value={publishedAnnouncements}
           icon={FileText}
-          color="green"
+          colorScheme="green"
+          index={1}
         />
         <KpiCard
           title="Candidature da Valutare"
           value={pendingApplications}
           icon={Users}
-          color="yellow"
+          colorScheme="yellow"
+          index={2}
         />
         <KpiCard
           title="Colloqui da Gestire"
           value={scheduledInterviews}
           icon={Calendar}
-          color="purple"
+          colorScheme="purple"
+          index={3}
         />
-      </div>
+      </motion.div>
 
       {/* Assigned Selections */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold">Selezioni assegnate</h2>
-          <Link href="/selezioni">
-            <Button variant="ghost" size="sm">
-              Visualizza tutte <ArrowRight className="ml-1 h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
+      <div className="bigster-section">
+        <SectionHeader title="Selezioni assegnate" viewAllLink="/selezioni" />
 
         {assignedSelections.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="bigster-grid-cols-3">
             {assignedSelections
               .slice(0, 6)
-              .map((selection: SelectionWithCounts) => (
-                <Card key={selection.id} className="shadow-sm">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-base">
-                        {selection.titolo}
-                      </CardTitle>
-                      <Badge
-                        variant="outline"
-                        className={
-                          selection.stato === SelectionStatus.IN_CORSO
-                            ? "bg-blue-100 text-blue-800"
-                            : selection.stato ===
-                              SelectionStatus.ANNUNCI_PUBBLICATI
-                            ? "bg-indigo-100 text-indigo-800"
-                            : selection.stato ===
-                              SelectionStatus.CANDIDATURE_RICEVUTE
-                            ? "bg-violet-100 text-violet-800"
-                            : selection.stato ===
-                              SelectionStatus.COLLOQUI_IN_CORSO
-                            ? "bg-pink-100 text-pink-800"
-                            : "bg-green-100 text-green-800"
-                        }
-                      >
-                        {selection.stato.replace(/_/g, " ")}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-2">
-                    <div className="text-sm space-y-1">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Reparto:</span>
-                        <span>{selection.reparto?.nome}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Annunci:</span>
-                        <span>{selection._count?.annunci || 0}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">
-                          Candidature:
-                        </span>
-                        <span>{selection._count?.candidature || 0}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="pt-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="w-full"
-                      asChild
-                    >
-                      <Link href={`/selezioni/${selection.id}`}>Gestisci</Link>
-                    </Button>
-                  </CardFooter>
-                </Card>
+              .map((selection: SelectionWithCounts, index: number) => (
+                <SelectionCard
+                  key={selection.id}
+                  selection={selection}
+                  action="Gestisci"
+                  index={index}
+                />
               ))}
           </div>
         ) : (
-          <Card className="bg-muted/50">
-            <CardContent className="p-6 text-center">
-              <Clock className="mx-auto h-12 w-12 text-muted-foreground mb-3" />
-              <h3 className="text-lg font-medium">
-                Nessuna selezione assegnata
-              </h3>
-              <p className="text-sm text-muted-foreground mt-1">
-                Non hai ancora selezioni assegnate da gestire.
-              </p>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={Clock}
+            title="Nessuna selezione assegnata"
+            description="Non hai ancora selezioni assegnate da gestire."
+          />
         )}
       </div>
 
       {/* Tasks Section */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <ChartCard title="Attività Urgenti" icon={AlertTriangle}>
+      <div className="bigster-grid-cols-2">
+        <ChartCard title="Attività Urgenti" icon={AlertTriangle} index={0}>
           <div className="space-y-3">
             {pendingApplications > 0 && (
-              <div className="flex items-center justify-between p-2 bg-yellow-50 rounded-md border border-yellow-200">
+              <motion.div
+                className="flex items-center justify-between p-2 bg-yellow-50 rounded-md border border-yellow-200"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+              >
                 <div className="flex items-center gap-3">
                   <Users className="h-5 w-5 text-yellow-600" />
                   <span>{pendingApplications} candidature da valutare</span>
@@ -726,10 +556,15 @@ function HRDashboard({ user }: { user: User }) {
                 <Button variant="ghost" size="sm" asChild>
                   <Link href="/candidature?filter=pending">Visualizza</Link>
                 </Button>
-              </div>
+              </motion.div>
             )}
             {scheduledInterviews > 0 && (
-              <div className="flex items-center justify-between p-2 bg-purple-50 rounded-md border border-purple-200">
+              <motion.div
+                className="flex items-center justify-between p-2 bg-purple-50 rounded-md border border-purple-200"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 }}
+              >
                 <div className="flex items-center gap-3">
                   <Calendar className="h-5 w-5 text-purple-600" />
                   <span>{scheduledInterviews} colloqui da gestire</span>
@@ -737,7 +572,7 @@ function HRDashboard({ user }: { user: User }) {
                 <Button variant="ghost" size="sm" asChild>
                   <Link href="/candidature?filter=interviews">Visualizza</Link>
                 </Button>
-              </div>
+              </motion.div>
             )}
             {pendingApplications === 0 && scheduledInterviews === 0 && (
               <div className="flex flex-col items-center justify-center p-6 text-center">
@@ -750,7 +585,7 @@ function HRDashboard({ user }: { user: User }) {
           </div>
         </ChartCard>
 
-        <ChartCard title="Performance Candidature" icon={PieChart}>
+        <ChartCard title="Performance Candidature" icon={PieChart} index={1}>
           <div className="h-60 flex items-center justify-center text-muted-foreground">
             <p className="text-center text-sm">
               Tasso di conversione delle candidature nelle tue selezioni
@@ -758,7 +593,7 @@ function HRDashboard({ user }: { user: User }) {
           </div>
         </ChartCard>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -787,13 +622,13 @@ export default function HomePage() {
   }
 
   return (
-    <div className="container p-6 mx-auto">
+    <>
       {user.ruolo === "CEO" && <CEODashboard />}
       {user.ruolo === "RESPONSABILE_REPARTO" && (
         <ResponsabileDashboard user={user} />
       )}
       {user.ruolo === "RISORSA_UMANA" && <HRDashboard user={user} />}
       {user.ruolo === "DEVELOPER" && <CEODashboard />}
-    </div>
+    </>
   );
 }
