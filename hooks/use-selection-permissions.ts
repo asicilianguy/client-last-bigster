@@ -1,3 +1,5 @@
+import { UserRole } from "@/types";
+
 // hooks/use-selection-permissions.ts
 export function useSelectionPermissions(selection: any, user: any) {
   // Check if the user is the owner of the selection
@@ -15,21 +17,26 @@ export function useSelectionPermissions(selection: any, user: any) {
   const canView = isCEO || isDeveloper || isOwner || isAssignedHR;
 
   // Check if the user can edit the selection
-  const canEdit = isCEO || isDeveloper || isOwner;
+  const canEdit = isDeveloper || isOwner;
 
   // Check if the user can approve the selection
   const canApprove = (isCEO || isDeveloper) && selection?.stato === "CREATA";
 
+  console.log({ user });
+
   // Check if the user can assign HR to the selection
-  const canAssignHR =
-    (isCEO || isDeveloper) && selection?.stato === "APPROVATA";
+  const canAssignHR = user?.reparto_id === 544 || isDeveloper;
+
+  const isResponsabileRisorseUmane =
+    user?.reparto_id === 544 && user.ruolo === UserRole.RESPONSABILE_REPARTO;
 
   // Check if the user can create announcements for the selection
-  const canCreateAnnouncements = (isHR && isAssignedHR) || isCEO || isDeveloper;
+  const canCreateAnnouncements =
+    (isHR && isAssignedHR) || isDeveloper || isResponsabileRisorseUmane;
 
   // Check if the user can manage applications for the selection
   const canManageApplications =
-    (isHR && isAssignedHR) || isCEO || isDeveloper || isOwner;
+    (isHR && isAssignedHR) || isDeveloper || isOwner;
 
   return {
     isOwner,

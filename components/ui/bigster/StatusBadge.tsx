@@ -1,0 +1,196 @@
+"use client";
+
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import {
+  FileText,
+  CheckCircle2,
+  Play,
+  Megaphone,
+  Users2,
+  MessageSquare,
+  Crown,
+  Trophy,
+  X,
+  Clock,
+} from "lucide-react";
+
+const StatusBadge = ({
+  status,
+  className,
+  showIcon = true,
+  size = "default",
+}: {
+  status: string;
+  className?: string;
+  showIcon?: boolean;
+  size?: "sm" | "default" | "lg";
+}) => {
+  const statusConfig = {
+    CREATA: {
+      label: "Creata",
+      icon: FileText,
+      bgColor: "rgba(254, 241, 154, 0.3)", // #fef19a with 30% opacity
+      textColor: "#6c4e06",
+      borderColor: "rgba(108, 78, 6, 0.2)",
+      hoverBg: "rgba(254, 241, 154, 0.5)",
+      hoverBorder: "rgba(108, 78, 6, 0.3)",
+      iconColor: "rgba(108, 78, 6, 0.7)",
+      animation: "",
+    },
+    APPROVATA: {
+      label: "Approvata",
+      icon: CheckCircle2,
+      bgColor: "rgba(228, 215, 43, 0.4)", // #e4d72b with 40% opacity
+      textColor: "#6c4e06",
+      borderColor: "rgba(228, 215, 43, 0.3)",
+      hoverBg: "rgba(228, 215, 43, 0.6)",
+      hoverBorder: "rgba(228, 215, 43, 0.5)",
+      iconColor: "#6c4e06",
+      animation: "",
+    },
+    IN_CORSO: {
+      label: "In Corso",
+      icon: Play,
+      bgColor: "rgba(254, 241, 154, 0.5)", // #fef19a with 50% opacity
+      textColor: "#6c4e06",
+      borderColor: "rgba(108, 78, 6, 0.3)",
+      hoverBg: "rgba(254, 241, 154, 0.7)",
+      hoverBorder: "rgba(108, 78, 6, 0.5)",
+      iconColor: "#6c4e06",
+      animation: "animate-pulse",
+    },
+    ANNUNCI_PUBBLICATI: {
+      label: "Annunci Pubblicati",
+      icon: Megaphone,
+      bgColor: "rgba(228, 215, 43, 0.5)", // #e4d72b with 50% opacity
+      textColor: "#6c4e06",
+      borderColor: "rgba(228, 215, 43, 0.4)",
+      hoverBg: "rgba(228, 215, 43, 0.7)",
+      hoverBorder: "rgba(228, 215, 43, 0.6)",
+      iconColor: "#6c4e06",
+      animation: "animate-pulse",
+    },
+    CANDIDATURE_RICEVUTE: {
+      label: "Candidature",
+      icon: Users2,
+      bgColor: "rgba(254, 241, 154, 0.6)", // #fef19a with 60% opacity
+      textColor: "#6c4e06",
+      borderColor: "rgba(108, 78, 6, 0.4)",
+      hoverBg: "rgba(254, 241, 154, 0.8)",
+      hoverBorder: "rgba(108, 78, 6, 0.6)",
+      iconColor: "#6c4e06",
+      animation: "",
+    },
+    COLLOQUI_IN_CORSO: {
+      label: "Colloqui",
+      icon: MessageSquare,
+      bgColor: "rgba(228, 215, 43, 0.6)", // #e4d72b with 60% opacity
+      textColor: "#6c4e06",
+      borderColor: "rgba(228, 215, 43, 0.5)",
+      hoverBg: "rgba(228, 215, 43, 0.8)",
+      hoverBorder: "rgba(228, 215, 43, 0.7)",
+      iconColor: "#6c4e06",
+      animation: "animate-pulse",
+    },
+    COLLOQUI_CEO: {
+      label: "Colloqui CEO",
+      icon: Crown,
+      bgColor: "rgba(228, 215, 43, 0.7)", // #e4d72b with 70% opacity
+      textColor: "#6c4e06",
+      borderColor: "rgba(228, 215, 43, 0.6)",
+      hoverBg: "rgba(228, 215, 43, 0.9)",
+      hoverBorder: "rgba(228, 215, 43, 0.8)",
+      iconColor: "#6c4e06",
+      animation: "animate-pulse",
+    },
+    CHIUSA: {
+      label: "Chiusa",
+      icon: Trophy,
+      bgColor: "rgba(228, 215, 43, 0.8)", // #e4d72b with 80% opacity
+      textColor: "#6c4e06",
+      borderColor: "rgba(228, 215, 43, 0.7)",
+      hoverBg: "#e4d72b", // Full color on hover
+      hoverBorder: "#e4d72b",
+      iconColor: "#6c4e06",
+      animation: "",
+    },
+    ANNULLATA: {
+      label: "Annullata",
+      icon: X,
+      bgColor: "rgba(216, 216, 216, 0.5)", // #d8d8d8 with 50% opacity
+      textColor: "#666666",
+      borderColor: "#d8d8d8",
+      hoverBg: "rgba(216, 216, 216, 0.7)",
+      hoverBorder: "rgba(102, 102, 102, 0.5)",
+      iconColor: "#666666",
+      animation: "",
+    },
+  };
+
+  const config = statusConfig[status as keyof typeof statusConfig] || {
+    label: status.replace(/_/g, " "),
+    icon: Clock,
+    bgColor: "rgba(216, 216, 216, 0.3)",
+    textColor: "#666666",
+    borderColor: "rgba(216, 216, 216, 0.5)",
+    hoverBg: "rgba(216, 216, 216, 0.5)",
+    hoverBorder: "rgba(102, 102, 102, 0.3)",
+    iconColor: "#666666",
+    animation: "",
+  };
+
+  const sizeClasses = {
+    sm: "text-xs px-2 py-1",
+    default: "text-sm px-3 py-1.5",
+    lg: "text-base px-4 py-2",
+  };
+
+  const iconSizes = {
+    sm: "h-3 w-3",
+    default: "h-4 w-4",
+    lg: "h-5 w-5",
+  };
+
+  const IconComponent = config.icon;
+
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        "font-semibold rounded-md shadow-sm transition-all duration-300 cursor-default select-none",
+        "hover:scale-105 transform-gpu border-2",
+        config.animation,
+        sizeClasses[size],
+        className
+      )}
+      style={{
+        backgroundColor: config.bgColor,
+        color: config.textColor,
+        borderColor: config.borderColor,
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.backgroundColor = config.hoverBg;
+        e.currentTarget.style.borderColor = config.hoverBorder;
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.backgroundColor = config.bgColor;
+        e.currentTarget.style.borderColor = config.borderColor;
+      }}
+    >
+      <div className="flex items-center gap-2">
+        {showIcon && (
+          <IconComponent
+            className={cn(iconSizes[size], "flex-shrink-0")}
+            style={{ color: config.iconColor }}
+          />
+        )}
+        <span className="font-semibold tracking-wide whitespace-nowrap">
+          {config.label}
+        </span>
+      </div>
+    </Badge>
+  );
+};
+
+export default StatusBadge;

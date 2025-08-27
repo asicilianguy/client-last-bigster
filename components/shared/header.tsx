@@ -29,11 +29,11 @@ export function Header() {
   };
 
   const navLinks = [
-    { name: "Dashboard", href: "/" },
+    // { name: "Dashboard", href: "/" },
     { name: "Selezioni", href: "/selezioni" },
     { name: "Annunci", href: "/annunci" },
     { name: "Candidature", href: "/candidature" },
-    { name: "Gestione", href: "/gestione/figure-professionali" },
+    { name: "Figure Professionali", href: "/gestione/figure-professionali" },
   ];
 
   return (
@@ -69,8 +69,8 @@ export function Header() {
                     href={link.href}
                     className={`px-4 py-2 text-sm font-medium ${
                       pathname === link.href
-                        ? "bg-[#FEF19A] text-[#6C4E06] rounded-md"
-                        : "text-[#333333] hover:bg-gray-100 rounded-md"
+                        ? "bg-[#FEF19A] text-[#6C4E06] rounded-sm"
+                        : "text-[#333333] hover:bg-gray-100 rounded-sm"
                     }`}
                   >
                     {link.name}
@@ -89,8 +89,8 @@ export function Header() {
               href={link.href}
               className={`px-4 py-2 text-sm font-medium transition-colors ${
                 pathname === link.href
-                  ? "bg-[#fef19a] text-[#6c4e06] rounded-md"
-                  : "text-[#333333] hover:bg-gray-100 rounded-md"
+                  ? "bg-[#fef19a] text-[#6c4e06] rounded-sm"
+                  : "text-[#333333] hover:bg-gray-100 rounded-sm"
               }`}
               prefetch={false}
             >

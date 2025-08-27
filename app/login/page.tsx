@@ -56,7 +56,7 @@ export default function LoginPage() {
     try {
       await login(data).unwrap();
       toast.success("Login effettuato con successo!");
-      router.push("/");
+      router.push("/selezioni");
     } catch (err: any) {
       toast.error(err.data?.message || "Credenziali non valide.");
     }

@@ -8,11 +8,11 @@ export interface User {
   nome: string;
   cognome: string;
   email: string;
-  password: string;
+  password?: string;
   ruolo: UserRole;
   reparto_id: number | null;
-  data_creazione: Date;
-  data_modifica: Date;
+  data_creazione?: Date;
+  data_modifica?: Date;
 
   // Relazioni
   reparto?: Department | null;

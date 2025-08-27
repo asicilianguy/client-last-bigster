@@ -1,29 +1,22 @@
 // hooks/use-user-role.ts
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "@/lib/redux/features/auth/authSlice";
-
-export type UserRole =
-  | "CEO"
-  | "RESPONSABILE_REPARTO"
-  | "RISORSA_UMANA"
-  | "DEVELOPER"
-  | null;
+import { UserRole } from "@/types/enums";
 
 export function useUserRole() {
   const user = useSelector(selectCurrentUser);
 
-  const role = user?.ruolo as UserRole;
-
-  console.log({ role });
+  const role = user?.ruolo;
 
   // Convenience methods for role checks
-  const isCEO = role === "CEO";
-  const isResponsabile = role === "RESPONSABILE_REPARTO";
-  const isHR = role === "RISORSA_UMANA";
-  const isDeveloper = role === "DEVELOPER";
+  const isCEO = role === UserRole.CEO;
+  const isResponsabile = role === UserRole.RESPONSABILE_REPARTO;
+  const isHR = role === UserRole.RISORSA_UMANA;
+  const isDeveloper = role === UserRole.DEVELOPER;
+  const isResponsabileHR = isResponsabile && user?.reparto_id === 544;
 
   // Permission-based checks for specific actions
-  const canCreateSelection = isResponsabile || isCEO || isDeveloper;
+  const canCreateSelection = isResponsabile || isDeveloper;
   const canApproveSelection = isCEO || isDeveloper;
   const canAssignHR = isCEO || isDeveloper;
   const canManageAnnouncements = isHR || isCEO || isDeveloper;
@@ -41,6 +34,7 @@ export function useUserRole() {
     role,
     isCEO,
     isResponsabile,
+    isResponsabileHR,
     isHR,
     isDeveloper,
     canCreateSelection,
