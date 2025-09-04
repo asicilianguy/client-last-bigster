@@ -58,6 +58,16 @@ export default function SelezioniDashboardPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  useEffect(() => {
+    if (document.querySelector("main")) {
+      document.querySelector("main")!.style.padding = "0px";
+    }
+
+    return () => {
+      document.querySelector("main")!.style.padding = "1rem";
+    };
+  }, []);
+
   // First, get all selections accessible to the user based on role
   const accessibleSelections = useMemo(() => {
     if (!selectionsData?.data) return [];
@@ -215,7 +225,7 @@ export default function SelezioniDashboardPage() {
   return (
     <div className="space-y-6  animate-fade-in-up">
       {/* Header Section */}
-      <SectionHeader
+      {/* <SectionHeader
         title="Dashboard Selezioni"
         action={
           canCreateSelection && (
@@ -234,31 +244,68 @@ export default function SelezioniDashboardPage() {
             </div>
           )
         }
-      />
+      /> */}
 
       {/* Filters and Search */}
-      <FiltersSection
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        departmentFilter={departmentFilter}
-        setDepartmentFilter={setDepartmentFilter}
-        figureFilter={figureFilter}
-        setFigureFilter={setFigureFilter}
-        statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-        departmentsData={departmentsData}
-        professionalFiguresData={professionalFiguresData}
-        user={user as User}
-      />
+      <motion.div
+        style={{
+          boxShadow: "0px 8px 32px rgba(0, 0, 0, 0.08)",
+        }}
+        initial={{ opacity: 0, transform: "translateY(-20px)" }}
+        animate={{ opacity: 1, transform: "translateY(0)" }}
+        transition={{
+          duration: 0.3, // Durata ridotta
+          ease: "easeOut", // Curva di easing più fluida
+          opacity: { duration: 0.2 }, // Animazione opacity più veloce
+          transform: { type: "spring", stiffness: 300, damping: 30 }, // Animazione spring per il movimento
+        }}
+        className="p-4 sm:p-6 !py-[10px] overflow-hidden border-0 shadow-lg flex bg-[#FFFAD8] items-center justify-between will-change-transform"
+      >
+        <FiltersSection
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          departmentFilter={departmentFilter}
+          setDepartmentFilter={setDepartmentFilter}
+          figureFilter={figureFilter}
+          setFigureFilter={setFigureFilter}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          departmentsData={departmentsData}
+          professionalFiguresData={professionalFiguresData}
+          user={user as User}
+        />{" "}
+        {canCreateSelection && (
+          <div>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-2.5 px-2.5 py-2.5 border-none font-medium text-[15px]"
+              style={{
+                backgroundColor: "#6c4e06",
+                color: "#FFFAD8",
+              }}
+            >
+              <PlusCircle className="h-4 w-4" />
+              Nuova Selezione
+            </button>
+
+            <CreateSelectionModal
+              isOpen={isModalOpen}
+              onClose={() => setIsModalOpen(false)}
+              onSuccess={() => {}}
+              userData={user as User}
+            />
+          </div>
+        )}
+      </motion.div>
 
       {/* Tabs - Updated to show counts based on current filters */}
       <Tabs
         defaultValue="all"
         value={activeTab}
         onValueChange={setActiveTab}
-        className="w-full"
+        className="w-full p-4 sm:p-6 !mt-0"
       >
         <SelectionTabs
           activeTab={activeTab}

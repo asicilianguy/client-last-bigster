@@ -28,10 +28,12 @@ const statusConfig: Record<string, any> = {
     icon: FileText,
     step: 1,
     totalSteps: 8,
-    bgColor: "rgba(254, 241, 154, 0.3)",
+    bgColor: "#ffffff", // Bianco puro
     textColor: "#6c4e06",
     borderColor: "rgba(108, 78, 6, 0.2)",
-    cardAccent: "rgba(254, 241, 154, 0.1)",
+    cardAccent: "rgba(255, 255, 255, 1)", // Bianco puro per rimuovere qualsiasi gradiente
+    // Rimuovo completamente il linear-gradient per questo stato
+    cardBackground: "white", // Aggiunto per garantire che non ci sia gradiente
   },
   APPROVATA: {
     label: "Approvata",
@@ -98,10 +100,13 @@ const statusConfig: Record<string, any> = {
     icon: Trophy,
     step: 8,
     totalSteps: 8,
-    bgColor: "rgba(228, 215, 43, 0.8)",
-    textColor: "#6c4e06",
-    borderColor: "rgba(228, 215, 43, 0.7)",
-    cardAccent: "rgba(228, 215, 43, 0.3)",
+    bgColor: "rgba(76, 175, 80, 0.8)", // Verde
+    textColor: "#2e7d32", // Verde scuro per il testo
+    borderColor: "rgba(76, 175, 80, 0.7)", // Verde per il bordo
+    cardAccent: "rgba(76, 175, 80, 0.3)", // Verde per l'accento
+    // Gradiente verde invece di giallo
+    cardBackground:
+      "linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(255, 255, 255, 0.95) 100%)",
   },
   ANNULLATA: {
     label: "Annullata",

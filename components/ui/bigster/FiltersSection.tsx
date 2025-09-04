@@ -94,40 +94,28 @@ export function FiltersSection({
   };
 
   return (
-    <motion.div
-      className="overflow-hidden border-0 shadow-lg"
-      style={{
-        background:
-          "linear-gradient(135deg, rgba(254, 241, 154, 0.1) 0%, rgba(255, 255, 255, 0.95) 100%)",
-        boxShadow: "0px 8px 32px rgba(0, 0, 0, 0.08)",
-        borderRadius: "8px",
-      }}
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: 0.2 }}
-    >
-      <div className="p-4 bg-[#FFFAD8]">
-        <div className="flex gap-3 items-center">
+    <div>
+      <div className=" bg-[#FFFAD8]">
+        <div className="flex gap-8 items-center">
           {/* Search Input */}
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <Input
+          <h3 style={{ fontWeight: 700, fontSize: "15px", color: "#6c4e06" }}>
+            Selezioni
+          </h3>
+          <div className="relative">
+            <span className="absolute top-2.5 left-2.5">
+              <Search
+                width={18}
+                height={18}
+                color="#6c4e06
+"
+              />
+            </span>
+            <input
+              // type="text"
               placeholder="Cerca per titolo, figura professionale o reparto..."
-              className="pl-10 pr-4 py-2.5 text-base border border-gray-200 rounded-md shadow-sm transition-all duration-200 focus:shadow-md"
-              style={{
-                borderColor: "rgba(108, 78, 6, 0.2)",
-                backgroundColor: "rgba(255, 255, 255, 0.8)",
-              }}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={(e) => {
-                e.target.style.borderColor = "#e4d72b";
-                e.target.style.backgroundColor = "#ffffff";
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = "rgba(108, 78, 6, 0.2)";
-                e.target.style.backgroundColor = "rgba(255, 255, 255, 0.8)";
-              }}
+              className="border-none p-2.5 pl-10 w-[480px] font-medium text-[15px] text-[#6c4e06] placeholder-[#6c4e06] focus:outline-none focus:ring-0 focus:shadow-none"
             />
           </div>
 
@@ -417,96 +405,7 @@ export function FiltersSection({
             </DialogContent>
           </Dialog>
         </div>
-
-        {/* Active Filters Chips */}
-        {hasActiveFilters && (
-          <motion.div
-            className="flex flex-wrap gap-2 mt-3"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            transition={{ duration: 0.3 }}
-          >
-            {departmentFilter !== "all" && (
-              <Badge
-                variant="secondary"
-                className="flex items-center gap-1 cursor-pointer px-3 py-1 rounded-md font-medium shadow-sm hover:shadow-md transition-all duration-200"
-                style={{
-                  backgroundColor: "rgba(228, 215, 43, 0.2)",
-                  color: "#6c4e06",
-                  border: "1px solid rgba(228, 215, 43, 0.3)",
-                }}
-                onClick={() => setDepartmentFilter("all")}
-              >
-                Reparto:{" "}
-                {
-                  departmentsData?.data.find(
-                    (d: any) => d.id.toString() === departmentFilter
-                  )?.nome
-                }
-                <X className="h-3 w-3 ml-1 hover:bg-red-100 rounded-sm" />
-              </Badge>
-            )}
-
-            {figureFilter !== "all" && (
-              <Badge
-                variant="secondary"
-                className="flex items-center gap-1 cursor-pointer px-3 py-1 rounded-md font-medium shadow-sm hover:shadow-md transition-all duration-200"
-                style={{
-                  backgroundColor: "rgba(228, 215, 43, 0.2)",
-                  color: "#6c4e06",
-                  border: "1px solid rgba(228, 215, 43, 0.3)",
-                }}
-                onClick={() => setFigureFilter("all")}
-              >
-                Figura:{" "}
-                {
-                  professionalFiguresData?.data.find(
-                    (f: any) => f.id.toString() === figureFilter
-                  )?.nome
-                }
-                <X className="h-3 w-3 ml-1 hover:bg-red-100 rounded-sm" />
-              </Badge>
-            )}
-
-            {statusFilter !== "all" && (
-              <Badge
-                variant="secondary"
-                className="flex items-center gap-1 cursor-pointer px-3 py-1 rounded-md font-medium shadow-sm hover:shadow-md transition-all duration-200"
-                style={{
-                  backgroundColor: "rgba(228, 215, 43, 0.2)",
-                  color: "#6c4e06",
-                  border: "1px solid rgba(228, 215, 43, 0.3)",
-                }}
-                onClick={() => setStatusFilter("all")}
-              >
-                Stato: {statusFilter.replace(/_/g, " ")}
-                <X className="h-3 w-3 ml-1 hover:bg-red-100 rounded-sm" />
-              </Badge>
-            )}
-
-            <Badge
-              variant="outline"
-              className="flex items-center gap-1 cursor-pointer px-3 py-1 rounded-md font-medium shadow-sm hover:shadow-md transition-all duration-200 border"
-              style={{
-                borderColor: "#ef4444",
-                color: "#ef4444",
-                backgroundColor: "rgba(239, 68, 68, 0.05)",
-              }}
-              onClick={clearAllFilters}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor =
-                  "rgba(239, 68, 68, 0.1)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor =
-                  "rgba(239, 68, 68, 0.05)";
-              }}
-            >
-              Cancella <X className="h-3 w-3 ml-1" />
-            </Badge>
-          </motion.div>
-        )}
       </div>
-    </motion.div>
+    </div>
   );
 }
