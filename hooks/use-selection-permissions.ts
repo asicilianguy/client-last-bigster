@@ -25,12 +25,13 @@ export function useSelectionPermissions(selection: any, user: any) {
   console.log({ user });
 
   // Check if the user can assign HR to the selection
-  const canAssignHR = user?.reparto_id === 544 || isDeveloper;
+  const canAssignHR = user?.reparto_id === 12 || isDeveloper;
 
   const isResponsabileRisorseUmane =
-    user?.reparto_id === 544 && user.ruolo === UserRole.RESPONSABILE_REPARTO;
+    user?.reparto_id === 12 && user.ruolo === UserRole.RESPONSABILE_REPARTO;
+  console.log({ isResponsabileRisorseUmane });
 
-  // Check if the user can create announcements for the selection
+  //l Check if the user can create announcements for the selection
   const canCreateAnnouncements =
     (isHR && isAssignedHR) || isDeveloper || isResponsabileRisorseUmane;
 

@@ -71,9 +71,6 @@ const DetailItem = ({
   value: React.ReactNode;
 }) => (
   <div className="flex items-start gap-4">
-    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-      {React.createElement(icon, { className: "h-5 w-5" })}
-    </div>
     <div>
       <p className="text-sm text-muted-foreground">{label}</p>
       <p className="font-semibold">{value || "N/A"}</p>
@@ -575,13 +572,11 @@ export default function SelezioneDetailPage() {
 
   const selection = data.data;
 
-  // useEffect(() => {
-
-  // }, [data])
-
   // Use the selection permissions with user passed as parameter
   const { canCreateAnnouncements, canManageApplications } =
     useSelectionPermissions(selection, user);
+
+  console.log({ canCreateAnnouncements, canManageApplications });
 
   return (
     <div className="animate-fade-in-up space-y-6">

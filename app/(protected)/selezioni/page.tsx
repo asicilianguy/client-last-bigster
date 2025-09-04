@@ -42,6 +42,8 @@ export default function SelezioniDashboardPage() {
     isLoading,
   } = useGetSelectionsQuery({}, { refetchOnMountOrArgChange: true });
   const { data: departmentsData } = useGetDepartmentsQuery({});
+  console.log({ departmentsData });
+
   const { data: professionalFiguresData } = useGetAllProfessionalFiguresQuery();
   const { isCEO, isResponsabile, isHR, isDeveloper, canCreateSelection, user } =
     useUserRole();
@@ -66,7 +68,7 @@ export default function SelezioniDashboardPage() {
       if (isCEO || isDeveloper) return true;
 
       // Caso speciale per responsabile risorse umane
-      if (isResponsabile && Number(user?.reparto_id) === 544) return true;
+      if (isResponsabile && Number(user?.reparto_id) === 12) return true;
 
       // Altri ruoli con accesso limitato
       if (isResponsabile) return selection.responsabile_id === user?.id;
@@ -211,7 +213,7 @@ export default function SelezioniDashboardPage() {
   }
 
   return (
-    <div className="space-y-6 p-6 sm:p-8 animate-fade-in-up">
+    <div className="space-y-6  animate-fade-in-up">
       {/* Header Section */}
       <SectionHeader
         title="Dashboard Selezioni"

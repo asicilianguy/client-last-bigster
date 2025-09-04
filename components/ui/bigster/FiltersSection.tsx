@@ -1,6 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,6 +70,7 @@ export function FiltersSection({
   user,
 }: FiltersSectionProps) {
   const { isCEO, isResponsabile } = useUserRole();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const hasActiveFilters =
     departmentFilter !== "all" ||
@@ -76,57 +85,35 @@ export function FiltersSection({
     setSearchQuery("");
   };
 
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (departmentFilter !== "all") count++;
+    if (figureFilter !== "all") count++;
+    if (statusFilter !== "all") count++;
+    return count;
+  };
+
   return (
     <motion.div
-      className="overflow-hidden border-0 shadow-xl"
+      className="overflow-hidden border-0 shadow-lg"
       style={{
         background:
           "linear-gradient(135deg, rgba(254, 241, 154, 0.1) 0%, rgba(255, 255, 255, 0.95) 100%)",
         boxShadow: "0px 8px 32px rgba(0, 0, 0, 0.08)",
-        borderRadius: "12px",
+        borderRadius: "8px",
       }}
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
     >
-      {/* Header with gradient */}
-      <div
-        className="px-6 py-4 border-b"
-        style={{
-          background:
-            "linear-gradient(90deg, rgba(228, 215, 43, 0.1) 0%, rgba(254, 241, 154, 0.1) 100%)",
-          borderColor: "rgba(108, 78, 6, 0.1)",
-        }}
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center"
-            style={{
-              background: "linear-gradient(135deg, #e4d72b 0%, #fef19a 100%)",
-            }}
-          >
-            <Filter className="h-5 w-5 text-white" />
-          </div>
-          <div>
-            <h3 className="font-bold text-lg" style={{ color: "#6c4e06" }}>
-              Filtri e Ricerca
-            </h3>
-            <p className="text-sm" style={{ color: "#666666" }}>
-              Trova rapidamente le selezioni che ti interessano
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-6">
-        {/* Search and Sort Row */}
-        <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between mb-6">
+      <div className="p-4 bg-[#FFFAD8]">
+        <div className="flex gap-3 items-center">
           {/* Search Input */}
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
-              placeholder="🔍 Cerca per titolo, figura professionale o reparto..."
-              className="pl-12 pr-4 py-3 text-base border-2 rounded-xl shadow-sm transition-all duration-200 focus:shadow-md"
+              placeholder="Cerca per titolo, figura professionale o reparto..."
+              className="pl-10 pr-4 py-2.5 text-base border border-gray-200 rounded-md shadow-sm transition-all duration-200 focus:shadow-md"
               style={{
                 borderColor: "rgba(108, 78, 6, 0.2)",
                 backgroundColor: "rgba(255, 255, 255, 0.8)",
@@ -144,12 +131,12 @@ export function FiltersSection({
             />
           </div>
 
-          {/* Sort Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          {/* Filter Dialog Trigger */}
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
               <Button
                 variant="outline"
-                className="font-semibold shadow-sm hover:shadow-md transition-all duration-200 border-2 px-6 py-3 rounded-xl bg-transparent"
+                className="relative font-medium shadow-sm hover:shadow-md transition-all duration-200 border px-3 py-2.5 rounded-md bg-transparent"
                 style={{
                   borderColor: "rgba(108, 78, 6, 0.2)",
                   backgroundColor: "rgba(255, 255, 255, 0.8)",
@@ -166,174 +153,275 @@ export function FiltersSection({
                   e.currentTarget.style.borderColor = "rgba(108, 78, 6, 0.2)";
                 }}
               >
-                <SlidersHorizontal className="h-4 w-4 mr-2" />
-                Ordina per
-                <ChevronDown className="h-4 w-4 ml-2" />
+                <Filter className="h-5 w-5" />
+                {getActiveFiltersCount() > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-yellow-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                    {getActiveFiltersCount()}
+                  </span>
+                )}
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 shadow-xl border-0 rounded-xl p-2">
-              <DropdownMenuItem
-                onClick={() => setSortBy("recent")}
-                className="rounded-lg p-3 cursor-pointer hover:bg-yellow-50 transition-colors"
-              >
-                <Clock className="h-4 w-4 mr-3" style={{ color: "#6c4e06" }} />
-                <span className="font-medium">Più recenti</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setSortBy("applications")}
-                className="rounded-lg p-3 cursor-pointer hover:bg-yellow-50 transition-colors"
-              >
-                <Users className="h-4 w-4 mr-3" style={{ color: "#6c4e06" }} />
-                <span className="font-medium">Più candidature</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setSortBy("alphabetical")}
-                className="rounded-lg p-3 cursor-pointer hover:bg-yellow-50 transition-colors"
-              >
-                <FileText
-                  className="h-4 w-4 mr-3"
+            </DialogTrigger>
+
+            <DialogContent className="sm:max-w-md md:max-w-lg">
+              <DialogHeader>
+                <DialogTitle
+                  className="text-lg font-bold"
                   style={{ color: "#6c4e06" }}
-                />
-                <span className="font-medium">Nome (A-Z)</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+                >
+                  Filtri e Ordinamento
+                </DialogTitle>
+              </DialogHeader>
 
-        {/* Filter Selects Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          {/* Department Filter */}
-          <div className="space-y-3">
-            <label
-              className="text-sm font-bold flex items-center gap-2"
-              style={{ color: "#6c4e06" }}
-            >
-              🏢 Reparto
-            </label>
-            <Select
-              value={departmentFilter}
-              onValueChange={setDepartmentFilter}
-              disabled={!(isCEO || (isResponsabile && user.reparto_id === 544))}
-            >
-              <SelectTrigger
-                className="border-2 rounded-xl shadow-sm transition-all duration-200 hover:shadow-md py-3"
-                style={{
-                  borderColor: "rgba(108, 78, 6, 0.2)",
-                  backgroundColor: "rgba(255, 255, 255, 0.8)",
-                }}
-              >
-                <SelectValue placeholder="Tutti i reparti" />
-              </SelectTrigger>
-              <SelectContent className="shadow-xl border-0 rounded-xl">
-                <SelectItem value="all" className="rounded-lg">
-                  Tutti i reparti
-                </SelectItem>
-                {departmentsData?.data.map((dept: any) => (
-                  <SelectItem
-                    key={dept.id}
-                    value={dept.id.toString()}
-                    className="rounded-lg"
+              <div className="space-y-5 mt-4">
+                {/* Sort Options */}
+                <div className="space-y-2">
+                  <label
+                    className="text-sm font-bold"
+                    style={{ color: "#6c4e06" }}
                   >
-                    {dept.nome}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                    Ordina per
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button
+                      variant={sortBy === "recent" ? "default" : "outline"}
+                      className={`flex items-center justify-center gap-2 py-2 rounded-md ${
+                        sortBy === "recent"
+                          ? "bg-yellow-100 text-amber-800 border border-yellow-200"
+                          : "border border-gray-200"
+                      }`}
+                      onClick={() => setSortBy("recent")}
+                    >
+                      <Clock className="h-4 w-4" />
+                      <span className="font-medium">Più recenti</span>
+                    </Button>
+                    <Button
+                      variant={
+                        sortBy === "applications" ? "default" : "outline"
+                      }
+                      className={`flex items-center justify-center gap-2 py-2 rounded-md ${
+                        sortBy === "applications"
+                          ? "bg-yellow-100 text-amber-800 border border-yellow-200"
+                          : "border border-gray-200"
+                      }`}
+                      onClick={() => setSortBy("applications")}
+                    >
+                      <Users className="h-4 w-4" />
+                      <span className="font-medium">Più candidature</span>
+                    </Button>
+                    <Button
+                      variant={
+                        sortBy === "alphabetical" ? "default" : "outline"
+                      }
+                      className={`flex items-center justify-center gap-2 py-2 rounded-md ${
+                        sortBy === "alphabetical"
+                          ? "bg-yellow-100 text-amber-800 border border-yellow-200"
+                          : "border border-gray-200"
+                      }`}
+                      onClick={() => setSortBy("alphabetical")}
+                    >
+                      <FileText className="h-4 w-4" />
+                      <span className="font-medium">Nome (A-Z)</span>
+                    </Button>
+                  </div>
+                </div>
 
-          {/* Professional Figure Filter */}
-          <div className="space-y-3">
-            <label
-              className="text-sm font-bold flex items-center gap-2"
-              style={{ color: "#6c4e06" }}
-            >
-              💼 Figura Professionale
-            </label>
-            <Select value={figureFilter} onValueChange={setFigureFilter}>
-              <SelectTrigger
-                className="border-2 rounded-xl shadow-sm transition-all duration-200 hover:shadow-md py-3"
-                style={{
-                  borderColor: "rgba(108, 78, 6, 0.2)",
-                  backgroundColor: "rgba(255, 255, 255, 0.8)",
-                }}
-              >
-                <SelectValue placeholder="Tutte le figure" />
-              </SelectTrigger>
-              <SelectContent className="shadow-xl border-0 rounded-xl">
-                <SelectItem value="all" className="rounded-lg">
-                  Tutte le figure
-                </SelectItem>
-                {professionalFiguresData?.data.map((figure: any) => (
-                  <SelectItem
-                    key={figure.id}
-                    value={figure.id.toString()}
-                    className="rounded-lg"
+                {/* Filter Selects */}
+                <div className="space-y-5">
+                  {/* Department Filter */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <label
+                        className="text-sm font-bold"
+                        style={{ color: "#6c4e06" }}
+                      >
+                        Reparto
+                      </label>
+                      {departmentFilter !== "all" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => setDepartmentFilter("all")}
+                        >
+                          <X className="h-3 w-3 mr-1" /> Rimuovi filtro
+                        </Button>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <Select
+                        value={departmentFilter}
+                        onValueChange={setDepartmentFilter}
+                        disabled={
+                          !(isCEO || (isResponsabile && user.reparto_id === 12))
+                        }
+                      >
+                        <SelectTrigger
+                          className="border rounded-md shadow-sm transition-all duration-200 hover:shadow-md py-2"
+                          style={{
+                            borderColor: "rgba(108, 78, 6, 0.2)",
+                            backgroundColor: "rgba(255, 255, 255, 0.8)",
+                          }}
+                        >
+                          <SelectValue placeholder="Tutti i reparti" />
+                        </SelectTrigger>
+                        <SelectContent className="shadow-lg border rounded-md">
+                          <SelectItem value="all">Tutti i reparti</SelectItem>
+                          {departmentsData?.data.map((dept: any) => (
+                            <SelectItem
+                              key={dept.id}
+                              value={dept.id.toString()}
+                            >
+                              {dept.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Professional Figure Filter */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <label
+                        className="text-sm font-bold"
+                        style={{ color: "#6c4e06" }}
+                      >
+                        Figura Professionale
+                      </label>
+                      {figureFilter !== "all" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => setFigureFilter("all")}
+                        >
+                          <X className="h-3 w-3 mr-1" /> Rimuovi filtro
+                        </Button>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <Select
+                        value={figureFilter}
+                        onValueChange={setFigureFilter}
+                      >
+                        <SelectTrigger
+                          className="border rounded-md shadow-sm transition-all duration-200 hover:shadow-md py-2"
+                          style={{
+                            borderColor: "rgba(108, 78, 6, 0.2)",
+                            backgroundColor: "rgba(255, 255, 255, 0.8)",
+                          }}
+                        >
+                          <SelectValue placeholder="Tutte le figure" />
+                        </SelectTrigger>
+                        <SelectContent className="shadow-lg border rounded-md">
+                          <SelectItem value="all">Tutte le figure</SelectItem>
+                          {professionalFiguresData?.data.map((figure: any) => (
+                            <SelectItem
+                              key={figure.id}
+                              value={figure.id.toString()}
+                            >
+                              {figure.nome} ({figure.seniority})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Status Filter */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <label
+                        className="text-sm font-bold"
+                        style={{ color: "#6c4e06" }}
+                      >
+                        Stato
+                      </label>
+                      {statusFilter !== "all" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => setStatusFilter("all")}
+                        >
+                          <X className="h-3 w-3 mr-1" /> Rimuovi filtro
+                        </Button>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <Select
+                        value={statusFilter}
+                        onValueChange={setStatusFilter}
+                      >
+                        <SelectTrigger
+                          className="border rounded-md shadow-sm transition-all duration-200 hover:shadow-md py-2"
+                          style={{
+                            borderColor: "rgba(108, 78, 6, 0.2)",
+                            backgroundColor: "rgba(255, 255, 255, 0.8)",
+                          }}
+                        >
+                          <SelectValue placeholder="Tutti gli stati" />
+                        </SelectTrigger>
+                        <SelectContent className="shadow-lg border rounded-md">
+                          <SelectItem value="all">Tutti gli stati</SelectItem>
+                          <SelectItem value="CREATA">Creata</SelectItem>
+                          <SelectItem value="APPROVATA">Approvata</SelectItem>
+                          <SelectItem value="IN_CORSO">In Corso</SelectItem>
+                          <SelectItem value="ANNUNCI_PUBBLICATI">
+                            Annunci Pubblicati
+                          </SelectItem>
+                          <SelectItem value="CANDIDATURE_RICEVUTE">
+                            Candidature Ricevute
+                          </SelectItem>
+                          <SelectItem value="COLLOQUI_IN_CORSO">
+                            Colloqui in Corso
+                          </SelectItem>
+                          <SelectItem value="COLLOQUI_CEO">
+                            Colloqui CEO
+                          </SelectItem>
+                          <SelectItem value="CHIUSA">Chiusa</SelectItem>
+                          <SelectItem value="ANNULLATA">Annullata</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Clear Filters Button */}
+                {hasActiveFilters && (
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2 w-full mt-4 rounded-md font-semibold shadow-sm hover:shadow-md transition-all duration-200 border"
+                    style={{
+                      borderColor: "#ef4444",
+                      color: "#ef4444",
+                      backgroundColor: "rgba(239, 68, 68, 0.05)",
+                    }}
+                    onClick={() => {
+                      clearAllFilters();
+                      setIsDialogOpen(false);
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "rgba(239, 68, 68, 0.1)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor =
+                        "rgba(239, 68, 68, 0.05)";
+                    }}
                   >
-                    {figure.nome} ({figure.seniority})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Status Filter */}
-          <div className="space-y-3">
-            <label
-              className="text-sm font-bold flex items-center gap-2"
-              style={{ color: "#6c4e06" }}
-            >
-              📊 Stato
-            </label>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger
-                className="border-2 rounded-xl shadow-sm transition-all duration-200 hover:shadow-md py-3"
-                style={{
-                  borderColor: "rgba(108, 78, 6, 0.2)",
-                  backgroundColor: "rgba(255, 255, 255, 0.8)",
-                }}
-              >
-                <SelectValue placeholder="Tutti gli stati" />
-              </SelectTrigger>
-              <SelectContent className="shadow-xl border-0 rounded-xl">
-                <SelectItem value="all" className="rounded-lg">
-                  Tutti gli stati
-                </SelectItem>
-                <SelectItem value="CREATA" className="rounded-lg">
-                  Creata
-                </SelectItem>
-                <SelectItem value="APPROVATA" className="rounded-lg">
-                  Approvata
-                </SelectItem>
-                <SelectItem value="IN_CORSO" className="rounded-lg">
-                  In Corso
-                </SelectItem>
-                <SelectItem value="ANNUNCI_PUBBLICATI" className="rounded-lg">
-                  Annunci Pubblicati
-                </SelectItem>
-                <SelectItem value="CANDIDATURE_RICEVUTE" className="rounded-lg">
-                  Candidature Ricevute
-                </SelectItem>
-                <SelectItem value="COLLOQUI_IN_CORSO" className="rounded-lg">
-                  Colloqui in Corso
-                </SelectItem>
-                <SelectItem value="COLLOQUI_CEO" className="rounded-lg">
-                  Colloqui CEO
-                </SelectItem>
-                <SelectItem value="CHIUSA" className="rounded-lg">
-                  Chiusa
-                </SelectItem>
-                <SelectItem value="ANNULLATA" className="rounded-lg">
-                  Annullata
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+                    <X className="h-4 w-4" /> Cancella tutti i filtri
+                  </Button>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
         {/* Active Filters Chips */}
         {hasActiveFilters && (
           <motion.div
-            className="flex flex-wrap gap-3"
+            className="flex flex-wrap gap-2 mt-3"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             transition={{ duration: 0.3 }}
@@ -341,7 +429,7 @@ export function FiltersSection({
             {departmentFilter !== "all" && (
               <Badge
                 variant="secondary"
-                className="flex items-center gap-2 cursor-pointer px-4 py-2 rounded-full font-medium shadow-sm hover:shadow-md transition-all duration-200"
+                className="flex items-center gap-1 cursor-pointer px-3 py-1 rounded-md font-medium shadow-sm hover:shadow-md transition-all duration-200"
                 style={{
                   backgroundColor: "rgba(228, 215, 43, 0.2)",
                   color: "#6c4e06",
@@ -349,20 +437,20 @@ export function FiltersSection({
                 }}
                 onClick={() => setDepartmentFilter("all")}
               >
-                🏢 Reparto:{" "}
+                Reparto:{" "}
                 {
                   departmentsData?.data.find(
                     (d: any) => d.id.toString() === departmentFilter
                   )?.nome
                 }
-                <X className="h-3 w-3 ml-1 hover:bg-red-100 rounded-full" />
+                <X className="h-3 w-3 ml-1 hover:bg-red-100 rounded-sm" />
               </Badge>
             )}
 
             {figureFilter !== "all" && (
               <Badge
                 variant="secondary"
-                className="flex items-center gap-2 cursor-pointer px-4 py-2 rounded-full font-medium shadow-sm hover:shadow-md transition-all duration-200"
+                className="flex items-center gap-1 cursor-pointer px-3 py-1 rounded-md font-medium shadow-sm hover:shadow-md transition-all duration-200"
                 style={{
                   backgroundColor: "rgba(228, 215, 43, 0.2)",
                   color: "#6c4e06",
@@ -370,20 +458,20 @@ export function FiltersSection({
                 }}
                 onClick={() => setFigureFilter("all")}
               >
-                💼 Figura:{" "}
+                Figura:{" "}
                 {
                   professionalFiguresData?.data.find(
                     (f: any) => f.id.toString() === figureFilter
                   )?.nome
                 }
-                <X className="h-3 w-3 ml-1 hover:bg-red-100 rounded-full" />
+                <X className="h-3 w-3 ml-1 hover:bg-red-100 rounded-sm" />
               </Badge>
             )}
 
             {statusFilter !== "all" && (
               <Badge
                 variant="secondary"
-                className="flex items-center gap-2 cursor-pointer px-4 py-2 rounded-full font-medium shadow-sm hover:shadow-md transition-all duration-200"
+                className="flex items-center gap-1 cursor-pointer px-3 py-1 rounded-md font-medium shadow-sm hover:shadow-md transition-all duration-200"
                 style={{
                   backgroundColor: "rgba(228, 215, 43, 0.2)",
                   color: "#6c4e06",
@@ -391,31 +479,14 @@ export function FiltersSection({
                 }}
                 onClick={() => setStatusFilter("all")}
               >
-                📊 Stato: {statusFilter.replace(/_/g, " ")}
-                <X className="h-3 w-3 ml-1 hover:bg-red-100 rounded-full" />
+                Stato: {statusFilter.replace(/_/g, " ")}
+                <X className="h-3 w-3 ml-1 hover:bg-red-100 rounded-sm" />
               </Badge>
             )}
 
-            {searchQuery && (
-              <Badge
-                variant="secondary"
-                className="flex items-center gap-2 cursor-pointer px-4 py-2 rounded-full font-medium shadow-sm hover:shadow-md transition-all duration-200"
-                style={{
-                  backgroundColor: "rgba(228, 215, 43, 0.2)",
-                  color: "#6c4e06",
-                  border: "1px solid rgba(228, 215, 43, 0.3)",
-                }}
-                onClick={() => setSearchQuery("")}
-              >
-                🔍 Ricerca: {searchQuery}
-                <X className="h-3 w-3 ml-1 hover:bg-red-100 rounded-full" />
-              </Badge>
-            )}
-
-            {/* Clear All Filters */}
             <Badge
               variant="outline"
-              className="flex items-center gap-2 cursor-pointer px-4 py-2 rounded-full font-bold shadow-sm hover:shadow-md transition-all duration-200 border-2"
+              className="flex items-center gap-1 cursor-pointer px-3 py-1 rounded-md font-medium shadow-sm hover:shadow-md transition-all duration-200 border"
               style={{
                 borderColor: "#ef4444",
                 color: "#ef4444",
@@ -431,8 +502,7 @@ export function FiltersSection({
                   "rgba(239, 68, 68, 0.05)";
               }}
             >
-              🗑️ Cancella tutto
-              <X className="h-3 w-3 ml-1" />
+              Cancella <X className="h-3 w-3 ml-1" />
             </Badge>
           </motion.div>
         )}

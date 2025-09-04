@@ -64,7 +64,6 @@ export function SelectionTabs({
                 color: activeTab === tab.id ? "#6c4e06" : "#666666",
               }}
             >
-              <span className="text-base">{tab.icon}</span>
               <span>{tab.label}</span>
               <span
                 className="ml-1 px-2 py-0.5 text-xs rounded-full bg-white/80 shadow-sm"

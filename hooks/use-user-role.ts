@@ -13,7 +13,7 @@ export function useUserRole() {
   const isResponsabile = role === UserRole.RESPONSABILE_REPARTO;
   const isHR = role === UserRole.RISORSA_UMANA;
   const isDeveloper = role === UserRole.DEVELOPER;
-  const isResponsabileHR = isResponsabile && user?.reparto_id === 544;
+  const isResponsabileHR = isResponsabile && user?.reparto_id === 12;
 
   // Permission-based checks for specific actions
   const canCreateSelection = isResponsabile || isDeveloper;

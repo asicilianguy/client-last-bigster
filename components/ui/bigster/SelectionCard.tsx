@@ -176,20 +176,6 @@ export function SelectionCard({ selection, index = 0 }: SelectionCardProps) {
           <div className="flex items-center justify-between gap-6">
             {/* Left section - Status icon and main info */}
             <div className="flex items-center gap-4 flex-1 min-w-0">
-              {/* Status icon */}
-              <div
-                className="flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center shadow-sm"
-                style={{
-                  backgroundColor: config.bgColor,
-                  border: `2px solid ${config.borderColor}`,
-                }}
-              >
-                <StatusIcon
-                  className="h-7 w-7"
-                  style={{ color: config.textColor }}
-                />
-              </div>
-
               {/* Title and details */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-2">

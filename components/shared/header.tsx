@@ -108,17 +108,12 @@ export function Header() {
               variant="ghost"
               className="flex items-center gap-2 p-0 rounded-full focus-visible:ring-0 focus-visible:ring-offset-0"
             >
-              <Avatar className="w-9 h-9 border border-[#d4d4d4]">
-                <AvatarImage
-                  src={`https://api.dicebear.com/8.x/adventurer/svg?seed=${user?.email}`}
-                  alt="User avatar"
-                />
-                <AvatarFallback>
-                  {user?.nome && user?.cognome
-                    ? `${user.nome[0]}${user.cognome[0]}`
-                    : "MR"}
-                </AvatarFallback>
-              </Avatar>
+              <div className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-100 text-slate-700 font-medium border border-[#d4d4d4]">
+                {user?.nome && user?.cognome
+                  ? `${user.nome[0]}${user.cognome[0]}`
+                  : "MR"}
+              </div>
+
               <span className="hidden sm:inline text-sm font-medium text-[#333333]">
                 {user?.nome && user?.cognome
                   ? `Dott. ${user.nome} ${user.cognome}`
