@@ -9,6 +9,8 @@
     "start": "next start"
   },
   "dependencies": {
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
     "@emotion/is-prop-valid": "latest",
     "@hookform/resolvers": "^3.3.4",
     "@radix-ui/react-accordion": "latest",
@@ -50,9 +52,7 @@
     "lucide-react": "^0.454.0",
     "next": "15.2.4",
     "next-themes": "latest",
-    "react": "^19",
     "react-day-picker": "latest",
-    "react-dom": "^19",
     "react-hook-form": "^7.49.3",
     "react-hot-toast": "latest",
     "react-redux": "latest",
