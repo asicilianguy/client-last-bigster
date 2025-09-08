@@ -63,19 +63,22 @@ export function Header() {
             </SheetTrigger>
             <SheetContent side="right">
               <nav className="flex flex-col gap-4 mt-8">
-                {navLinks.map((link) => (
-                  <Link
-                    key={link.name}
-                    href={link.href}
-                    className={`px-4 py-2 text-sm font-medium ${
-                      pathname === link.href
-                        ? "bg-[#FEF19A] text-[#6C4E06] rounded-sm"
-                        : "text-[#333333] hover:bg-gray-100 rounded-sm"
-                    }`}
-                  >
-                    {link.name}
-                  </Link>
-                ))}
+                {navLinks.map((link) => {
+                  return (
+                    <Link
+                      key={link.name}
+                      href={link.href}
+                      className={`px-4 py-2 text-sm font-medium ${
+                        "/" + pathname.split("/")[1] ===
+                        "/" + link.href.split("/")[1]
+                          ? "bg-[#FEF19A] text-[#6C4E06] rounded-sm"
+                          : "text-[#333333] hover:bg-gray-100 rounded-sm"
+                      }`}
+                    >
+                      {link.name}
+                    </Link>
+                  );
+                })}
               </nav>
             </SheetContent>
           </Sheet>
@@ -83,20 +86,21 @@ export function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-4">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              href={link.href}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${
-                pathname === link.href
-                  ? "bg-[#fef19a] text-[#6c4e06] rounded-sm"
-                  : "text-[#333333] hover:bg-gray-100 rounded-sm"
-              }`}
-              prefetch={false}
-            >
-              {link.name}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            return (
+              <Link
+                key={link.name}
+                href={link.href}
+                className={`px-4 py-2 text-sm font-medium ${
+                  "/" + pathname.split("/")[1] === "/" + link.href.split("/")[1]
+                    ? "bg-[#FEF19A] text-[#6C4E06] rounded-sm"
+                    : "text-[#333333] hover:bg-gray-100 rounded-sm"
+                }`}
+              >
+                {link.name}
+              </Link>
+            );
+          })}
         </nav>
       </div>
 

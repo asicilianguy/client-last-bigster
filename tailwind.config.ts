@@ -29,9 +29,11 @@ const config = {
 
         // BigSter palette
         "bigster-primary": "#fef19a",
+        "bigster-background": "#efedde",
+        "bigster-text": "#6c4e06",
         "bigster-primary-text": "#6c4e06",
         "bigster-surface": "#ffffff",
-        "bigster-text": "#333333",
+        // "bigster-text": "#333333",
         "bigster-text-muted": "#666666",
         "bigster-border": "#d8d8d8",
         "bigster-star": "#e4d72b",

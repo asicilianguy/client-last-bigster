@@ -9,14 +9,7 @@ import { useCreateSelectionMutation } from "@/lib/redux/features/selections/sele
 import { useGetDepartmentsQuery } from "@/lib/redux/features/departments/departmentsApiSlice";
 import { useGetProfessionalFiguresByDepartmentQuery } from "@/lib/redux/features/professional-figures/professionalFiguresApiSlice";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,6 +25,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { PlusCircle, X } from "lucide-react";
 import { User } from "@/types";
 import { useUserRole } from "@/hooks/use-user-role";
+import {
+  DialogContent,
+  DialogHeader,
+} from "@/components/ui/bigster/dialog-custom";
+import CustomDialog from "@/components/ui/bigster/CustomDialog";
 
 const createSelectionSchema = z.object({
   titolo: z.string().min(5, "Il titolo deve contenere almeno 5 caratteri"),
@@ -71,8 +69,6 @@ export function CreateSelectionModal({
 
   const { data: figuresData, isLoading: isLoadingFigures } =
     useGetProfessionalFiguresByDepartmentQuery(userData.reparto_id);
-
-
 
   const {
     register,
@@ -118,186 +114,164 @@ export function CreateSelectionModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">
-            Crea Nuova Selezione
-          </DialogTitle>
-          <DialogDescription>
-            Compila i campi per avviare un nuovo processo di selezione.
-          </DialogDescription>
-        </DialogHeader>
+    <CustomDialog
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Crea Nuova Selezione"
+    >
+      <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
+        <div className="space-y-2">
+          <Label htmlFor="titolo">Titolo Selezione</Label>
+          <Input
+            id="titolo"
+            placeholder="Es. Ricerca Sviluppatore Senior"
+            {...register("titolo")}
+            className="w-full"
+          />
+          {errors.titolo && (
+            <p className="text-sm text-red-500">{errors.titolo.message}</p>
+          )}
+        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 py-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-2">
-            <Label htmlFor="titolo">Titolo Selezione</Label>
-            <Input
-              id="titolo"
-              placeholder="Es. Ricerca Sviluppatore Senior"
-              {...register("titolo")}
-              className="w-full"
-            />
-            {errors.titolo && (
-              <p className="text-sm text-red-500">{errors.titolo.message}</p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="space-y-2">
-              <Label htmlFor="reparto_id">Reparto</Label>
-              <Controller
-                name="reparto_id"
-                control={control}
-                defaultValue={userData.reparto_id!}
-                render={({ field }) => (
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      setSelectedDepartment(Number(value));
-                    }}
-                    defaultValue={
-                      field.value?.toString() || userData.reparto_id?.toString()
-                    }
+            <Label htmlFor="reparto_id">Reparto</Label>
+            <Controller
+              name="reparto_id"
+              control={control}
+              defaultValue={userData.reparto_id!}
+              render={({ field }) => (
+                <Select
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    setSelectedDepartment(Number(value));
+                  }}
+                  defaultValue={
+                    field.value?.toString() || userData.reparto_id?.toString()
+                  }
+                >
+                  <SelectTrigger
+                    disabled={isLoadingDepartments || !isCEO}
+                    className="w-full"
                   >
-                    <SelectTrigger
-                      disabled={isLoadingDepartments || !isCEO}
-                      className="w-full"
-                    >
-                      <SelectValue placeholder="Seleziona un reparto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {isLoadingDepartments ? (
-                        <SelectItem value="loading" disabled>
-                          Caricamento...
+                    <SelectValue placeholder="Seleziona un reparto" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingDepartments ? (
+                      <SelectItem value="loading" disabled>
+                        Caricamento...
+                      </SelectItem>
+                    ) : isCEO ? (
+                      departmentsData?.data.map((dept: any) => (
+                        <SelectItem key={dept.id} value={dept.id.toString()}>
+                          {dept.nome}
                         </SelectItem>
-                      ) : isCEO ? (
-                        departmentsData?.data.map((dept: any) => (
+                      ))
+                    ) : (
+                      departmentsData?.data
+                        .filter((dept: any) => dept.id === userData.reparto_id)
+                        .map((dept: any) => (
                           <SelectItem key={dept.id} value={dept.id.toString()}>
                             {dept.nome}
                           </SelectItem>
                         ))
-                      ) : (
-                        departmentsData?.data
-                          .filter(
-                            (dept: any) => dept.id === userData.reparto_id
-                          )
-                          .map((dept: any) => (
-                            <SelectItem
-                              key={dept.id}
-                              value={dept.id.toString()}
-                            >
-                              {dept.nome}
-                            </SelectItem>
-                          ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.reparto_id && (
-                <p className="text-sm text-red-500">
-                  {errors.reparto_id.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="figura_professionale_id">
-                Figura Professionale
-              </Label>
-              <Controller
-                name="figura_professionale_id"
-                control={control}
-                render={({ field }) => (
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value?.toString()}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Seleziona una figura" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {isLoadingFigures ? (
-                        <SelectItem value="loading" disabled>
-                          Caricamento...
-                        </SelectItem>
-                      ) : !figuresData?.data?.length ? (
-                        <SelectItem value="none" disabled>
-                          Nessuna figura disponibile
-                        </SelectItem>
-                      ) : (
-                        figuresData?.data.map((fig: any) => (
-                          <SelectItem key={fig.id} value={fig.id.toString()}>
-                            {fig.nome} ({fig.seniority})
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-              {errors.figura_professionale_id && (
-                <p className="text-sm text-red-500">
-                  {errors.figura_professionale_id.message}
-                </p>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="tipo">Tipo Selezione</Label>
-            <Controller
-              name="tipo"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seleziona il tipo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ESTERNO">Esterna</SelectItem>
-                    <SelectItem value="INTERNO">Interna</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               )}
             />
-            {errors.tipo && (
-              <p className="text-sm text-red-500">{errors.tipo.message}</p>
+            {errors.reparto_id && (
+              <p className="text-sm text-red-500">
+                {errors.reparto_id.message}
+              </p>
             )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="note">Note Aggiuntive (Opzionale)</Label>
-            <Textarea
-              id="note"
-              placeholder="Inserisci eventuali dettagli o requisiti aggiuntivi..."
-              {...register("note")}
-              className="min-h-[100px]"
+            <Label htmlFor="figura_professionale_id">
+              Figura Professionale
+            </Label>
+            <Controller
+              name="figura_professionale_id"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value?.toString()}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Seleziona una figura" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingFigures ? (
+                      <SelectItem value="loading" disabled>
+                        Caricamento...
+                      </SelectItem>
+                    ) : !figuresData?.data?.length ? (
+                      <SelectItem value="none" disabled>
+                        Nessuna figura disponibile
+                      </SelectItem>
+                    ) : (
+                      figuresData?.data.map((fig: any) => (
+                        <SelectItem key={fig.id} value={fig.id.toString()}>
+                          {fig.nome} ({fig.seniority})
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
             />
-            {errors.note && (
-              <p className="text-sm text-red-500">{errors.note.message}</p>
+            {errors.figura_professionale_id && (
+              <p className="text-sm text-red-500">
+                {errors.figura_professionale_id.message}
+              </p>
             )}
           </div>
+        </div>
 
-          <DialogFooter className="mt-6 gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Annulla
-            </Button>
-            <Button
-              type="submit"
-              disabled={isCreating}
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              {isCreating && <Spinner className="mr-2 h-4 w-4" />}
-              Crea Selezione
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        <div className="space-y-2">
+          <Label htmlFor="tipo">Tipo Selezione</Label>
+          <Controller
+            name="tipo"
+            control={control}
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seleziona il tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ESTERNO">Esterna</SelectItem>
+                  <SelectItem value="INTERNO">Interna</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
+          {errors.tipo && (
+            <p className="text-sm text-red-500">{errors.tipo.message}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="note">Note Aggiuntive (Opzionale)</Label>
+          <Textarea
+            id="note"
+            placeholder="Inserisci eventuali dettagli o requisiti aggiuntivi..."
+            {...register("note")}
+            className="min-h-[100px]"
+          />
+          {errors.note && (
+            <p className="text-sm text-red-500">{errors.note.message}</p>
+          )}
+        </div>
+
+        <DialogFooter className="mt-6 gap-2">
+          <Button type="submit" variant="secondary" disabled={isCreating}>
+            {isCreating && <Spinner className="mr-2 h-4 w-4" />}
+            Conferma
+          </Button>
+        </DialogFooter>
+      </form>
+    </CustomDialog>
   );
 }

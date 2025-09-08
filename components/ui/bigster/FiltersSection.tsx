@@ -95,7 +95,7 @@ export function FiltersSection({
 
   return (
     <div>
-      <div className=" bg-[#FFFAD8]">
+      <div className="">
         <div className="flex gap-8 items-center">
           {/* Search Input */}
           <h3 style={{ fontWeight: 700, fontSize: "15px", color: "#6c4e06" }}>
@@ -150,17 +150,13 @@ export function FiltersSection({
               </Button>
             </DialogTrigger>
 
-            <DialogContent className="sm:max-w-md md:max-w-lg">
-              <DialogHeader>
-                <DialogTitle
-                  className="text-lg font-bold"
-                  style={{ color: "#6c4e06" }}
-                >
-                  Filtri e Ordinamento
-                </DialogTitle>
-              </DialogHeader>
+            <DialogContent>
+              <DialogHeader
+                title="Filtra e Ordina"
+                onClose={() => setIsDialogOpen(false)}
+              />
 
-              <div className="space-y-5 mt-4">
+              <div className="space-y-5 p-5 pt-0">
                 {/* Sort Options */}
                 <div className="space-y-2">
                   <label
@@ -174,7 +170,7 @@ export function FiltersSection({
                       variant={sortBy === "recent" ? "default" : "outline"}
                       className={`flex items-center justify-center gap-2 py-2 rounded-md ${
                         sortBy === "recent"
-                          ? "bg-yellow-100 text-amber-800 border border-yellow-200"
+                          ? "bg-bigster-primary text-bigster-text border border-yellow-200"
                           : "border border-gray-200"
                       }`}
                       onClick={() => setSortBy("recent")}
@@ -188,7 +184,7 @@ export function FiltersSection({
                       }
                       className={`flex items-center justify-center gap-2 py-2 rounded-md ${
                         sortBy === "applications"
-                          ? "bg-yellow-100 text-amber-800 border border-yellow-200"
+                          ? "bg-bigster-primary text-bigster-text border border-yellow-200"
                           : "border border-gray-200"
                       }`}
                       onClick={() => setSortBy("applications")}
@@ -202,7 +198,7 @@ export function FiltersSection({
                       }
                       className={`flex items-center justify-center gap-2 py-2 rounded-md ${
                         sortBy === "alphabetical"
-                          ? "bg-yellow-100 text-amber-800 border border-yellow-200"
+                          ? "bg-bigster-primary text-bigster-text border border-yellow-200"
                           : "border border-gray-200"
                       }`}
                       onClick={() => setSortBy("alphabetical")}
@@ -226,9 +222,9 @@ export function FiltersSection({
                       </label>
                       {departmentFilter !== "all" && (
                         <Button
-                          variant="ghost"
+                          variant="secondary"
                           size="sm"
-                          className="h-6 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
+                          className="h-6 px-2 text-xs"
                           onClick={() => setDepartmentFilter("all")}
                         >
                           <X className="h-3 w-3 mr-1" /> Rimuovi filtro
@@ -278,9 +274,9 @@ export function FiltersSection({
                       </label>
                       {figureFilter !== "all" && (
                         <Button
-                          variant="ghost"
                           size="sm"
-                          className="h-6 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
+                          variant="secondary"
+                          className="h-6 px-2 text-xs"
                           onClick={() => setFigureFilter("all")}
                         >
                           <X className="h-3 w-3 mr-1" /> Rimuovi filtro
@@ -327,9 +323,9 @@ export function FiltersSection({
                       </label>
                       {statusFilter !== "all" && (
                         <Button
-                          variant="ghost"
                           size="sm"
-                          className="h-6 px-2 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
+                          variant="secondary"
+                          className="h-6 px-2 text-xs"
                           onClick={() => setStatusFilter("all")}
                         >
                           <X className="h-3 w-3 mr-1" /> Rimuovi filtro

@@ -64,7 +64,8 @@ export default function SelezioniDashboardPage() {
     }
 
     return () => {
-      document.querySelector("main")!.style.padding = "1rem";
+      if (document.querySelector("main"))
+        document.querySelector("main")!.style.padding = "1rem";
     };
   }, []);
 
@@ -259,7 +260,7 @@ export default function SelezioniDashboardPage() {
           opacity: { duration: 0.2 }, // Animazione opacity più veloce
           transform: { type: "spring", stiffness: 300, damping: 30 }, // Animazione spring per il movimento
         }}
-        className="p-4 sm:p-6 !py-[10px] overflow-hidden border-0 shadow-lg flex bg-[#FFFAD8] items-center justify-between will-change-transform"
+        className="p-4 sm:p-6 !py-[10px] overflow-hidden border-0 shadow-lg flex bg-bigster-background items-center justify-between will-change-transform"
       >
         <FiltersSection
           searchQuery={searchQuery}
@@ -280,11 +281,7 @@ export default function SelezioniDashboardPage() {
           <div>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2.5 px-2.5 py-2.5 border-none font-medium text-[15px]"
-              style={{
-                backgroundColor: "#6c4e06",
-                color: "#FFFAD8",
-              }}
+              className="flex items-center gap-2.5 px-2.5 py-2.5 border-none font-medium text-[15px] bg-bigster-primary text-bigster-text"
             >
               <PlusCircle className="h-4 w-4" />
               Nuova Selezione
