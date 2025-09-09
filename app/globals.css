@@ -92,6 +92,14 @@
       "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 
+  .border-outline {
+    border: 1px solid #d4d4d4;
+  }
+
+  .border-bigster {
+    border: 1px solid #6c4e06;
+  }
+
   input,
   button,
   textarea,

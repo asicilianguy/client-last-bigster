@@ -124,21 +124,11 @@ export function FiltersSection({
             <DialogTrigger asChild>
               <Button
                 variant="outline"
-                className="relative font-medium shadow-sm hover:shadow-md transition-all duration-200 border px-3 py-2.5 rounded-md bg-transparent"
+                className="relative border-none font-medium px-3 py-2.5 rounded-none bg-transparent"
                 style={{
-                  borderColor: "rgba(108, 78, 6, 0.2)",
+                  borderColor: "transparent",
                   backgroundColor: "rgba(255, 255, 255, 0.8)",
                   color: "#6c4e06",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor =
-                    "rgba(228, 215, 43, 0.1)";
-                  e.currentTarget.style.borderColor = "#e4d72b";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor =
-                    "rgba(255, 255, 255, 0.8)";
-                  e.currentTarget.style.borderColor = "rgba(108, 78, 6, 0.2)";
                 }}
               >
                 <Filter className="h-5 w-5" />

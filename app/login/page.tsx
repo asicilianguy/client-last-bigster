@@ -159,7 +159,6 @@ export default function LoginPage() {
           height={200}
           className="mx-auto"
         />
-        <h1 className="mt-4 text-4xl font-bold text-gray-800">BigSter</h1>
       </div>
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">

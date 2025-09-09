@@ -158,31 +158,15 @@ const StatusBadge = ({
     <Badge
       variant="outline"
       className={cn(
-        "font-semibold rounded-md shadow-sm transition-all duration-300 cursor-default select-none",
-        "hover:scale-105 transform-gpu border-2",
-        config.animation,
-        sizeClasses[size],
+        "font-semibold text-bigster-text border-bigster-text p-2 rounded-none cursor-default select-none",
+        "transform-gpu border-2 !border-bigster",
         className
       )}
-      style={{
-        backgroundColor: config.bgColor,
-        color: config.textColor,
-        borderColor: config.borderColor,
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = config.hoverBg;
-        e.currentTarget.style.borderColor = config.hoverBorder;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = config.bgColor;
-        e.currentTarget.style.borderColor = config.borderColor;
-      }}
     >
       <div className="flex items-center gap-2">
         {showIcon && (
           <IconComponent
-            className={cn(iconSizes[size], "flex-shrink-0")}
-            style={{ color: config.iconColor }}
+            className={cn(iconSizes[size], "flex-shrink-0 text-bigster-text")}
           />
         )}
         <span className="font-semibold tracking-wide whitespace-nowrap">

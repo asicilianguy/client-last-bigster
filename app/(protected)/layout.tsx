@@ -15,7 +15,7 @@ export default function ProtectedLayout({
         <div className="flex min-h-screen w-full bg-secondary">
           <div className="flex flex-1 flex-col">
             <Header />
-            <main className="flex-1 p-4 sm:p-6">{children}</main>
+            <main className="flex-1">{children}</main>
           </div>
         </div>
       </SidebarProvider>

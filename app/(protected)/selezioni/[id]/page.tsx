@@ -60,6 +60,7 @@ import SelectionTimeline from "@/components/ui/bigster/SelectionTimeline";
 import StatusBadge from "@/components/ui/bigster/StatusBadge";
 import { useUserRole } from "@/hooks/use-user-role";
 import { SelectionStatus } from "@/types";
+import Breadcrumb from "@/components/ui/bigster/BreadCrumb";
 
 const DetailItem = ({
   icon,
@@ -79,10 +80,8 @@ const DetailItem = ({
 );
 
 const SelectionDetailsCard = ({ selection }: { selection: any }) => {
-  console.log({ selection });
-
   return (
-    <Card className="shadow-sm border-0">
+    <Card className="shadow-sm border-0 rounded-none !border-outline">
       <CardHeader>
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
@@ -580,73 +579,57 @@ export default function SelezioneDetailPage() {
 
   return (
     <div className="animate-fade-in-up space-y-6">
-      <div className="flex items-center gap-4">
-        <Button
-          variant="outline"
-          size="icon"
-          asChild
-          className="rounded-full bg-transparent"
-        >
-          <Link href="/selezioni">
-            <ArrowLeft />
-            <span className="sr-only">Torna alle Selezioni</span>
-          </Link>
-        </Button>
-        <h1 className="text-xl font-semibold text-muted-foreground">
-          <Link href="/selezioni" className="hover:text-primary">
-            Selezioni
-          </Link>
-          <span className="mx-2">/</span>
-          <span className="text-foreground">{selection.titolo}</span>
-        </h1>
-      </div>
-
-      {/* Timeline Wizard */}
-      <SelectionTimeline selection={selection} className="shadow-sm border-0" />
-
-      <div className="grid gap-6 lg:grid-cols-5">
-        <div className="space-y-6 lg:col-span-3">
-          <SelectionDetailsCard selection={selection} />
-          <SelectionActions selection={selection} user={user} />
-        </div>
-        <div className="lg:col-span-2">
-          <Tabs defaultValue="announcements" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="announcements">
-                <FileSignature className="mr-2 h-4 w-4" />
-                Annunci
-              </TabsTrigger>
-              <TabsTrigger
-                value="applications"
-                disabled={!canManageApplications}
-              >
-                <Users className="mr-2 h-4 w-4" />
-                Candidature
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="announcements">
-              {canCreateAnnouncements ? (
-                <AnnouncementsSection selectionId={selection.id} />
-              ) : (
-                <Card className="shadow-sm border-0 mt-4">
-                  <CardContent className="pt-6 text-center text-muted-foreground">
-                    Non hai i permessi per gestire gli annunci.
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-            <TabsContent value="applications">
-              {canManageApplications ? (
-                <ApplicationsSection selectionId={selection.id} />
-              ) : (
-                <Card className="shadow-sm border-0 mt-4">
-                  <CardContent className="pt-6 text-center text-muted-foreground">
-                    Non hai i permessi per visualizzare le candidature.
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-          </Tabs>
+      <Breadcrumb name="Selezioni" path="/selezioni" />
+      <div className="p-5 !mt-0 space-y-5">
+        {" "}
+        <SelectionTimeline
+          selection={selection}
+          className="shadow-sm border-0"
+        />
+        <div className="grid gap-6 lg:grid-cols-6">
+          <div className="space-y-6 lg:col-span-3">
+            <SelectionDetailsCard selection={selection} />
+            <SelectionActions selection={selection} user={user} />
+          </div>
+          <div className="lg:col-span-3">
+            <Tabs defaultValue="announcements" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="announcements">
+                  <FileSignature className="mr-2 h-4 w-4" />
+                  Annunci
+                </TabsTrigger>
+                <TabsTrigger
+                  value="applications"
+                  disabled={!canManageApplications}
+                >
+                  <Users className="mr-2 h-4 w-4" />
+                  Candidature
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="announcements">
+                {canCreateAnnouncements ? (
+                  <AnnouncementsSection selectionId={selection.id} />
+                ) : (
+                  <Card className="shadow-sm border-0 mt-4">
+                    <CardContent className="pt-6 text-center text-muted-foreground">
+                      Non hai i permessi per gestire gli annunci.
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+              <TabsContent value="applications">
+                {canManageApplications ? (
+                  <ApplicationsSection selectionId={selection.id} />
+                ) : (
+                  <Card className="shadow-sm border-0 mt-4">
+                    <CardContent className="pt-6 text-center text-muted-foreground">
+                      Non hai i permessi per visualizzare le candidature.
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+            </Tabs>
+          </div>
         </div>
       </div>
     </div>

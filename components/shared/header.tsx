@@ -68,12 +68,15 @@ export function Header() {
                     <Link
                       key={link.name}
                       href={link.href}
-                      className={`px-4 py-2 text-sm font-medium ${
+                      className={`px-4 py-2 text-sm ${
                         "/" + pathname.split("/")[1] ===
                         "/" + link.href.split("/")[1]
-                          ? "bg-[#FEF19A] text-[#6C4E06] rounded-sm"
+                          ? "bg-[#FEF19A] text-[#6C4E06] rounded-sm !font-bold "
                           : "text-[#333333] hover:bg-gray-100 rounded-sm"
                       }`}
+                      style={{
+                        fontSize: "15px",
+                      }}
                     >
                       {link.name}
                     </Link>
@@ -91,11 +94,14 @@ export function Header() {
               <Link
                 key={link.name}
                 href={link.href}
-                className={`px-4 py-2 text-sm font-medium ${
+                className={`px-4 py-2 text-sm ${
                   "/" + pathname.split("/")[1] === "/" + link.href.split("/")[1]
-                    ? "bg-bigster-background text-bigster-text rounded-sm"
+                    ? "bg-[#FEF19A] text-[#6C4E06] rounded-sm !font-bold "
                     : "text-[#333333] hover:bg-gray-100 rounded-sm"
                 }`}
+                style={{
+                  fontSize: "15px",
+                }}
               >
                 {link.name}
               </Link>

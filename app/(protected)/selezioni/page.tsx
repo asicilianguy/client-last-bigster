@@ -58,17 +58,6 @@ export default function SelezioniDashboardPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (document.querySelector("main")) {
-      document.querySelector("main")!.style.padding = "0px";
-    }
-
-    return () => {
-      if (document.querySelector("main"))
-        document.querySelector("main")!.style.padding = "1rem";
-    };
-  }, []);
-
   // First, get all selections accessible to the user based on role
   const accessibleSelections = useMemo(() => {
     if (!selectionsData?.data) return [];

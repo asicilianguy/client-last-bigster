@@ -440,14 +440,13 @@ export default function SelectionTimeline({
   };
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Timeline Selezione</CardTitle>
+    <Card className={className + " " + "rounded-none !border-outline"}>
+      <CardHeader className="p-5">
+        <div className="flex items-center justify-end">
           {selection.storico_stati && selection.storico_stati.length > 0 && (
             <Button
-              variant="ghost"
               size="sm"
+              variant="outline"
               onClick={() => setIsHistoryOpen(!isHistoryOpen)}
               className="flex items-center gap-2"
             >
@@ -462,7 +461,7 @@ export default function SelectionTimeline({
           )}
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-5 px-7">
         {/* Timeline Steps */}
         <div className="relative">
           {/* Timeline Line */}
@@ -515,8 +514,7 @@ export default function SelectionTimeline({
                           : isCompleted
                           ? "#e4d72b"
                           : "#ffffff",
-                        borderColor:
-                          isCurrent || isCompleted ? config.color : "#d8d8d8",
+                        borderColor: isCurrent ? "transparent" : "#6c4e06",
                         borderWidth: "2px",
                         borderStyle: "solid",
                         "--tw-ring-color": isCurrent
@@ -538,33 +536,19 @@ export default function SelectionTimeline({
                   <div className="mt-3 text-center max-w-[100px]">
                     <p
                       className={`text-sm font-semibold ${
-                        isCurrent ? "text-lg" : ""
+                        isCurrent ? "text-lg text-bigster-text" : ""
                       }`}
-                      style={{
-                        color: isCurrent ? config.color : "#333333",
-                      }}
                     >
                       {config.label}
                     </p>
                     <p
-                      className="text-xs mt-1"
-                      style={{
-                        color: isCurrent ? config.color : "#666666",
-                      }}
+                      className={`text-xs mt-1font-semibold ${
+                        isCurrent ? "text-lg text-bigster-text" : ""
+                      }`}
                     >
                       {config.description}
                     </p>
                   </div>
-
-                  {/* Current Status Indicator */}
-                  {isCurrent && (
-                    <div
-                      className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center animate-pulse"
-                      style={{ backgroundColor: config.color }}
-                    >
-                      <div className="w-2 h-2 bg-white rounded-full" />
-                    </div>
-                  )}
                 </div>
               );
             })}

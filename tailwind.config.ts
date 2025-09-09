@@ -67,6 +67,10 @@ const config = {
           foreground: "hsl(var(--card-foreground))",
         },
       },
+      border: {
+        bigster: "1px solid #6c4e06",
+        "bigster-outline": "1px solid #d4d4d4",
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
