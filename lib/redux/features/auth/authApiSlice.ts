@@ -13,6 +13,7 @@ export const authApiSlice = apiSlice.injectEndpoints({
         try {
           const { data } = await queryFulfilled;
           dispatch(setCredentials(data));
+          localStorage.setItem("token", data.token);
         } catch (error) {}
       },
     }),

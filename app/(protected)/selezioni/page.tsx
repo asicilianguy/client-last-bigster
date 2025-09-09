@@ -260,7 +260,7 @@ export default function SelezioniDashboardPage() {
           opacity: { duration: 0.2 }, // Animazione opacity più veloce
           transform: { type: "spring", stiffness: 300, damping: 30 }, // Animazione spring per il movimento
         }}
-        className="p-4 sm:p-6 !py-[10px] overflow-hidden border-0 shadow-lg flex bg-bigster-background items-center justify-between will-change-transform"
+        className="p-4 sm:p-6 !py-[10px] overflow-hidden border-0 sticky top[60px] z-10 shadow-lg flex bg-bigster-background items-center justify-between will-change-transform"
       >
         <FiltersSection
           searchQuery={searchQuery}
@@ -297,95 +297,78 @@ export default function SelezioniDashboardPage() {
         )}
       </motion.div>
 
-      {/* Tabs - Updated to show counts based on current filters */}
-      <Tabs
-        defaultValue="all"
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="w-full p-4 sm:p-6 !mt-0"
-      >
-        <SelectionTabs
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          tabCounts={tabCounts}
-        />
-
-        {/* Tab Content - All tabs show the same content, but with different filters applied */}
-        <TabsContent value={activeTab} className="mt-4">
-          {filteredSelections.length > 0 ? (
-            <>
-              {/* Selections Grid */}
-              <motion.div
-                className="flex flex-col gap-6"
-                variants={{
-                  hidden: { opacity: 0 },
-                  visible: {
-                    opacity: 1,
-                    transition: { staggerChildren: 0.05 },
-                  },
+      {filteredSelections.length > 0 ? (
+        <>
+          {/* Selections Grid */}
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-5 pt-0"
+            variants={{
+              hidden: { opacity: 0 },
+              visible: {
+                opacity: 1,
+                transition: { staggerChildren: 0.05 },
+              },
+            }}
+            initial="hidden"
+            animate="visible"
+          >
+            {filteredSelections.map((selection: any, index: number) => (
+              <SelectionCard
+                key={selection.id}
+                selection={selection}
+                // action={getActionText(selection)}
+                // actionIcon={<ArrowRight className="h-4 w-4 mr-2" />}
+                index={index}
+              />
+            ))}
+          </motion.div>
+        </>
+      ) : (
+        <EmptyState
+          icon={Briefcase}
+          title="Nessuna selezione trovata"
+          description={
+            searchQuery ||
+            departmentFilter !== "all" ||
+            figureFilter !== "all" ||
+            statusFilter !== "all"
+              ? "Prova a modificare i filtri per vedere più risultati."
+              : canCreateSelection
+              ? "Inizia creando una nuova selezione."
+              : "Non ci sono selezioni disponibili per te al momento."
+          }
+          action={
+            searchQuery ||
+            departmentFilter !== "all" ||
+            figureFilter !== "all" ||
+            statusFilter !== "all" ? (
+              <Button
+                variant="outline"
+                className="mt-4"
+                onClick={() => {
+                  setDepartmentFilter("all");
+                  setFigureFilter("all");
+                  setStatusFilter("all");
+                  setSearchQuery("");
                 }}
-                initial="hidden"
-                animate="visible"
               >
-                {filteredSelections.map((selection: any, index: number) => (
-                  <SelectionCard
-                    key={selection.id}
-                    selection={selection}
-                    // action={getActionText(selection)}
-                    // actionIcon={<ArrowRight className="h-4 w-4 mr-2" />}
-                    index={index}
-                  />
-                ))}
-              </motion.div>
-            </>
-          ) : (
-            <EmptyState
-              icon={Briefcase}
-              title="Nessuna selezione trovata"
-              description={
-                searchQuery ||
-                departmentFilter !== "all" ||
-                figureFilter !== "all" ||
-                statusFilter !== "all"
-                  ? "Prova a modificare i filtri per vedere più risultati."
-                  : canCreateSelection
-                  ? "Inizia creando una nuova selezione."
-                  : "Non ci sono selezioni disponibili per te al momento."
-              }
-              action={
-                searchQuery ||
-                departmentFilter !== "all" ||
-                figureFilter !== "all" ||
-                statusFilter !== "all" ? (
-                  <Button
-                    variant="outline"
-                    className="mt-4"
-                    onClick={() => {
-                      setDepartmentFilter("all");
-                      setFigureFilter("all");
-                      setStatusFilter("all");
-                      setSearchQuery("");
-                    }}
-                  >
-                    Cancella filtri
-                  </Button>
-                ) : canCreateSelection ? (
-                  <Button
-                    asChild
-                    className="mt-4 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
-                  >
-                    <Link href="/selezioni/nuova">
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Crea la prima Selezione
-                    </Link>
-                  </Button>
-                ) : null
-              }
-              className="col-span-full"
-            />
-          )}
-        </TabsContent>
-      </Tabs>
+                Cancella filtri
+              </Button>
+            ) : canCreateSelection ? (
+              <Button
+                asChild
+                className="mt-4 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+              >
+                <Link href="/selezioni/nuova">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Crea la prima Selezione
+                </Link>
+              </Button>
+            ) : null
+          }
+          className="col-span-full"
+        />
+      )}
     </div>
   );
 }

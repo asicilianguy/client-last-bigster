@@ -32,7 +32,6 @@ const statusConfig: Record<string, any> = {
     textColor: "#6c4e06",
     borderColor: "rgba(108, 78, 6, 0.2)",
     cardAccent: "rgba(255, 255, 255, 1)", // Bianco puro per rimuovere qualsiasi gradiente
-    // Rimuovo completamente il linear-gradient per questo stato
     cardBackground: "white", // Aggiunto per garantire che non ci sia gradiente
   },
   APPROVATA: {
@@ -104,7 +103,6 @@ const statusConfig: Record<string, any> = {
     textColor: "#2e7d32", // Verde scuro per il testo
     borderColor: "rgba(76, 175, 80, 0.7)", // Verde per il bordo
     cardAccent: "rgba(76, 175, 80, 0.3)", // Verde per l'accento
-    // Gradiente verde invece di giallo
     cardBackground:
       "linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(255, 255, 255, 0.95) 100%)",
   },
@@ -157,17 +155,17 @@ export function SelectionCard({ selection, index = 0 }: SelectionCardProps) {
         ease: [0.22, 1, 0.36, 1],
       }}
       whileHover={{ y: -4 }}
-      className="w-full"
+      className="w-full h-full"
     >
       <Card
-        className="w-full transition-all duration-300 hover:shadow-xl border-0 overflow-hidden group"
+        className="rounded-none w-full h-full transition-all duration-300 hover:shadow-xl border-0 overflow-hidden group flex flex-col"
         style={{
-          background: `linear-gradient(135deg, ${config.cardAccent} 0%, rgba(255, 255, 255, 0.95) 100%)`,
+          background: `white`,
           boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.05)",
         }}
       >
         {/* Progress bar */}
-        <div className="h-1.5 w-full bg-gray-200 relative overflow-hidden">
+        {/* <div className="h-1.5 w-full bg-gray-200 relative overflow-hidden">
           <motion.div
             className="h-full"
             style={{ backgroundColor: config.textColor }}
@@ -175,136 +173,102 @@ export function SelectionCard({ selection, index = 0 }: SelectionCardProps) {
             animate={{ width: `${progressPercentage}%` }}
             transition={{ duration: 1, delay: index * 0.1 + 0.3 }}
           />
-        </div>
+        </div> */}
 
-        <CardContent className="p-6">
-          <div className="flex items-center justify-between gap-6">
-            {/* Left section - Status icon and main info */}
-            <div className="flex items-center gap-4 flex-1 min-w-0">
-              {/* Title and details */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-xl font-bold text-gray-900 truncate">
-                    {selection.titolo}
-                  </h3>
-                  <Badge
-                    variant="outline"
-                    className="font-semibold text-xs px-3 py-1 border-2 whitespace-nowrap"
-                    style={{
-                      backgroundColor: config.bgColor,
-                      color: config.textColor,
-                      borderColor: config.borderColor,
-                    }}
-                  >
-                    Stato {config.step}/{config.totalSteps}
-                  </Badge>
-                </div>
+        <CardContent className="p-6 flex flex-col h-full">
+          {/* Header with status badge */}
+          <div className="flex items-start justify-between mb-4">
+            <Badge
+              variant="outline"
+              className="font-semibold text-xs px-3 py-1 border-2 whitespace-nowrap text-bigster-text"
+              style={{
+                backgroundColor: "white",
+                borderColor: "#6c4e06",
+              }}
+            >
+              <StatusIcon className="h-3 w-3 mr-1 inline" />
+              {config.label} • {config.step}/{config.totalSteps}
+            </Badge>
+          </div>
 
-                <div className="flex items-center gap-6 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <Briefcase className="h-4 w-4" />
-                    <span className="truncate">
-                      {selection.figura_professionale?.nome || "N/A"}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
-                    <span className="truncate">
-                      {selection.reparto?.nome || "N/A"}
-                    </span>
-                  </div>
-                  {selection.data_creazione && (
-                    <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      <span>
-                        {new Date(selection.data_creazione).toLocaleDateString(
-                          "it-IT"
-                        )}
-                      </span>
-                    </div>
+          {/* Title */}
+          <h3 className="text-xl font-bold text-gray-900 line-clamp-2 mb-3">
+            {selection.titolo}
+          </h3>
+
+          {/* Details */}
+          <div className="space-y-2 text-sm text-gray-600 mb-6">
+            <div className="flex items-center gap-2">
+              <Briefcase className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">
+                {selection.figura_professionale?.nome || "N/A"}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 flex-shrink-0" />
+              <span className="truncate">
+                {selection.reparto?.nome || "N/A"}
+              </span>
+            </div>
+            {selection.data_creazione && (
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 flex-shrink-0" />
+                <span>
+                  {new Date(selection.data_creazione).toLocaleDateString(
+                    "it-IT"
                   )}
-                </div>
+                </span>
               </div>
+            )}
+          </div>
+
+          {/* Stats */}
+          <div className="flex items-center justify-between bg-bigster-background rounded-lg p-4 mb-6">
+            <div className="text-center flex-1">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Megaphone className="h-4 w-4 text-gray-500" />
+                <span className="text-xs text-gray-500 font-medium">
+                  Annunci
+                </span>
+              </div>
+              <p className="text-2xl font-bold text-bigster-text">
+                {selection._count?.annunci || 0}
+              </p>
             </div>
 
-            {/* Center section - Stats */}
-            <div className="flex items-center gap-8">
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <Megaphone className="h-4 w-4 text-gray-500" />
-                  <span className="text-xs text-gray-500 font-medium">
-                    Annunci
-                  </span>
-                </div>
-                <p
-                  className="text-2xl font-bold"
-                  style={{ color: config.textColor }}
-                >
-                  {selection._count?.annunci || 0}
-                </p>
-              </div>
+            <div className="w-px h-16 bg-gray-400" />
 
-              <div className="w-px h-12 bg-gray-200" />
-
-              <div className="text-center">
-                <div className="flex items-center justify-center gap-1 mb-1">
-                  <Users2 className="h-4 w-4 text-gray-500" />
-                  <span className="text-xs text-gray-500 font-medium">
-                    Candidature
-                  </span>
-                </div>
-                <p
-                  className="text-2xl font-bold"
-                  style={{ color: config.textColor }}
-                >
-                  {selection._count?.candidature || 0}
-                </p>
+            <div className="text-center flex-1">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Users2 className="h-4 w-4 text-gray-500" />
+                <span className="text-xs text-gray-500 font-medium">
+                  Candidature
+                </span>
               </div>
+              <p className="text-2xl font-bold text-bigster-text">
+                {selection._count?.candidature || 0}
+              </p>
             </div>
+          </div>
 
-            {/* Right section - Status and CTA */}
-            <div className="flex items-center gap-4">
-              <div className="text-right">
-                <Badge
-                  variant="outline"
-                  className="font-semibold text-sm px-4 py-2 border-2 shadow-sm mb-3 block"
-                  style={{
-                    backgroundColor: config.bgColor,
-                    color: config.textColor,
-                    borderColor: config.borderColor,
-                  }}
-                >
-                  <StatusIcon className="h-4 w-4 mr-2 inline" />
-                  {config.label}
-                </Badge>
-
-                <Button
-                  asChild
-                  variant="outline"
-                  className="font-semibold shadow-sm hover:shadow-md transition-all duration-300 border-2 group-hover:scale-105 bg-transparent"
-                  style={{
-                    borderColor: config.borderColor,
-                    color: config.textColor,
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = config.bgColor;
-                    e.currentTarget.style.borderColor = config.textColor;
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = "transparent";
-                    e.currentTarget.style.borderColor = config.borderColor;
-                  }}
-                >
-                  <Link
-                    href={`/selezioni/${selection.id}`}
-                    className="flex items-center gap-2"
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                    Dettagli
-                  </Link>
-                </Button>
-              </div>
-            </div>
+          {/* Button */}
+          <div className="mt-auto">
+            <Button
+              asChild
+              variant="outline"
+              className="w-full font-semibold text-bigster-text transition-all duration-300 border-2 bg-transparent"
+              style={{
+                borderColor: "#6c4e06",
+              }}
+            >
+              <Link
+                href={`/selezioni/${selection.id}`}
+                className="flex items-center justify-center gap-2"
+              >
+                Visualizza dettagli
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         </CardContent>
       </Card>

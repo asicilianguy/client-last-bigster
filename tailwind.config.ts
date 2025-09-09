@@ -28,8 +28,8 @@ const config = {
         foreground: "hsl(var(--foreground))",
 
         // BigSter palette
-        "bigster-primary": "#fef19a",
-        "bigster-background": "#efedde",
+        "bigster-primary": "#fde01c",
+        "bigster-background": "#efeac7",
         "bigster-text": "#6c4e06",
         "bigster-primary-text": "#6c4e06",
         "bigster-surface": "#ffffff",

@@ -56,7 +56,7 @@ export function Header() {
         <div className="md:hidden ml-auto">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button size="icon">
                 <Menu className="h-6 w-6" />
                 <span className="sr-only">Menu</span>
               </Button>
@@ -93,7 +93,7 @@ export function Header() {
                 href={link.href}
                 className={`px-4 py-2 text-sm font-medium ${
                   "/" + pathname.split("/")[1] === "/" + link.href.split("/")[1]
-                    ? "bg-[#FEF19A] text-[#6C4E06] rounded-sm"
+                    ? "bg-bigster-background text-bigster-text rounded-sm"
                     : "text-[#333333] hover:bg-gray-100 rounded-sm"
                 }`}
               >
@@ -107,11 +107,8 @@ export function Header() {
       {/* User profile */}
       <div className="flex items-center">
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className="flex items-center gap-2 p-0 rounded-full focus-visible:ring-0 focus-visible:ring-offset-0"
-            >
+          <DropdownMenuTrigger asChild className="bg-transparent">
+            <Button className="flex items-center gap-2 p-0 rounded-full focus-visible:ring-0 focus-visible:ring-offset-0">
               <div className="flex items-center justify-center w-9 h-9 rounded-full bg-slate-100 text-slate-700 font-medium border border-[#d4d4d4]">
                 {user?.nome && user?.cognome
                   ? `${user.nome[0]}${user.cognome[0]}`

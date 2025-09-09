@@ -20,13 +20,15 @@ export function SelectionTabs({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
     >
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="w-full bg-transparent"
+      >
         <TabsList
-          className="w-full h-full p-1.5 grid grid-cols-4 gap-2 bg-white/80 backdrop-blur-sm rounded-xl shadow-lg border-0"
+          className="w-full h-full p-1.5 grid grid-cols-4 gap-2 bg-white/80 backdrop-blur-sm rounded-xl border-0"
           style={{
-            background:
-              "linear-gradient(135deg, rgba(254, 241, 154, 0.1) 0%, rgba(255, 255, 255, 0.95) 100%)",
-            boxShadow: "0px 8px 24px rgba(0, 0, 0, 0.06)",
+            background: "transparent",
           }}
         >
           {[
@@ -55,11 +57,11 @@ export function SelectionTabs({
               value={tab.id}
               className={cn(
                 "flex items-center gap-2 py-3 px-4 rounded-lg font-medium transition-all data-[state=active]:shadow-md border-2 border-transparent",
-                "hover:border-yellow-200 hover:bg-yellow-50/50",
                 "data-[state=active]:border-[#e4d72b] data-[state=active]:bg-gradient-to-r data-[state=active]:from-[rgba(228,215,43,0.15)] data-[state=active]:to-[rgba(254,241,154,0.15)]",
                 "data-[state=active]:text-[#6c4e06] data-[state=active]:font-semibold"
               )}
               style={{
+                // borderColor: activeTab === tab.id ? "#e4d72b" : "#e4d82b43",
                 borderColor: activeTab === tab.id ? "#e4d72b" : "transparent",
                 color: activeTab === tab.id ? "#6c4e06" : "#666666",
               }}

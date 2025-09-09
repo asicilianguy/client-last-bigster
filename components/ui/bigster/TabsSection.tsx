@@ -96,9 +96,8 @@ export function TabsSection({
         <TabsList
           className="grid w-full h-full grid-cols-4 p-2 shadow-lg border-0 rounded-2xl"
           style={{
-            background:
-              "linear-gradient(135deg, rgba(254, 241, 154, 0.2) 0%, rgba(255, 255, 255, 0.9) 100%)",
-            boxShadow: "0px 8px 32px rgba(0, 0, 0, 0.08)",
+            background: "transparent",
+            boxShadow: "none",
           }}
         >
           <TabsTrigger
