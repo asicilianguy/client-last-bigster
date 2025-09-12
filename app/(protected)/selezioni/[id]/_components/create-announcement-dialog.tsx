@@ -6,15 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useCreateAnnouncementMutation } from "@/lib/redux/features/announcements/announcementsApiSlice";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { DialogFooter } from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -34,7 +26,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import toast from "react-hot-toast";
-import { PlusCircle } from "lucide-react";
+import { Check, PlusIcon } from "lucide-react";
+import CustomDialog from "@/components/ui/bigster/CustomDialog";
 
 // FIX: Align schema with backend DTO (use 'piattaforma' instead of 'canale')
 const announcementSchema = z.object({
@@ -79,20 +72,18 @@ export function CreateAnnouncementDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <PlusCircle className="mr-2 h-4 w-4" />
+    <>
+      <div className="w-full flex justify-end">
+        <Button onClick={() => setOpen(true)}>
+          <PlusIcon className="h-4 w-4 font-bold" />
           Crea Annuncio
         </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Crea Nuovo Annuncio</DialogTitle>
-          <DialogDescription>
-            Compila i dettagli per il nuovo annuncio.
-          </DialogDescription>
-        </DialogHeader>
+      </div>
+      <CustomDialog
+        isOpen={open}
+        onClose={() => setOpen(false)}
+        title="Crea Nuovo Annuncio"
+      >
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -153,13 +144,14 @@ export function CreateAnnouncementDialog({
               )}
             />
             <DialogFooter>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? <Spinner /> : "Crea Annuncio"}
+              <Button variant="secondary" type="submit" disabled={isLoading}>
+                <Check className="h-4 w-4" />
+                {isLoading ? <Spinner /> : "Conferma"}
               </Button>
             </DialogFooter>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </CustomDialog>
+    </>
   );
 }

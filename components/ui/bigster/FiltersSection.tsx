@@ -124,7 +124,7 @@ export function FiltersSection({
             <DialogTrigger asChild>
               <Button
                 variant="outline"
-                className="relative border-none font-medium px-3 py-2.5 rounded-none bg-transparent"
+                className="relative !border-none font-medium px-3 py-2.5 rounded-none bg-transparent"
                 style={{
                   borderColor: "transparent",
                   backgroundColor: "rgba(255, 255, 255, 0.8)",

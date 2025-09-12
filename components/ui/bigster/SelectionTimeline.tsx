@@ -78,7 +78,7 @@ const statusConfig = {
   [SelectionStatus.APPROVATA]: {
     label: "Approvata",
     icon: CheckCircle,
-    color: "#e4d72b",
+    color: "#6c4e06",
     description: "Approvata dal CEO",
   },
   [SelectionStatus.IN_CORSO]: {
@@ -90,7 +90,7 @@ const statusConfig = {
   [SelectionStatus.ANNUNCI_PUBBLICATI]: {
     label: "Annunci",
     icon: FileText,
-    color: "#e4d72b",
+    color: "#6c4e06",
     description: "Annunci pubblicati",
   },
   [SelectionStatus.CANDIDATURE_RICEVUTE]: {
@@ -102,7 +102,7 @@ const statusConfig = {
   [SelectionStatus.COLLOQUI_IN_CORSO]: {
     label: "Colloqui",
     icon: MessageSquare,
-    color: "#e4d72b",
+    color: "#6c4e06",
     description: "Colloqui in corso",
   },
   [SelectionStatus.COLLOQUI_CEO]: {

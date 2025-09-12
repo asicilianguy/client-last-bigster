@@ -6,31 +6,13 @@ import { useGetDepartmentsQuery } from "@/lib/redux/features/departments/departm
 import { useGetAllProfessionalFiguresQuery } from "@/lib/redux/features/professional-figures/professionalFiguresApiSlice";
 import { useUserRole } from "@/hooks/use-user-role";
 import Link from "next/link";
-import {
-  PlusCircle,
-  Users,
-  FileText,
-  ArrowRight,
-  Briefcase,
-  Building,
-  Search,
-  Filter,
-  SlidersHorizontal,
-  TrendingUp,
-  Clock,
-  CheckCircle,
-  AlertTriangle,
-  ChevronDown,
-} from "lucide-react";
+import { PlusCircle, Briefcase, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { motion } from "framer-motion";
 import { SelectionCard } from "@/components/ui/bigster/SelectionCard";
 import { EmptyState } from "@/components/ui/bigster/EmptyState";
-import { SectionHeader } from "@/components/ui/bigster/SectionHeader";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { FiltersSection } from "@/components/ui/bigster/FiltersSection";
-import { SelectionTabs } from "@/components/ui/bigster/SelectionTabs";
 import { CreateSelectionModal } from "./[id]/_components/create-selection-modal";
 import { User } from "@/types";
 
@@ -214,28 +196,6 @@ export default function SelezioniDashboardPage() {
 
   return (
     <div className="space-y-6  animate-fade-in-up">
-      {/* Header Section */}
-      {/* <SectionHeader
-        title="Dashboard Selezioni"
-        action={
-          canCreateSelection && (
-            <div>
-              <Button onClick={() => setIsModalOpen(true)}>
-                <PlusCircle className="h-4 w-4 mr-2" />
-                Nuova Selezione
-              </Button>
-
-              <CreateSelectionModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSuccess={() => {}}
-                userData={user as User}
-              />
-            </div>
-          )
-        }
-      /> */}
-
       {/* Filters and Search */}
       <motion.div
         style={{
@@ -272,7 +232,7 @@ export default function SelezioniDashboardPage() {
               onClick={() => setIsModalOpen(true)}
               className="flex items-center gap-2.5 px-2.5 py-2.5 border-none font-medium text-[15px] bg-bigster-primary text-bigster-text"
             >
-              <PlusCircle className="h-4 w-4" />
+              <PlusIcon className="h-4 w-4 font-bold" />
               Nuova Selezione
             </button>
 

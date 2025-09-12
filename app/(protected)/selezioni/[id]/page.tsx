@@ -161,7 +161,6 @@ const SelectionActions = ({
     useGetUsersByRoleQuery("RISORSA_UMANA");
   const [selectedHr, setSelectedHr] = useState<string | null>(null);
 
-  // Use the useSelectionPermissions hook with the user passed as parameter
   const { canApprove, canAssignHR } = useSelectionPermissions(selection, user);
 
   const handleApprove = async () => {
@@ -189,87 +188,48 @@ const SelectionActions = ({
     }
   };
 
-  if (
-    !canApprove &&
-    !canAssignHR &&
-    !(selection.stato === "APPROVATA" && selection.risorsa_umana_id)
-  ) {
-    return null;
-  }
-
   return (
-    <Card className="shadow-sm border-0">
-      <CardHeader>
-        <CardTitle>Azioni Rapide</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <Card className="!border-outline">
+      <CardContent className="space-y-4 pt-6">
         {canApprove && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="overflow-hidden rounded-xl border-0 mb-6"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(234, 179, 8, 0.08) 0%, rgba(255, 255, 255, 0.95) 100%)",
-              boxShadow: "0px 8px 24px rgba(234, 179, 8, 0.12)",
-            }}
+            transition={{ duration: 0.3 }}
+            className="border mb-6 rounded-none"
           >
-            {/* Header con gradiente */}
-            <div
-              className="px-6 py-4 border-b flex items-center gap-3"
-              style={{
-                background:
-                  "linear-gradient(90deg, rgba(234, 179, 8, 0.12) 0%, rgba(254, 240, 138, 0.12) 100%)",
-                borderColor: "rgba(234, 179, 8, 0.15)",
-              }}
-            >
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #eab308 0%, #fde047 100%)",
-                }}
-              >
-                <AlertTriangle className="h-5 w-5 text-white" />
-              </div>
+            {/* Header */}
+            <div className="px-6 py-4 border-b bg-bigster-background flex items-center gap-3">
               <div>
-                <h3 className="font-bold text-lg" style={{ color: "#854d0e" }}>
+                <h3 className="font-bold text-lg text-bigster-text">
                   In attesa di approvazione
                 </h3>
-                <p className="text-sm text-amber-600/80">
+                <p className="text-sm text-bigster-text">
                   Questa selezione richiede la tua revisione
                 </p>
               </div>
             </div>
 
             {/* Contenuto */}
-            <div className="p-6">
+            <div className="p-6 bg-white">
               <div className="flex flex-col gap-4">
                 <div className="flex items-start gap-3">
-                  <div className="rounded-full bg-amber-100 p-1 mt-0.5">
-                    <Info className="h-4 w-4 text-amber-600" />
+                  <div className="bg-bigster-primary mt-1 rounded-full">
+                    <Info className="h-4 w-4 text-bigster-text" />
                   </div>
-                  <p className="text-amber-800">
+                  <p className="text-bigster-text">
                     Questa selezione è stata creata da un responsabile di
                     reparto e necessita della tua approvazione per poter
                     procedere con il processo di selezione.
                   </p>
                 </div>
 
-                {/* Button con effetti migliorati */}
+                {/* Button */}
                 <Button
                   onClick={handleApprove}
                   disabled={isApproving}
-                  className={`mt-2 rounded-xl py-2.5 px-4 transition-all duration-300 shadow-sm transform 
-                     ${
-                       !isApproving
-                         ? "hover:shadow-md hover:-translate-y-0.5"
-                         : ""
-                     }
-                     ${
-                       isApproving ? "bg-amber-400" : "bg-amber-500"
-                     } text-white`}
+                  variant="outline"
+                  className={`mt-2 rounded-none py-2.5 px-4`}
                 >
                   {isApproving ? (
                     <div className="flex items-center justify-center gap-2">
@@ -283,249 +243,184 @@ const SelectionActions = ({
                     </div>
                   )}
                 </Button>
-
-                {/* Nota aggiuntiva */}
-                <div className="mt-1 text-xs text-amber-600/70 flex items-center gap-2">
-                  <AlertCircle className="h-3.5 w-3.5 text-amber-400" />
-                  <span>
-                    Assicurati di aver rivisto attentamente i dettagli della
-                    selezione prima di approvarla.
-                  </span>
-                </div>
               </div>
             </div>
           </motion.div>
         )}
 
-        {canAssignHR && !selection.risorsa_umana_id && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="overflow-hidden rounded-xl border-0 mb-6"
-            style={{
-              background:
-                "linear-gradient(135deg, rgba(46, 126, 255, 0.08) 0%, rgba(255, 255, 255, 0.95) 100%)",
-              boxShadow: "0px 8px 24px rgba(46, 126, 255, 0.12)",
-            }}
-          >
-            {/* Header con gradiente */}
-            <div
-              className="px-6 py-4 border-b flex items-center gap-3"
-              style={{
-                background:
-                  "linear-gradient(90deg, rgba(46, 126, 255, 0.12) 0%, rgba(214, 230, 255, 0.12) 100%)",
-                borderColor: "rgba(46, 126, 255, 0.15)",
-              }}
-            >
-              <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #2e7eff 0%, #75a9ff 100%)",
-                }}
-              >
-                <UserPlus className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h3 className="font-bold text-lg" style={{ color: "#1e429f" }}>
-                  Assegna una Risorsa Umana
-                </h3>
-                <p className="text-sm text-blue-600/80">
-                  La selezione è pronta per essere gestita
-                </p>
-              </div>
-            </div>
-
-            {/* Contenuto */}
-            <div className="p-6">
-              <div className="flex flex-col gap-4">
-                <p className="text-blue-800">
-                  Seleziona un membro del team HR per avviare il processo di
-                  selezione e gestire le candidature.
-                </p>
-
-                {/* Select con stile migliorato */}
-                <div className="relative">
-                  <Select
-                    onValueChange={setSelectedHr}
-                    disabled={isLoadingHrUsers}
-                  >
-                    <SelectTrigger
-                      className="w-full border-2 rounded-xl shadow-sm transition-all duration-200 hover:shadow-md py-3 pl-12"
-                      style={{
-                        borderColor: "rgba(46, 126, 255, 0.2)",
-                        backgroundColor: "rgba(255, 255, 255, 0.8)",
-                      }}
-                    >
-                      <SelectValue placeholder="Seleziona un HR Manager" />
-                    </SelectTrigger>
-                    <SelectContent className="shadow-xl border-0 rounded-xl">
-                      {isLoadingHrUsers ? (
-                        <div className="px-4 py-3 flex items-center justify-center">
-                          <Spinner className="h-4 w-4 mr-2 text-blue-600" />
-                          <span>Caricamento...</span>
-                        </div>
-                      ) : hrUsersData?.data.length === 0 ? (
-                        <div className="px-4 py-3 text-center text-gray-500">
-                          Nessun HR disponibile
-                        </div>
-                      ) : isResponsabileHR ? (
-                        [...hrUsersData?.data, user].map((hr: any) => (
-                          <SelectItem
-                            key={hr.id}
-                            value={hr.id.toString()}
-                            className="rounded-lg py-2.5 px-3 hover:bg-blue-50 cursor-pointer"
-                          >
-                            {hr.nome} {hr.cognome}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        hrUsersData?.data.map((hr: any) => (
-                          <SelectItem
-                            key={hr.id}
-                            value={hr.id.toString()}
-                            className="rounded-lg py-2.5 px-3 hover:bg-blue-50 cursor-pointer"
-                          >
-                            {hr.nome} {hr.cognome}
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-blue-500" />
-                </div>
-
-                {/* Button con effetti migliorati */}
-                <Button
-                  onClick={handleAssignHr}
-                  disabled={isAssigning || !selectedHr}
-                  className={`rounded-xl py-2.5 px-4 transition-all duration-300 shadow-sm transform 
-                     ${
-                       selectedHr && !isAssigning
-                         ? "hover:shadow-md hover:-translate-y-0.5"
-                         : ""
-                     }
-                     ${!selectedHr ? "opacity-60 cursor-not-allowed" : ""}
-                     ${isAssigning ? "bg-blue-400" : "bg-blue-600"} text-white`}
-                >
-                  {isAssigning ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <Spinner className="h-4 w-4 text-white" />
-                      <span>Assegnazione in corso...</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center gap-2">
-                      <UserPlus className="h-4 w-4" />
-                      <span>Assegna HR</span>
-                    </div>
-                  )}
-                </Button>
-
-                {/* Informazioni aggiuntive */}
-                <div className="mt-2 text-xs text-blue-600/70 flex items-center gap-2">
-                  <Info className="h-3.5 w-3.5 text-blue-400" />
-                  <span>
-                    Una volta assegnato, l'HR riceverà una notifica e potrà
-                    iniziare a gestire la selezione.
-                  </span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {selection.stato === SelectionStatus.IN_CORSO &&
-          selection.risorsa_umana_id && (
-            <Alert className="border-green-400/50 bg-green-400/10 text-green-700">
-              <CheckCircle className="h-4 w-4 !text-green-600" />
-              <AlertTitle className="font-semibold">
-                Pronta per Iniziare!
-              </AlertTitle>
-              <AlertDescription>
-                La risorsa umana {selection.risorsa_umana.nome}{" "}
-                {selection.risorsa_umana.cognome} può ora procedere con la
-                creazione degli annunci.
-              </AlertDescription>
-            </Alert>
-          )}
-
-        {/* Messaggio di default quando non ci sono azioni disponibili */}
-        {!canApprove &&
-          !(canAssignHR && !selection.risorsa_umana_id) &&
-          !(
-            selection.stato === SelectionStatus.IN_CORSO &&
-            selection.risorsa_umana_id
-          ) && (
+        {canAssignHR &&
+          selection.stato !== SelectionStatus.CREATA &&
+          selection.stato !== SelectionStatus.ANNULLATA &&
+          selection.stato !== SelectionStatus.CHIUSA && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-              className="overflow-hidden rounded-xl border-0"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(148, 163, 184, 0.08) 0%, rgba(255, 255, 255, 0.95) 100%)",
-                boxShadow: "0px 4px 16px rgba(148, 163, 184, 0.12)",
-              }}
+              transition={{ duration: 0.3 }}
+              className="border mb-6 rounded-none"
             >
-              <div
-                className="px-6 py-4 border-b flex items-center gap-3"
-                style={{
-                  background:
-                    "linear-gradient(90deg, rgba(148, 163, 184, 0.12) 0%, rgba(226, 232, 240, 0.12) 100%)",
-                  borderColor: "rgba(148, 163, 184, 0.15)",
-                }}
-              >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, #94a3b8 0%, #cbd5e1 100%)",
-                  }}
-                >
-                  <ClipboardCheck className="h-5 w-5 text-white" />
-                </div>
+              {/* Header */}
+              <div className="px-6 py-4 border-b bg-bigster-background flex items-center gap-3">
                 <div>
-                  <h3 className="font-bold text-lg text-slate-700">
-                    Nessuna azione richiesta
+                  <h3 className="font-bold text-lg text-bigster-text">
+                    {!selection.risorsa_umana_id
+                      ? "Assegna una Risorsa Umana"
+                      : "Riassegna Risorsa Umana"}
                   </h3>
-                  <p className="text-sm text-slate-500">
-                    Questa selezione sta procedendo normalmente
+                  <p className="text-sm text-bigster-text">
+                    {selection.stato === SelectionStatus.APPROVATA
+                      ? "La selezione è pronta per essere gestita"
+                      : "Gestisci la selezione con un altro HR"}
                   </p>
                 </div>
               </div>
 
-              <div className="p-6">
-                <div className="flex items-start gap-3">
-                  <div className="rounded-full bg-slate-100 p-1 mt-0.5">
-                    <Info className="h-4 w-4 text-slate-500" />
+              {/* Contenuto */}
+              <div className="p-6 bg-white">
+                <div className="flex flex-col gap-4">
+                  <p className="text-bigster-text">
+                    {selection.stato === SelectionStatus.APPROVATA
+                      ? "Seleziona un membro del team HR per avviare il processo di selezione e gestire le candidature."
+                      : selection.risorsa_umana_id
+                      ? `Attualmente assegnata a ${selection.risorsa_umana.nome} ${selection.risorsa_umana.cognome}. Puoi riassegnare questa selezione a un altro membro del team HR.`
+                      : "Seleziona un membro del team HR per gestire questa selezione."}
+                  </p>
+
+                  {/* Select */}
+                  <div className="relative">
+                    <Select
+                      onValueChange={setSelectedHr}
+                      disabled={isLoadingHrUsers}
+                    >
+                      <SelectTrigger className="w-full border rounded-none py-3 pl-12 bg-white">
+                        <SelectValue placeholder="Seleziona un HR Manager" />
+                      </SelectTrigger>
+                      <SelectContent className="border rounded-none">
+                        {isLoadingHrUsers ? (
+                          <div className="px-4 py-3 flex items-center justify-center">
+                            <Spinner className="h-4 w-4 mr-2 text-bigster-text" />
+                            <span>Caricamento...</span>
+                          </div>
+                        ) : hrUsersData?.data.length === 0 ? (
+                          <div className="px-4 py-3 text-center text-gray-500">
+                            Nessun HR disponibile
+                          </div>
+                        ) : isResponsabileHR ? (
+                          [...hrUsersData?.data, user].map((hr: any) => (
+                            <SelectItem
+                              key={hr.id}
+                              value={hr.id.toString()}
+                              className="py-2.5 px-3 hover:bg-blue-50 cursor-pointer"
+                            >
+                              {hr.nome} {hr.cognome}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          hrUsersData?.data.map((hr: any) => (
+                            <SelectItem
+                              key={hr.id}
+                              value={hr.id.toString()}
+                              className="py-2.5 px-3 hover:bg-blue-50 cursor-pointer"
+                            >
+                              {hr.nome} {hr.cognome}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <User className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-bigster-text" />
                   </div>
-                  <div className="space-y-3">
-                    <p className="text-slate-700">
-                      {(() => {
-                        switch (selection.stato) {
-                          case "CHIUSA":
-                            return "Questa selezione è stata completata. Non sono richieste ulteriori azioni.";
-                          case "ANNULLATA":
-                            return "Questa selezione è stata annullata. Non sono richieste ulteriori azioni.";
-                          case "ANNUNCI_PUBBLICATI":
-                            return "Gli annunci per questa selezione sono stati pubblicati. Il processo è attualmente gestito dalla risorsa umana assegnata.";
-                          case "CANDIDATURE_RICEVUTE":
-                            return "Sono state ricevute candidature per questa selezione. La risorsa umana assegnata sta gestendo il processo di screening.";
-                          case "COLLOQUI_IN_CORSO":
-                            return "I colloqui per questa selezione sono in corso. La risorsa umana assegnata sta gestendo il processo.";
-                          case "COLLOQUI_CEO":
-                            return "I colloqui finali con il CEO per questa selezione sono in corso.";
-                          default:
-                            return "Non ci sono azioni da intraprendere in questo momento. Lo stato della selezione è attualmente gestito dal personale assegnato.";
-                        }
-                      })()}
-                    </p>
+
+                  {/* Button */}
+                  <Button
+                    onClick={handleAssignHr}
+                    variant={selectedHr ? "default" : "outline"}
+                    disabled={isAssigning || !selectedHr}
+                    className={`rounded-none py-2.5 px-4 transition-all
+               ${!selectedHr ? "opacity-60 cursor-not-allowed" : ""}`}
+                  >
+                    {isAssigning ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Spinner className="h-4 w-4 text-white" />
+                        <span>Assegnazione in corso...</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-2">
+                        <UserPlus className="h-4 w-4" />
+                        <span>
+                          {selection.risorsa_umana_id
+                            ? "Riassegna HR"
+                            : "Assegna HR"}
+                        </span>
+                      </div>
+                    )}
+                  </Button>
+
+                  {/* Info */}
+                  <div className="mt-2 text-xs text-bigster-text flex items-center gap-2">
+                    <Info className="h-3.5 w-3.5 text-bigster-text" />
+                    <span>
+                      {selection.stato === SelectionStatus.APPROVATA
+                        ? "Una volta assegnato, l'HR riceverà una notifica e potrà iniziare a gestire la selezione."
+                        : selection.risorsa_umana_id
+                        ? "La riassegnazione trasferirà tutte le responsabilità di questa selezione al nuovo HR scelto."
+                        : "Una volta assegnato, l'HR riceverà una notifica e potrà iniziare a gestire la selezione."}
+                    </span>
                   </div>
                 </div>
               </div>
             </motion.div>
           )}
+
+        {/* Messaggio di default */}
+        {!canApprove && !canAssignHR && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="border rounded-none"
+          >
+            <div className="px-6 py-4 border-b bg-bigster-background flex items-center gap-3">
+              <div>
+                <h3 className="font-bold text-lg text-bigster-text">
+                  Nessuna azione richiesta
+                </h3>
+                <p className="text-sm text-bigster-text">
+                  Questa selezione sta procedendo normalmente
+                </p>
+              </div>
+            </div>
+
+            <div className="p-6 bg-white">
+              <div className="flex items-start gap-3">
+                <div className="bg-bigster-primary mt-1 rounded-full">
+                  <Info className="h-4 w-4 text-bigster-text" />
+                </div>
+                <div>
+                  <p className="text-bigster-text">
+                    {(() => {
+                      switch (selection.stato) {
+                        case "CHIUSA":
+                          return "Questa selezione è stata completata. Non sono richieste ulteriori azioni.";
+                        case "ANNULLATA":
+                          return "Questa selezione è stata annullata. Non sono richieste ulteriori azioni.";
+                        case "ANNUNCI_PUBBLICATI":
+                          return "Gli annunci per questa selezione sono stati pubblicati. Il processo è attualmente gestito dalla risorsa umana assegnata.";
+                        case "CANDIDATURE_RICEVUTE":
+                          return "Sono state ricevute candidature per questa selezione. La risorsa umana assegnata sta gestendo il processo di screening.";
+                        case "COLLOQUI_IN_CORSO":
+                          return "I colloqui per questa selezione sono in corso. La risorsa umana assegnata sta gestendo il processo.";
+                        case "COLLOQUI_CEO":
+                          return "I colloqui finali con il CEO per questa selezione sono in corso.";
+                        default:
+                          return "Non ci sono azioni da intraprendere in questo momento. Lo stato della selezione è attualmente gestito dal personale assegnato.";
+                      }
+                    })()}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
       </CardContent>
     </Card>
   );
@@ -575,8 +470,6 @@ export default function SelezioneDetailPage() {
   const { canCreateAnnouncements, canManageApplications } =
     useSelectionPermissions(selection, user);
 
-  console.log({ canCreateAnnouncements, canManageApplications });
-
   return (
     <div className="animate-fade-in-up space-y-6">
       <Breadcrumb name="Selezioni" path="/selezioni" />
@@ -593,29 +486,26 @@ export default function SelezioneDetailPage() {
           </div>
           <div className="lg:col-span-3">
             <Tabs defaultValue="announcements" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="announcements">
-                  <FileSignature className="mr-2 h-4 w-4" />
+              <TabsList className="flex gap-[10px] w-fit">
+                <TabsTrigger
+                  value="announcements"
+                  className="p-[10px] w-fit font-semibold !border-none data-[state=active]:bg-primary data-[state=active]:text-white data-[state=inactive]:bg-transparent data-[state=inactive]:text-bigster-text"
+                >
                   Annunci
                 </TabsTrigger>
                 <TabsTrigger
                   value="applications"
                   disabled={!canManageApplications}
+                  className="p-[10px] w-fit font-semibold !border-none data-[state=active]:bg-primary data-[state=active]:text-white data-[state=inactive]:bg-transparent data-[state=inactive]:text-bigster-text"
                 >
-                  <Users className="mr-2 h-4 w-4" />
                   Candidature
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="announcements">
-                {canCreateAnnouncements ? (
-                  <AnnouncementsSection selectionId={selection.id} />
-                ) : (
-                  <Card className="shadow-sm border-0 mt-4">
-                    <CardContent className="pt-6 text-center text-muted-foreground">
-                      Non hai i permessi per gestire gli annunci.
-                    </CardContent>
-                  </Card>
-                )}
+                <AnnouncementsSection
+                  selectionId={selection.id}
+                  canCreateAnnouncements={canCreateAnnouncements}
+                />
               </TabsContent>
               <TabsContent value="applications">
                 {canManageApplications ? (

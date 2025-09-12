@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
-import { PlusCircle, X } from "lucide-react";
+import { Check, CheckCheckIcon, PlusCircle, X } from "lucide-react";
 import { User } from "@/types";
 import { useUserRole } from "@/hooks/use-user-role";
 import {
@@ -267,6 +267,7 @@ export function CreateSelectionModal({
 
         <DialogFooter className="mt-6 gap-2">
           <Button type="submit" variant="secondary" disabled={isCreating}>
+            <Check className="h-4 w-4" />
             {isCreating && <Spinner className="mr-2 h-4 w-4" />}
             Conferma
           </Button>

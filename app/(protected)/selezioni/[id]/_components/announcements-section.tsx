@@ -9,6 +9,7 @@ import { PlusCircle, FileText, ExternalLink, Users, Edit } from "lucide-react";
 import { CreateAnnouncementDialog } from "./create-announcement-dialog";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { useSelectionPermissions } from "@/hooks/use-selection-permissions";
 
 const AnnouncementStatusBadge = ({ status }: { status: string }) => {
   const statusConfig = {
@@ -36,33 +37,35 @@ const AnnouncementStatusBadge = ({ status }: { status: string }) => {
   };
 
   return (
-    <Badge variant="outline" className={cn("font-medium", config.color)}>
+    <Badge
+      variant="outline"
+      className="border-none rounded-none text-bigster-text bg-bigster-background"
+    >
       {config.label}
     </Badge>
   );
 };
 
-export function AnnouncementsSection({ selectionId }: { selectionId: number }) {
+export function AnnouncementsSection({
+  selectionId,
+  canCreateAnnouncements,
+}: {
+  selectionId: number;
+  canCreateAnnouncements: boolean;
+}) {
   const { data, error, isLoading } =
     useGetAnnouncementsBySelectionIdQuery(selectionId);
 
   return (
-    <Card className="shadow-sm border-0 h-full mt-4">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle className="text-lg">Annunci</CardTitle>
-        </div>
-        <CreateAnnouncementDialog selectionId={selectionId}>
-          <Button
-            size="sm"
-            className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
-          >
-            <PlusCircle />
-            Crea
-          </Button>
-        </CreateAnnouncementDialog>
-      </CardHeader>
-      <CardContent>
+    <Card className="border-0 h-full mt-4 !border-outline">
+      {canCreateAnnouncements && (
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CreateAnnouncementDialog selectionId={selectionId} />
+        </CardHeader>
+      )}
+      <CardContent
+        className={`${canCreateAnnouncements ? "pt-0" : "pt-6 "}`}
+      >
         {isLoading && (
           <div className="flex justify-center p-8">
             <Spinner className="text-primary" />
@@ -82,7 +85,7 @@ export function AnnouncementsSection({ selectionId }: { selectionId: number }) {
               data.data.map((announcement: any) => (
                 <div
                   key={announcement.id}
-                  className="rounded-lg border bg-background p-4 transition-all hover:border-primary/50"
+                  className="bg-background p-4 !border-outline"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -91,7 +94,17 @@ export function AnnouncementsSection({ selectionId }: { selectionId: number }) {
                         {announcement.piattaforma.replace(/_/g, " ")}
                       </p>
                     </div>
-                    <AnnouncementStatusBadge status={announcement.stato} />
+                    <Badge
+                      variant="outline"
+                      className="font-semibold text-xs px-3 py-1 border-2 whitespace-nowrap text-bigster-text"
+                      style={{
+                        backgroundColor: "white",
+                        borderColor: "#6c4e06",
+                      }}
+                    >
+                      {announcement.stato.charAt(0).toUpperCase() +
+                        announcement.stato.slice(1).toLowerCase()}
+                    </Badge>{" "}
                   </div>
                   <div className="mt-4 flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
@@ -102,7 +115,7 @@ export function AnnouncementsSection({ selectionId }: { selectionId: number }) {
                 </div>
               ))
             ) : (
-              <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed py-12 text-center">
+              <div className="flex flex-col items-center justify-center py-12 text-center">
                 <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-4 text-lg font-semibold">
                   Nessun annuncio creato

@@ -94,6 +94,7 @@
 
   .border-outline {
     border: 1px solid #d4d4d4;
+    border-radius: 0px;
   }
 
   .border-bigster {

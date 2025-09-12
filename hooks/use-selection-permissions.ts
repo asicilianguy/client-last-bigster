@@ -20,16 +20,16 @@ export function useSelectionPermissions(selection: any, user: any) {
   const canEdit = isDeveloper || isOwner;
 
   // Check if the user can approve the selection
-  const canApprove = (isCEO || isDeveloper) && selection?.stato === "CREATA";
-
-  console.log({ user });
-
-  // Check if the user can assign HR to the selection
-  const canAssignHR = user?.reparto_id === 12 || isDeveloper;
+  const canApprove = isCEO && selection?.stato === "CREATA";
 
   const isResponsabileRisorseUmane =
     user?.reparto_id === 12 && user.ruolo === UserRole.RESPONSABILE_REPARTO;
   console.log({ isResponsabileRisorseUmane });
+
+  console.log({ user, selection });
+
+  const canAssignHR =
+    isResponsabileRisorseUmane || selection?.risorsa_umana_id === user.id;
 
   //l Check if the user can create announcements for the selection
   const canCreateAnnouncements =

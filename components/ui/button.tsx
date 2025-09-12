@@ -11,8 +11,7 @@ const buttonVariants = cva(
       variant: {
         default: "bg-bigster-primary text-bigster-text",
         destructive: "bg-destructive text-destructive-foreground",
-        outline:
-          "border !border-[#6c4e06] text-bigster-text border-input bg-transparent",
+        outline: "!border-bigster text-bigster-text border-input bg-transparent",
         secondary: "bg-bigster-background text-bigster-text",
         link: "text-primary underline-oWffset-4",
       },

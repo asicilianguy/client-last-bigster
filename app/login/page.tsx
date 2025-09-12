@@ -22,6 +22,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import CustomDialog from "@/components/ui/bigster/CustomDialog";
 
 const loginSchema = z.object({
   email: z.string().email("Email non valida"),
@@ -204,7 +205,12 @@ export default function LoginPage() {
               )}
             </div>
             <div className="flex gap-2">
-              <Button type="submit" className="flex-1" disabled={isLoading}>
+              <Button
+                type="submit"
+                variant="default"
+                className="flex-1"
+                disabled={isLoading}
+              >
                 {isLoading ? (
                   <Spinner className="mr-2 h-4 w-4" />
                 ) : (
@@ -214,7 +220,7 @@ export default function LoginPage() {
               </Button>
               <Button
                 type="button"
-                variant="outline"
+                variant="default"
                 onClick={() => setShowUserSelector(!showUserSelector)}
                 className="px-3"
               >
@@ -225,58 +231,38 @@ export default function LoginPage() {
         </CardContent>
       </Card>
 
-      {/* User Selector Popup */}
-      {showUserSelector && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-md shadow-xl animate-in fade-in-50 zoom-in-95 duration-200">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div>
-                <CardTitle className="text-xl">Seleziona un utente</CardTitle>
-                <CardDescription>
-                  Scegli un utente per compilare automaticamente
-                </CardDescription>
+      <CustomDialog
+        isOpen={showUserSelector}
+        onClose={() => setShowUserSelector(false)}
+        title="Seleziona un utente"
+      >
+        <div className="space-y-2 max-h-[60vh]">
+          {availableUsers.map((user, index) => (
+            <div
+              key={index}
+              onClick={() => fillCredentials(user)}
+              className="flex items-center gap-3 p-3 rounded-md hover:bg-slate-100 cursor-pointer border transition-colors last:mb-4"
+            >
+              <div className="flex-shrink-0 bg-gray-100 rounded-full p-2">
+                <Users size={20} className="text-gray-600" />
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowUserSelector(false)}
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm">{user.name}</p>
+                <p className="text-xs text-gray-500 truncate">{user.email}</p>
+              </div>
+              <Badge
+                variant="outline"
+                className={cn("font-medium", user.roleBadgeColor)}
               >
-                <X size={18} />
-              </Button>
-            </CardHeader>
-            <CardContent className="max-h-[60vh] overflow-y-auto">
-              <div className="space-y-2">
-                {availableUsers.map((user, index) => (
-                  <div
-                    key={index}
-                    onClick={() => fillCredentials(user)}
-                    className="flex items-center gap-3 p-3 rounded-md hover:bg-slate-100 cursor-pointer border transition-colors"
-                  >
-                    <div className="flex-shrink-0 bg-gray-100 rounded-full p-2">
-                      <Users size={20} className="text-gray-600" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{user.name}</p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {user.email}
-                      </p>
-                    </div>
-                    <Badge
-                      variant="outline"
-                      className={cn("font-medium", user.roleBadgeColor)}
-                    >
-                      {user.role}
-                    </Badge>
-                    <div className="flex-shrink-0 text-gray-400">
-                      <Key size={14} />
-                    </div>
-                  </div>
-                ))}
+                {user.role}
+              </Badge>
+              <div className="flex-shrink-0 text-gray-400">
+                <Key size={14} />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          ))}
         </div>
-      )}
+      </CustomDialog>
 
       <footer className="mt-8 text-center text-sm text-gray-500">
         <p>BigSter © 2025. All Rights Reserved.</p>

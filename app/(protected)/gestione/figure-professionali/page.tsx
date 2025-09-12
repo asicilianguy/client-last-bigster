@@ -1,35 +1,59 @@
-"use client"
+"use client";
 
-import { useGetAllProfessionalFiguresQuery } from "@/lib/redux/features/professional-figures/professionalFiguresApiSlice"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Spinner } from "@/components/ui/spinner"
-import { Button } from "@/components/ui/button"
-import { Edit, PlusCircle, Users, Building } from "lucide-react"
-import { FigureFormDialog } from "./_components/figure-form-dialog"
-import { Badge } from "@/components/ui/badge"
+import { useGetAllProfessionalFiguresQuery } from "@/lib/redux/features/professional-figures/professionalFiguresApiSlice";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Spinner } from "@/components/ui/spinner";
+import { Button } from "@/components/ui/button";
+import { Edit, PlusCircle, Users, Building } from "lucide-react";
+import { FigureFormDialog } from "./_components/figure-form-dialog";
+import { Badge } from "@/components/ui/badge";
+import WorkInProgressOverlay from "@/components/ui/bigster/WorkInProgressOverlay";
 
 export default function GestioneFigureProfessionaliPage() {
-  const { data, error, isLoading } = useGetAllProfessionalFiguresQuery({})
+  const { data, error, isLoading } = useGetAllProfessionalFiguresQuery({});
 
   if (isLoading) {
     return (
       <div className="flex h-[calc(100vh-10rem)] items-center justify-center">
         <Spinner className="h-10 w-10 text-primary" />
       </div>
-    )
+    );
   }
 
   if (error) {
-    return <div className="text-red-500">Errore nel caricamento delle figure professionali.</div>
+    return (
+      <div className="text-red-500">
+        Errore nel caricamento delle figure professionali.
+      </div>
+    );
   }
 
   return (
-    <Card className="shadow-sm border-0 animate-fade-in-up">
+    <Card className="shadow-sm border-0 animate-fade-in-up relative">
+      <WorkInProgressOverlay />
+
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-4">
         <div>
-          <CardTitle className="text-2xl font-bold tracking-tight">Figure Professionali</CardTitle>
-          <CardDescription>Crea, visualizza e modifica le figure professionali aziendali.</CardDescription>
+          <CardTitle className="text-2xl font-bold tracking-tight">
+            Figure Professionali
+          </CardTitle>
+          <CardDescription>
+            Crea, visualizza e modifica le figure professionali aziendali.
+          </CardDescription>
         </div>
         <FigureFormDialog>
           <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm">
@@ -92,5 +116,5 @@ export default function GestioneFigureProfessionaliPage() {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
