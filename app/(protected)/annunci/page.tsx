@@ -62,7 +62,7 @@ export default function AnnouncementsPage() {
       transition={{ duration: 0.5 }}
       className="p-4 sm:p-6 lg:p-8 relative"
     >
-      <WorkInProgressOverlay />
+      {/* <WorkInProgressOverlay /> */}
       <Card className="shadow-sm border-0">
         <CardHeader>
           <CardTitle className="text-2xl">Tutti gli Annunci</CardTitle>

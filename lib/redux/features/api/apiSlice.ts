@@ -19,11 +19,11 @@ export const apiSlice = createApi({
   baseQuery,
   tagTypes: [
     "Selection",
-    "Department",
     "ProfessionalFigure",
     "User",
     "Announcement",
     "Application",
+    "Company", // Aggiunto nuovo tag type
   ],
   endpoints: (builder) => ({}),
 });

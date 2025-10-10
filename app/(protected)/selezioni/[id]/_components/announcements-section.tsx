@@ -2,49 +2,11 @@
 
 import { useGetAnnouncementsBySelectionIdQuery } from "@/lib/redux/features/announcements/announcementsApiSlice";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { PlusCircle, FileText, ExternalLink, Users, Edit } from "lucide-react";
+import { FileText, Users, Calendar, Clock } from "lucide-react";
 import { CreateAnnouncementDialog } from "./create-announcement-dialog";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { useSelectionPermissions } from "@/hooks/use-selection-permissions";
-
-const AnnouncementStatusBadge = ({ status }: { status: string }) => {
-  const statusConfig = {
-    BOZZA: {
-      label: "Bozza",
-      color: "bg-gray-400/20 text-gray-600 border-gray-400/30",
-    },
-    PUBBLICATO: {
-      label: "Pubblicato",
-      color: "bg-green-400/20 text-green-600 border-green-400/30",
-    },
-    SCADUTO: {
-      label: "Scaduto",
-      color: "bg-orange-400/20 text-orange-600 border-orange-400/30",
-    },
-    CHIUSO: {
-      label: "Chiuso",
-      color: "bg-red-400/20 text-red-600 border-red-400/30",
-    },
-  };
-
-  const config = statusConfig[status as keyof typeof statusConfig] || {
-    label: status,
-    color: "bg-gray-400/20 text-gray-600 border-gray-400/30",
-  };
-
-  return (
-    <Badge
-      variant="outline"
-      className="border-none rounded-none text-bigster-text bg-bigster-background"
-    >
-      {config.label}
-    </Badge>
-  );
-};
 
 export function AnnouncementsSection({
   selectionId,
@@ -63,9 +25,7 @@ export function AnnouncementsSection({
           <CreateAnnouncementDialog selectionId={selectionId} />
         </CardHeader>
       )}
-      <CardContent
-        className={`${canCreateAnnouncements ? "pt-0" : "pt-6 "}`}
-      >
+      <CardContent className={`${canCreateAnnouncements ? "pt-0" : "pt-6 "}`}>
         {isLoading && (
           <div className="flex justify-center p-8">
             <Spinner className="text-primary" />
@@ -110,6 +70,26 @@ export function AnnouncementsSection({
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <Users className="h-4 w-4" />
                       <span>{announcement._count.candidature} Candidature</span>
+                    </div>
+                    <div className="flex gap-4">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        <span>
+                          {announcement.data_pubblicazione
+                            ? new Date(
+                                announcement.data_pubblicazione
+                              ).toLocaleDateString("it-IT")
+                            : "Non pubblicato"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Clock className="h-4 w-4" />
+                        <span>
+                          {new Date(
+                            announcement.data_creazione
+                          ).toLocaleDateString("it-IT")}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>

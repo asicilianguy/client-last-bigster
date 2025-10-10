@@ -31,9 +31,8 @@ export function Header() {
   const navLinks = [
     // { name: "Dashboard", href: "/" },
     { name: "Selezioni", href: "/selezioni" },
-    { name: "Annunci", href: "/annunci" },
     { name: "Candidature", href: "/candidature" },
-    { name: "Figure Professionali", href: "/gestione/figure-professionali" },
+    { name: "Figure Professionali", href: "/figure-professionali" },
   ];
 
   return (

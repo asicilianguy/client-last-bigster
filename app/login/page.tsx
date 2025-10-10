@@ -57,7 +57,7 @@ export default function LoginPage() {
     try {
       await login(data).unwrap();
       toast.success("Login effettuato con successo!");
-      router.push("/selezioni");
+      router.push("/accesso-fattureincloud");
     } catch (err: any) {
       toast.error(err.data?.message || "Credenziali non valide.");
     }

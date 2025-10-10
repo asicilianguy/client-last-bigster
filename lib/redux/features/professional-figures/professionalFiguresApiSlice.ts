@@ -1,99 +1,132 @@
 import { apiSlice } from "../api/apiSlice";
-
-export type ProfessionalFigure = {
-  id: number;
-  nome: string;
-  seniority: string;
-  descrizione: string;
-  prerequisiti: string;
-  reparto_id: number;
-  reparto?: {
-    id: number;
-    nome: string;
-  };
-};
+import type {
+  ProfessionalFigureResponse,
+  ProfessionalFigureDetail,
+  ProfessionalFigureStatsResponse,
+  CreateProfessionalFigurePayload,
+  UpdateProfessionalFigurePayload,
+  GetProfessionalFiguresQueryParams,
+  DeleteProfessionalFigureResponse,
+  Seniority,
+} from "@/types/professionalFigure";
 
 export const professionalFiguresApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getProfessionalFigures: builder.query<{ data: ProfessionalFigure[] }, void>(
-      {
-        query: () => "/professional-figures",
-        providesTags: (result) =>
-          result
-            ? [
-                ...result.data.map(({ id }) => ({
-                  type: "ProfessionalFigure" as const,
-                  id,
-                })),
-                { type: "ProfessionalFigure", id: "LIST" },
-              ]
-            : [{ type: "ProfessionalFigure", id: "LIST" }],
-      }
-    ),
-    getProfessionalFiguresByDepartment: builder.query<
-      { data: ProfessionalFigure[] },
-      number | null | undefined
+    // Get all professional figures with optional filters
+    getProfessionalFigures: builder.query<
+      ProfessionalFigureResponse[],
+      GetProfessionalFiguresQueryParams | void
     >({
-      query: (departmentId) => {
-        // Se departmentId è null o undefined, restituiamo tutte le figure professionali
-        if (departmentId === null || departmentId === undefined) {
-          return `/professional-figures`;
-        }
-        return `/professional-figures/department/${departmentId}`;
-      },
-      providesTags: (result, error, departmentId) => [
-        {
-          type: "ProfessionalFigure",
-          id: departmentId ? `DEPT_${departmentId}` : "LIST",
-        },
-        ...(result?.data
-          ? result.data.map(({ id }) => ({
+      query: (params) => ({
+        url: "/professional-figures",
+        params: params ?? undefined,
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({
+                type: "ProfessionalFigure" as const,
+                id,
+              })),
+              { type: "ProfessionalFigure", id: "LIST" },
+            ]
+          : [{ type: "ProfessionalFigure", id: "LIST" }],
+    }),
+
+    // Get professional figure by ID
+    getProfessionalFigureById: builder.query<ProfessionalFigureDetail, number>({
+      query: (id) => `/professional-figures/${id}`,
+      providesTags: (result, error, id) => [{ type: "ProfessionalFigure", id }],
+    }),
+
+    // Get professional figures by seniority
+    getProfessionalFiguresBySeniority: builder.query<
+      ProfessionalFigureResponse[],
+      Seniority
+    >({
+      query: (seniority) => `/professional-figures/by-seniority/${seniority}`,
+      providesTags: (result, error, seniority) => [
+        { type: "ProfessionalFigure", id: `SENIORITY_${seniority}` },
+        ...(result
+          ? result.map(({ id }) => ({
               type: "ProfessionalFigure" as const,
               id,
             }))
           : []),
       ],
     }),
-    getProfessionalFigureById: builder.query<
-      { data: ProfessionalFigure },
-      number
+
+    // Search professional figures
+    searchProfessionalFigures: builder.query<
+      ProfessionalFigureResponse[],
+      string
     >({
-      query: (id) => `/professional-figures/${id}`,
-      providesTags: (result, error, id) => [{ type: "ProfessionalFigure", id }],
+      query: (query) => `/professional-figures/search/${query}`,
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({
+                type: "ProfessionalFigure" as const,
+                id,
+              })),
+            ]
+          : [],
     }),
+
+    // Get professional figures statistics
+    getProfessionalFiguresStats: builder.query<
+      ProfessionalFigureStatsResponse,
+      void
+    >({
+      query: () => "/professional-figures/stats",
+      providesTags: [{ type: "ProfessionalFigure", id: "STATS" }],
+    }),
+
+    // Create professional figure
     createProfessionalFigure: builder.mutation<
-      { data: ProfessionalFigure },
-      Partial<ProfessionalFigure>
+      ProfessionalFigureDetail,
+      CreateProfessionalFigurePayload
     >({
       query: (newFigure) => ({
         url: "/professional-figures",
         method: "POST",
         body: newFigure,
       }),
-      invalidatesTags: [{ type: "ProfessionalFigure", id: "LIST" }],
+      invalidatesTags: [
+        { type: "ProfessionalFigure", id: "LIST" },
+        { type: "ProfessionalFigure", id: "STATS" },
+      ],
     }),
+
+    // Update professional figure
     updateProfessionalFigure: builder.mutation<
-      { data: ProfessionalFigure },
-      { id: number } & Partial<ProfessionalFigure>
+      ProfessionalFigureDetail,
+      { id: number } & UpdateProfessionalFigurePayload
     >({
-      query: ({ id, ...updateData }) => ({
+      query: ({ id, ...changes }) => ({
         url: `/professional-figures/${id}`,
         method: "PUT",
-        body: updateData,
+        body: changes,
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: "ProfessionalFigure", id },
         { type: "ProfessionalFigure", id: "LIST" },
+        { type: "ProfessionalFigure", id: "STATS" },
       ],
     }),
-    deleteProfessionalFigure: builder.mutation<{ message: string }, number>({
+
+    // Delete professional figure
+    deleteProfessionalFigure: builder.mutation<
+      DeleteProfessionalFigureResponse,
+      number
+    >({
       query: (id) => ({
         url: `/professional-figures/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: (result, error, id) => [
-        { type: "ProfessionalFigure", id },
+      invalidatesTags: [
         { type: "ProfessionalFigure", id: "LIST" },
+        { type: "ProfessionalFigure", id: "STATS" },
       ],
     }),
   }),
@@ -101,14 +134,16 @@ export const professionalFiguresApiSlice = apiSlice.injectEndpoints({
 
 export const {
   useGetProfessionalFiguresQuery,
-  useGetProfessionalFiguresByDepartmentQuery,
   useGetProfessionalFigureByIdQuery,
+  useGetProfessionalFiguresBySeniorityQuery,
+  useSearchProfessionalFiguresQuery,
+  useGetProfessionalFiguresStatsQuery,
   useCreateProfessionalFigureMutation,
   useUpdateProfessionalFigureMutation,
   useDeleteProfessionalFigureMutation,
 } = professionalFiguresApiSlice;
 
-// Alias per compatibilità con il codice esistente
+// Alias for backward compatibility
 export const {
   useGetProfessionalFiguresQuery: useGetAllProfessionalFiguresQuery,
 } = professionalFiguresApiSlice;
