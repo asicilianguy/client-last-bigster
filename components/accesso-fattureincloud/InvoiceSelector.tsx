@@ -54,11 +54,12 @@ export default function InvoiceSelector({
     isLoading,
     fetchInvoices,
     companyId: ficCompanyId,
+    startAuthorization,
   } = useFattureInCloudAuth({
     clientId: "MTtGdO45g82xfjERs9lGODOmXHRuaBWM",
     clientSecret:
       "XRm8t8N4l5jEwJMEKM6p02zYCJ6BJcxfDVSYgUeeRUVZMmxbFgfFowBetpT4Kig0",
-    redirectUri: `http://localhost:3001/accesso-fattureincloud`,
+    redirectUri: `http://localhost:3001/amministrazione`,
     companyIndex: 0,
     companyId: 709890,
   });
@@ -247,13 +248,31 @@ export default function InvoiceSelector({
   if (!isAuthenticated) {
     return (
       <Card className="shadow-bigster-card border border-bigster-border rounded-none">
-        <CardContent className="p-6 text-center">
-          <AlertCircle className="h-12 w-12 mx-auto text-bigster-text-muted mb-4" />
-          <h3 className="text-lg font-semibold text-bigster-text mb-2">
-            Connessione richiesta
-          </h3>
-          <p className="text-sm text-bigster-text-muted">
-            È necessario connettere Fatture in Cloud per visualizzare le fatture
+        <CardContent className="p-8 text-center space-y-6">
+          <div>
+            <AlertCircle className="h-16 w-16 mx-auto text-bigster-text-muted mb-4" />
+            <h3 className="text-lg font-semibold text-bigster-text mb-2">
+              Connessione a Fatture in Cloud richiesta
+            </h3>
+            <p className="text-sm text-bigster-text-muted max-w-md mx-auto">
+              Per visualizzare e selezionare le fatture è necessario
+              autenticarsi con Fatture in Cloud
+            </p>
+          </div>
+
+          <Button
+            onClick={() => {
+              startAuthorization({ companyId: companyId.toString() });
+            }}
+            className="rounded-none bg-bigster-primary text-bigster-primary-text border border-yellow-200 hover:opacity-90"
+          >
+            <Building className="mr-2 h-5 w-5" />
+            Connetti Fatture in Cloud
+          </Button>
+
+          <p className="text-xs text-bigster-text-muted">
+            Sarai reindirizzato alla pagina di autenticazione sicura di Fatture
+            in Cloud
           </p>
         </CardContent>
       </Card>

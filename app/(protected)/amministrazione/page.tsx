@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -9,7 +9,6 @@ import {
   User,
   Building2,
   FileText,
-  AlertCircle,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +25,14 @@ import { PackageType } from "@/types/enums";
 
 type CreationStep = "consultant" | "company" | "invoice" | "form";
 
+const STORAGE_KEY = "bigster_selection_draft";
+
+interface SelectionDraft {
+  consultantId: number | null;
+  companyId: number | null;
+  invoiceId: number | null;
+}
+
 export default function CreateSelectionPage() {
   const router = useRouter();
   const [createSelection, { isLoading }] = useCreateSelectionMutation();
@@ -34,6 +41,7 @@ export default function CreateSelectionPage() {
   const { data: consultantsData } = useGetConsultantsQuery();
   const { data: companies } = useGetCompaniesQuery();
 
+  // Inizializza gli stati dal localStorage
   const [selectedConsultantId, setSelectedConsultantId] = useState<
     number | null
   >(null);
@@ -44,6 +52,52 @@ export default function CreateSelectionPage() {
     null
   );
   const [currentStep, setCurrentStep] = useState<CreationStep>("consultant");
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Carica i dati dal localStorage all'avvio
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(STORAGE_KEY);
+    if (savedDraft) {
+      try {
+        const draft: SelectionDraft = JSON.parse(savedDraft);
+
+        if (draft.consultantId) setSelectedConsultantId(draft.consultantId);
+        if (draft.companyId) setSelectedCompanyId(draft.companyId);
+        if (draft.invoiceId) setSelectedInvoiceId(draft.invoiceId);
+
+        // Determina lo step iniziale in base ai dati salvati
+        if (draft.invoiceId) {
+          setCurrentStep("form");
+        } else if (draft.companyId) {
+          setCurrentStep("invoice");
+        } else if (draft.consultantId) {
+          setCurrentStep("company");
+        }
+      } catch (error) {
+        console.error("Errore nel caricamento della bozza:", error);
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+    setIsInitialized(true);
+  }, []);
+
+  // Sincronizza con localStorage quando cambiano i valori
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    const draft: SelectionDraft = {
+      consultantId: selectedConsultantId,
+      companyId: selectedCompanyId,
+      invoiceId: selectedInvoiceId,
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+  }, [
+    selectedConsultantId,
+    selectedCompanyId,
+    selectedInvoiceId,
+    isInitialized,
+  ]);
 
   // Ottieni i dati completi per il riepilogo
   const selectedConsultant = consultantsData?.consultants?.find(
@@ -91,6 +145,10 @@ export default function CreateSelectionPage() {
       };
 
       await createSelection(payload).unwrap();
+
+      // Pulisci il localStorage dopo la creazione riuscita
+      localStorage.removeItem(STORAGE_KEY);
+
       router.push("/selezioni");
     } catch (error) {
       console.error("Errore nella creazione della selezione:", error);
@@ -154,6 +212,11 @@ export default function CreateSelectionPage() {
     }
   };
 
+  // Non renderizzare finché non abbiamo caricato dal localStorage
+  if (!isInitialized) {
+    return null;
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -205,16 +268,16 @@ export default function CreateSelectionPage() {
         </div>
       </div>
 
-      {/* Progress Indicator - PIÙ EVIDENTE */}
+      {/* Progress Indicator - Minimalista */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
         className="mb-6"
       >
-        <Card className="shadow-bigster-card border-2 border-bigster-border rounded-none">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
+        <Card className="shadow-bigster-card border border-bigster-border rounded-none">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
               <StepIndicator
                 step={1}
                 label="Consulente"
@@ -223,7 +286,7 @@ export default function CreateSelectionPage() {
                 onClick={() => setCurrentStep("consultant")}
                 isClickable={true}
               />
-              <div className="flex-1 h-1 bg-bigster-border rounded-none" />
+              <div className="flex-1 h-px bg-bigster-border" />
               <StepIndicator
                 step={2}
                 label="Compagnia"
@@ -234,7 +297,7 @@ export default function CreateSelectionPage() {
                 }
                 isClickable={selectedConsultantId !== null}
               />
-              <div className="flex-1 h-1 bg-bigster-border rounded-none" />
+              <div className="flex-1 h-px bg-bigster-border" />
               <StepIndicator
                 step={3}
                 label="Fattura"
@@ -243,7 +306,7 @@ export default function CreateSelectionPage() {
                 onClick={() => selectedCompanyId && setCurrentStep("invoice")}
                 isClickable={selectedCompanyId !== null}
               />
-              <div className="flex-1 h-1 bg-bigster-border rounded-none" />
+              <div className="flex-1 h-px bg-bigster-border" />
               <StepIndicator
                 step={4}
                 label="Dettagli"
@@ -257,22 +320,19 @@ export default function CreateSelectionPage() {
         </Card>
       </motion.div>
 
-      {/* RIEPILOGO SELEZIONI - SEMPRE VISIBILE */}
+      {/* RIEPILOGO SELEZIONI - Compatto */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
         className="mb-6"
       >
-        <Card className="shadow-bigster-card border border-bigster-border rounded-none bg-bigster-primary">
-          <CardContent className="p-5">
-            <h3 className="text-sm font-bold text-bigster-primary-text mb-4">
-              📋 Riepilogo Selezione
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="shadow-bigster-card border border-bigster-border rounded-none bg-bigster-surface">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-4">
               {/* Consulente */}
-              <div className="bg-bigster-surface border border-bigster-border rounded-none p-4">
-                <div className="flex items-center gap-2 mb-2">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
                   <User className="h-4 w-4 text-bigster-text-muted" />
                   <span className="text-xs font-semibold text-bigster-text-muted uppercase">
                     Consulente
@@ -284,22 +344,21 @@ export default function CreateSelectionPage() {
                       {selectedConsultant.fullName}
                     </p>
                     {selectedConsultant.area && (
-                      <p className="text-xs text-bigster-text-muted mt-1">
+                      <p className="text-xs text-bigster-text-muted">
                         {selectedConsultant.area}
                       </p>
                     )}
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 text-bigster-text-muted">
-                    <AlertCircle className="h-4 w-4" />
-                    <span className="text-sm">Non selezionato</span>
-                  </div>
+                  <span className="text-sm text-bigster-text-muted">—</span>
                 )}
               </div>
 
+              <div className="h-12 w-px bg-bigster-border" />
+
               {/* Compagnia */}
-              <div className="bg-bigster-surface border border-bigster-border rounded-none p-4">
-                <div className="flex items-center gap-2 mb-2">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
                   <Building2 className="h-4 w-4 text-bigster-text-muted" />
                   <span className="text-xs font-semibold text-bigster-text-muted uppercase">
                     Azienda
@@ -310,40 +369,31 @@ export default function CreateSelectionPage() {
                     <p className="font-semibold text-sm text-bigster-text">
                       {selectedCompany.nome}
                     </p>
-                    <p className="text-xs text-bigster-text-muted mt-1">
-                      {selectedCompany.citta} - CAP {selectedCompany.cap}
+                    <p className="text-xs text-bigster-text-muted">
+                      {selectedCompany.citta}
                     </p>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2 text-bigster-text-muted">
-                    <AlertCircle className="h-4 w-4" />
-                    <span className="text-sm">Non selezionata</span>
-                  </div>
+                  <span className="text-sm text-bigster-text-muted">—</span>
                 )}
               </div>
 
+              <div className="h-12 w-px bg-bigster-border" />
+
               {/* Fattura */}
-              <div className="bg-bigster-surface border border-bigster-border rounded-none p-4">
-                <div className="flex items-center gap-2 mb-2">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
                   <FileText className="h-4 w-4 text-bigster-text-muted" />
                   <span className="text-xs font-semibold text-bigster-text-muted uppercase">
                     Fattura
                   </span>
                 </div>
                 {selectedInvoiceId ? (
-                  <div>
-                    <p className="font-semibold text-sm text-bigster-text">
-                      Fattura #{selectedInvoiceId}
-                    </p>
-                    <p className="text-xs text-bigster-text-muted mt-1">
-                      Selezionata
-                    </p>
-                  </div>
+                  <p className="font-semibold text-sm text-bigster-text">
+                    #{selectedInvoiceId}
+                  </p>
                 ) : (
-                  <div className="flex items-center gap-2 text-bigster-text-muted">
-                    <AlertCircle className="h-4 w-4" />
-                    <span className="text-sm">Non selezionata</span>
-                  </div>
+                  <span className="text-sm text-bigster-text-muted">—</span>
                 )}
               </div>
             </div>
@@ -351,20 +401,18 @@ export default function CreateSelectionPage() {
         </Card>
       </motion.div>
 
-      {/* Step Description Card */}
+      {/* Step Description - Minimale */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}
         className="mb-6"
       >
-        <Card className="shadow-bigster-card border border-bigster-border rounded-none bg-bigster-surface">
-          <CardContent className="p-4">
-            <p className="text-sm text-bigster-text-muted">
-              {getStepDescription()}
-            </p>
-          </CardContent>
-        </Card>
+        <div className="px-1">
+          <p className="text-sm text-bigster-text-muted italic">
+            {getStepDescription()}
+          </p>
+        </div>
       </motion.div>
 
       {/* Content */}
@@ -405,7 +453,7 @@ export default function CreateSelectionPage() {
   );
 }
 
-// Step Indicator - PIÙ GRANDE E EVIDENTE
+// Step Indicator - Minimalista
 interface StepIndicatorProps {
   step: number;
   label: string;
@@ -428,28 +476,22 @@ function StepIndicator({
       onClick={onClick}
       disabled={!isClickable}
       className={`flex flex-col items-center gap-2 transition-all ${
-        isClickable
-          ? "cursor-pointer hover:scale-105"
-          : "cursor-not-allowed opacity-60"
+        isClickable ? "cursor-pointer" : "cursor-not-allowed opacity-50"
       }`}
     >
-      <motion.div
-        animate={{
-          scale: isActive ? 1.1 : 1,
-        }}
-        transition={{ duration: 0.2 }}
-        className={`w-14 h-14 flex items-center justify-center font-bold text-base border-3 transition-all rounded-none ${
+      <div
+        className={`w-10 h-10 flex items-center justify-center font-semibold text-sm border-2 transition-all rounded-none ${
           isCompleted
-            ? "bg-bigster-primary border-yellow-200 text-bigster-primary-text shadow-md"
+            ? "bg-bigster-primary border-yellow-200 text-bigster-primary-text"
             : isActive
-            ? "bg-bigster-surface border-bigster-text text-bigster-text shadow-lg ring-2 ring-bigster-text ring-offset-2"
+            ? "bg-bigster-surface border-bigster-text text-bigster-text"
             : "bg-bigster-surface border-bigster-border text-bigster-text-muted"
         }`}
       >
-        {isCompleted ? <Check className="h-6 w-6" /> : step}
-      </motion.div>
+        {isCompleted ? <Check className="h-5 w-5" /> : step}
+      </div>
       <span
-        className={`text-sm font-semibold text-center ${
+        className={`text-xs font-medium text-center ${
           isActive
             ? "text-bigster-text"
             : isCompleted

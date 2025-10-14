@@ -277,7 +277,7 @@ export default function ConsultantSelector({
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as ConsultantSortOption)}
-            className={`${inputBase} !w-[200px]`}
+            className={`${inputBase} !!w-[200px]`}
           >
             <option value="name-asc">Nome (A-Z)</option>
             <option value="name-desc">Nome (Z-A)</option>

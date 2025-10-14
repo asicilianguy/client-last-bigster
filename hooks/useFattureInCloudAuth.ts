@@ -184,7 +184,7 @@ export function useFattureInCloudAuth(config: FattureInCloudConfig) {
   const fetchInvoices = useCallback(
     async (forceRefresh: boolean = false): Promise<Invoice[]> => {
       if (!authState.accessToken || !authState.companyId) {
-        throw new Error("Not authenticated");
+        return [];
       }
 
       const companyId = authState.companyId;
