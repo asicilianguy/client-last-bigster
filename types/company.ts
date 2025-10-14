@@ -9,7 +9,7 @@ import {
 
 // ========== Base Types ==========
 
-export interface CompanyBase {
+export interface Company {
   id: number;
   nome: string;
   partita_iva?: string | null;
@@ -40,10 +40,10 @@ export interface UserBasic {
 // ========== Response Types ==========
 
 // Response per create, update
-export interface CompanyResponse extends CompanyBase {}
+export interface CompanyResponse extends Company {}
 
 // Response per getAll
-export interface CompanyListItem extends CompanyBase {
+export interface CompanyListItem extends Company {
   _count: {
     annunci: number;
     selezioni: number;
@@ -52,7 +52,7 @@ export interface CompanyListItem extends CompanyBase {
 }
 
 // Response per getById
-export interface CompanyDetail extends CompanyBase {
+export interface CompanyDetail extends Company {
   annunci: Array<{
     id: number;
     titolo: string;

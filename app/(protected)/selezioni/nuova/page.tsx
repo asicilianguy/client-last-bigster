@@ -7,8 +7,6 @@ import { z } from "zod";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { useCreateSelectionMutation } from "@/lib/redux/features/selections/selectionsApiSlice";
-import { useGetDepartmentsQuery } from "@/lib/redux/features/departments/departmentsApiSlice";
-import { useGetProfessionalFiguresByDepartmentQuery } from "@/lib/redux/features/professional-figures/professionalFiguresApiSlice";
 
 import {
   Card,

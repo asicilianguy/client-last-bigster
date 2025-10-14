@@ -178,7 +178,7 @@
 
   /* Additional utility classes */
   .bigster-page-container {
-    @apply p-6 sm:p-8 mx-auto max-w-7xl;
+    @apply p-6 sm:p-8 mx-auto max-w-screen-2xl;
   }
 
   .bigster-page-header {

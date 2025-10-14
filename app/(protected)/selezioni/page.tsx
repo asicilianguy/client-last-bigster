@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useGetSelectionsQuery } from "@/lib/redux/features/selections/selectionsApiSlice";
-import { useGetDepartmentsQuery } from "@/lib/redux/features/departments/departmentsApiSlice";
 import { useGetAllProfessionalFiguresQuery } from "@/lib/redux/features/professional-figures/professionalFiguresApiSlice";
 import { useUserRole } from "@/hooks/use-user-role";
 import Link from "next/link";

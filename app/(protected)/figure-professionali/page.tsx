@@ -3,9 +3,7 @@
 import { useState, useMemo } from "react";
 import {
   useGetAllProfessionalFiguresQuery,
-  useGetProfessionalFiguresByDepartmentQuery,
 } from "@/lib/redux/features/professional-figures/professionalFiguresApiSlice";
-import { useGetDepartmentsQuery } from "@/lib/redux/features/departments/departmentsApiSlice";
 import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { Badge } from "@/components/ui/badge";

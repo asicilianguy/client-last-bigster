@@ -10,7 +10,6 @@ import {
   useCreateProfessionalFigureMutation,
   useUpdateProfessionalFigureMutation,
 } from "@/lib/redux/features/professional-figures/professionalFiguresApiSlice";
-import { useGetDepartmentsQuery } from "@/lib/redux/features/departments/departmentsApiSlice";
 import { Button } from "@/components/ui/button";
 import {
   Form,

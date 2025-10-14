@@ -1,0 +1,428 @@
+"use client";
+
+import { useState, useMemo, useEffect } from "react";
+import { motion } from "framer-motion";
+import {
+  FileText,
+  Calendar,
+  Euro,
+  Building,
+  Search,
+  Filter,
+  Download,
+  AlertCircle,
+  X,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { Invoice, useFattureInCloudAuth } from "@/hooks/useFattureInCloudAuth";
+import { useGetCompanyByIdQuery } from "@/lib/redux/features/companies/companiesApiSlice";
+
+type SortOption = "date-desc" | "date-asc" | "amount-desc" | "amount-asc";
+type FilterCode = "ALL" | "AV" | "INS" | "MDO";
+
+interface InvoiceSelectorProps {
+  companyId: number;
+  onSelect: (invoiceId: number) => void;
+  selectedId?: number | null; // NEW: per mostrare quale è selezionato
+}
+
+const inputBase =
+  "w-full rounded-none bg-bigster-surface border border-bigster-border text-bigster-text placeholder:text-bigster-text-muted focus:outline-none focus:ring-0 focus:border-bigster-text px-4 py-2";
+
+export default function InvoiceSelector({
+  companyId,
+  onSelect,
+  selectedId,
+}: InvoiceSelectorProps) {
+  const { data: company } = useGetCompanyByIdQuery(companyId);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [isLoadingInvoices, setIsLoadingInvoices] = useState(false);
+  const [sortBy, setSortBy] = useState<SortOption>("date-desc");
+  const [filterCode, setFilterCode] = useState<FilterCode>("ALL");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
+  const { isAuthenticated, isLoading, fetchInvoices } = useFattureInCloudAuth({
+    clientId: "MTtGdO45g82xfjERs9lGODOmXHRuaBWM",
+    clientSecret:
+      "XRm8t8N4l5jEwJMEKM6p02zYCJ6BJcxfDVSYgUeeRUVZMmxbFgfFowBetpT4Kig0",
+    redirectUri: `http://localhost:3001/accesso-fattureincloud`,
+    companyIndex: 0,
+    companyId: 709890,
+  });
+
+  const handleLoadInvoices = async () => {
+    try {
+      setIsLoadingInvoices(true);
+      const data = await fetchInvoices();
+      setInvoices(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingInvoices(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated && company) {
+      handleLoadInvoices();
+    }
+  }, [isAuthenticated, company]);
+
+  const filteredAndSortedInvoices = useMemo(() => {
+    let filtered = [...invoices];
+
+    if (filterCode !== "ALL") {
+      filtered = filtered.filter((invoice) =>
+        invoice.items_codes?.includes(filterCode)
+      );
+    }
+
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (invoice) =>
+          invoice.contract_number?.toLowerCase().includes(search) ||
+          invoice.number.toLowerCase().includes(search)
+      );
+    }
+
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "date-desc":
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        case "date-asc":
+          return new Date(a.date).getTime() - new Date(b.date).getTime();
+        case "amount-desc":
+          return b.amount_gross - a.amount_gross;
+        case "amount-asc":
+          return a.amount_gross - b.amount_gross;
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  }, [invoices, filterCode, searchTerm, sortBy]);
+
+  const codeCounts = useMemo(() => {
+    const counts = {
+      ALL: invoices.length,
+      AV: 0,
+      INS: 0,
+      MDO: 0,
+    };
+
+    invoices.forEach((invoice) => {
+      if (invoice.items_codes?.includes("AV")) counts.AV++;
+      if (invoice.items_codes?.includes("INS")) counts.INS++;
+      if (invoice.items_codes?.includes("MDO")) counts.MDO++;
+    });
+
+    return counts;
+  }, [invoices]);
+
+  const activeFiltersCount = filterCode !== "ALL" ? 1 : 0;
+
+  const clearAllFilters = () => {
+    setFilterCode("ALL");
+    setSearchTerm("");
+    setSortBy("date-desc");
+  };
+
+  const hasActiveFilters =
+    filterCode !== "ALL" || searchTerm || sortBy !== "date-desc";
+
+  const CodeBadge = ({ code }: { code: string }) => (
+    <span className="inline-flex items-center px-2 py-1 text-xs font-semibold border border-bigster-border bg-bigster-surface text-bigster-text rounded-none">
+      {code}
+    </span>
+  );
+
+  if (isLoading || !company) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Spinner className="h-12 w-12 text-bigster-text" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Card className="shadow-bigster-card border border-bigster-border rounded-none">
+        <CardContent className="p-6 text-center">
+          <AlertCircle className="h-12 w-12 mx-auto text-bigster-text-muted mb-4" />
+          <h3 className="text-lg font-semibold text-bigster-text mb-2">
+            Connessione richiesta
+          </h3>
+          <p className="text-sm text-bigster-text-muted">
+            È necessario connettere Fatture in Cloud per visualizzare le fatture
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Card className="shadow-bigster-card border border-bigster-border rounded-none bg-bigster-surface">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Building className="h-6 w-6 text-bigster-text-muted" />
+              <div>
+                <h3 className="font-semibold text-base text-bigster-text">
+                  {company.nome}
+                </h3>
+                <p className="text-sm text-bigster-text-muted">
+                  {company.citta}, {company.provincia}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {invoices.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          <Card className="shadow-bigster-card border border-bigster-border rounded-none">
+            <CardContent className="p-6 text-center">
+              <Button
+                onClick={handleLoadInvoices}
+                disabled={isLoadingInvoices}
+                className="rounded-none bg-bigster-primary text-bigster-primary-text border border-yellow-200 hover:opacity-90"
+              >
+                {isLoadingInvoices ? (
+                  <>
+                    <Spinner className="mr-2 h-4 w-4" />
+                    Caricamento...
+                  </>
+                ) : (
+                  <>
+                    <Download className="mr-2 h-5 w-5" />
+                    Carica Fatture
+                  </>
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {invoices.length > 0 && (
+        <>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <div className="flex flex-wrap items-center gap-4">
+              <h3 className="text-[15px] font-semibold text-bigster-text">
+                Fatture
+              </h3>
+
+              <div className="relative">
+                <span className="absolute left-2.5 top-2.5">
+                  <Search
+                    width={18}
+                    height={18}
+                    className="text-bigster-text"
+                  />
+                </span>
+                <input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Cerca contratto, numero..."
+                  className={`${inputBase} pl-10 w-[500px]`}
+                />
+              </div>
+
+              <Button
+                variant="outline"
+                className="relative rounded-none border border-bigster-border bg-bigster-surface text-bigster-text px-3 py-2 hover:bg-bigster-surface"
+                onClick={() => setIsFiltersOpen(true)}
+              >
+                <Filter className="h-5 w-5" />
+                {activeFiltersCount > 0 && (
+                  <span
+                    className="absolute -top-2 -right-2 w-5 h-5 rounded-full text-bigster-primary-text text-xs flex items-center justify-center"
+                    style={{ backgroundColor: "#e4d72b" }}
+                  >
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </Button>
+
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className={`${inputBase} w-[200px]`}
+              >
+                <option value="date-desc">Data (più recente)</option>
+                <option value="date-asc">Data (più vecchia)</option>
+                <option value="amount-desc">Importo (maggiore)</option>
+                <option value="amount-asc">Importo (minore)</option>
+              </select>
+            </div>
+          </motion.div>
+
+          {isFiltersOpen && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-bigster-surface border border-bigster-border rounded-none shadow-bigster-card max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              >
+                <div className="flex items-center justify-between p-5 border-b border-bigster-border">
+                  <h2 className="text-lg font-semibold text-bigster-text">
+                    Filtra e ordina
+                  </h2>
+                  <button
+                    onClick={() => setIsFiltersOpen(false)}
+                    className="text-bigster-text-muted hover:text-bigster-text"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-5 p-5">
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-bigster-text">
+                      Filtra per codice servizio
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {(["ALL", "AV", "INS", "MDO"] as FilterCode[]).map(
+                        (code) => (
+                          <Button
+                            key={code}
+                            onClick={() => setFilterCode(code)}
+                            className={`rounded-none border ${
+                              filterCode === code
+                                ? "bg-bigster-primary text-bigster-primary-text border-yellow-200"
+                                : "bg-bigster-surface text-bigster-text border-bigster-border hover:bg-bigster-surface"
+                            }`}
+                          >
+                            {code === "ALL" ? "Tutti" : code} (
+                            {codeCounts[code]})
+                          </Button>
+                        )
+                      )}
+                    </div>
+                  </div>
+
+                  {hasActiveFilters && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        clearAllFilters();
+                        setIsFiltersOpen(false);
+                      }}
+                      className="w-full rounded-none border font-semibold"
+                      style={{
+                        borderColor: "#ef4444",
+                        color: "#ef4444",
+                        backgroundColor: "rgba(239,68,68,0.05)",
+                      }}
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Cancella tutti i filtri
+                    </Button>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          )}
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
+            <Card className="shadow-bigster-card border border-bigster-border rounded-none">
+              <CardHeader className="bg-bigster-surface">
+                <CardTitle className="text-lg font-semibold text-bigster-text">
+                  <span className="font-normal text-bigster-text-muted mr-2">
+                    Trovate:
+                  </span>
+                  {filteredAndSortedInvoices.length}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y divide-bigster-border">
+                  {filteredAndSortedInvoices.map((invoice, index) => (
+                    <motion.button
+                      key={invoice.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.03 }}
+                      onClick={() => onSelect(invoice.id)}
+                      className={`w-full p-4 text-left hover:bg-bigster-surface transition-colors ${
+                        selectedId === invoice.id ? "bg-bigster-surface" : ""
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <FileText className="h-5 w-5 text-bigster-text-muted" />
+                            <h4 className="font-semibold text-base text-bigster-text">
+                              Fattura {invoice.number}
+                            </h4>
+                            {selectedId === invoice.id && (
+                              <span className="px-2 py-0.5 text-xs font-semibold bg-bigster-primary text-bigster-primary-text border border-yellow-200 rounded-none">
+                                Selezionato
+                              </span>
+                            )}
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-sm text-bigster-text-muted flex items-center gap-2">
+                              <Calendar className="h-4 w-4" />
+                              {new Date(invoice.date).toLocaleDateString(
+                                "it-IT"
+                              )}
+                            </p>
+                            <p className="text-sm text-bigster-text-muted">
+                              Contratto:{" "}
+                              <span className="font-medium text-bigster-text">
+                                {invoice.contract_number || "N/D"}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="text-right bg-bigster-surface p-3 border border-bigster-border rounded-none">
+                          <p className="font-semibold text-xl text-bigster-text flex items-center gap-1">
+                            <Euro className="h-5 w-5" />
+                            {invoice.amount_gross.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {invoice.items_codes &&
+                        invoice.items_codes.length > 0 && (
+                          <div className="flex gap-2 flex-wrap">
+                            {invoice.items_codes.map((code, idx) => (
+                              <CodeBadge key={idx} code={code} />
+                            ))}
+                          </div>
+                        )}
+                    </motion.button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </>
+      )}
+    </div>
+  );
+}

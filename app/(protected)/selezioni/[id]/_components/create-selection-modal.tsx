@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import toast from "react-hot-toast";
 import { useCreateSelectionMutation } from "@/lib/redux/features/selections/selectionsApiSlice";
-import { useGetDepartmentsQuery } from "@/lib/redux/features/departments/departmentsApiSlice";
 import { useGetProfessionalFiguresByDepartmentQuery } from "@/lib/redux/features/professional-figures/professionalFiguresApiSlice";
 
 import { Dialog, DialogFooter } from "@/components/ui/dialog";

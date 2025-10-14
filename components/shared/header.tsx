@@ -24,7 +24,6 @@ export function Header() {
   const pathname = usePathname();
 
   const handleLogout = () => {
-    dispatch(logOut());
     router.push("/login");
   };
 
