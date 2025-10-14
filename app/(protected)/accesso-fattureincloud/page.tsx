@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Check, ArrowRight } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  ArrowRight,
+  User,
+  Building2,
+  FileText,
+  AlertCircle,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -11,6 +19,8 @@ import CompanySelector from "@/components/accesso-fattureincloud/CompanySelector
 import InvoiceSelector from "@/components/accesso-fattureincloud/InvoiceSelector";
 import SelectionForm from "@/components/accesso-fattureincloud/SelectionForm";
 import { useCreateSelectionMutation } from "@/lib/redux/features/selections/selectionsApiSlice";
+import { useGetConsultantsQuery } from "@/lib/redux/features/external/externalApiSlice";
+import { useGetCompaniesQuery } from "@/lib/redux/features/companies/companiesApiSlice";
 import type { CreateSelectionPayload } from "@/types/selection";
 import { PackageType } from "@/types/enums";
 
@@ -20,7 +30,10 @@ export default function CreateSelectionPage() {
   const router = useRouter();
   const [createSelection, { isLoading }] = useCreateSelectionMutation();
 
-  // State per i dati della selezione - TUTTI PERSISTENTI
+  // Queries per ottenere i dati completi
+  const { data: consultantsData } = useGetConsultantsQuery();
+  const { data: companies } = useGetCompaniesQuery();
+
   const [selectedConsultantId, setSelectedConsultantId] = useState<
     number | null
   >(null);
@@ -32,22 +45,24 @@ export default function CreateSelectionPage() {
   );
   const [currentStep, setCurrentStep] = useState<CreationStep>("consultant");
 
-  // Handler per la selezione del consulente (STEP 1)
+  // Ottieni i dati completi per il riepilogo
+  const selectedConsultant = consultantsData?.consultants?.find(
+    (c) => c.id === selectedConsultantId
+  );
+  const selectedCompany = companies?.find((c) => c.id === selectedCompanyId);
+
   const handleConsultantSelect = (consultantId: number) => {
     setSelectedConsultantId(consultantId);
   };
 
-  // Handler per la selezione della compagnia (STEP 2)
   const handleCompanySelect = (companyId: number) => {
     setSelectedCompanyId(companyId);
   };
 
-  // Handler per la selezione della fattura (STEP 3)
   const handleInvoiceSelect = (invoiceId: number) => {
     setSelectedInvoiceId(invoiceId);
   };
 
-  // Handler per andare avanti
   const handleNext = () => {
     if (currentStep === "consultant" && selectedConsultantId) {
       setCurrentStep("company");
@@ -58,7 +73,6 @@ export default function CreateSelectionPage() {
     }
   };
 
-  // Handler per il submit finale (STEP 4)
   const handleSubmit = async (formData: {
     titolo: string;
     pacchetto: "BASE" | "MDO";
@@ -83,7 +97,6 @@ export default function CreateSelectionPage() {
     }
   };
 
-  // Handler per tornare indietro - NON perde i dati
   const handleBack = () => {
     if (currentStep === "form") {
       setCurrentStep("invoice");
@@ -96,7 +109,6 @@ export default function CreateSelectionPage() {
     }
   };
 
-  // Verifica se può andare avanti
   const canProceed = () => {
     switch (currentStep) {
       case "consultant":
@@ -106,7 +118,7 @@ export default function CreateSelectionPage() {
       case "invoice":
         return selectedInvoiceId !== null;
       case "form":
-        return false; // Il form ha il suo submit
+        return false;
       default:
         return false;
     }
@@ -180,7 +192,6 @@ export default function CreateSelectionPage() {
             </div>
           </div>
 
-          {/* Next Button - mostrato solo se non siamo nel form finale */}
           {currentStep !== "form" && (
             <Button
               onClick={handleNext}
@@ -194,16 +205,16 @@ export default function CreateSelectionPage() {
         </div>
       </div>
 
-      {/* Progress Indicator */}
+      {/* Progress Indicator - PIÙ EVIDENTE */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
         className="mb-6"
       >
-        <Card className="shadow-bigster-card border border-bigster-border rounded-none">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
+        <Card className="shadow-bigster-card border-2 border-bigster-border rounded-none">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
               <StepIndicator
                 step={1}
                 label="Consulente"
@@ -212,7 +223,7 @@ export default function CreateSelectionPage() {
                 onClick={() => setCurrentStep("consultant")}
                 isClickable={true}
               />
-              <div className="flex-1 h-px bg-bigster-border" />
+              <div className="flex-1 h-1 bg-bigster-border rounded-none" />
               <StepIndicator
                 step={2}
                 label="Compagnia"
@@ -223,7 +234,7 @@ export default function CreateSelectionPage() {
                 }
                 isClickable={selectedConsultantId !== null}
               />
-              <div className="flex-1 h-px bg-bigster-border" />
+              <div className="flex-1 h-1 bg-bigster-border rounded-none" />
               <StepIndicator
                 step={3}
                 label="Fattura"
@@ -232,7 +243,7 @@ export default function CreateSelectionPage() {
                 onClick={() => selectedCompanyId && setCurrentStep("invoice")}
                 isClickable={selectedCompanyId !== null}
               />
-              <div className="flex-1 h-px bg-bigster-border" />
+              <div className="flex-1 h-1 bg-bigster-border rounded-none" />
               <StepIndicator
                 step={4}
                 label="Dettagli"
@@ -246,11 +257,105 @@ export default function CreateSelectionPage() {
         </Card>
       </motion.div>
 
-      {/* Step Description Card */}
+      {/* RIEPILOGO SELEZIONI - SEMPRE VISIBILE */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
+        className="mb-6"
+      >
+        <Card className="shadow-bigster-card border border-bigster-border rounded-none bg-bigster-primary">
+          <CardContent className="p-5">
+            <h3 className="text-sm font-bold text-bigster-primary-text mb-4">
+              📋 Riepilogo Selezione
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Consulente */}
+              <div className="bg-bigster-surface border border-bigster-border rounded-none p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <User className="h-4 w-4 text-bigster-text-muted" />
+                  <span className="text-xs font-semibold text-bigster-text-muted uppercase">
+                    Consulente
+                  </span>
+                </div>
+                {selectedConsultant ? (
+                  <div>
+                    <p className="font-semibold text-sm text-bigster-text">
+                      {selectedConsultant.fullName}
+                    </p>
+                    {selectedConsultant.area && (
+                      <p className="text-xs text-bigster-text-muted mt-1">
+                        {selectedConsultant.area}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-bigster-text-muted">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="text-sm">Non selezionato</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Compagnia */}
+              <div className="bg-bigster-surface border border-bigster-border rounded-none p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Building2 className="h-4 w-4 text-bigster-text-muted" />
+                  <span className="text-xs font-semibold text-bigster-text-muted uppercase">
+                    Azienda
+                  </span>
+                </div>
+                {selectedCompany ? (
+                  <div>
+                    <p className="font-semibold text-sm text-bigster-text">
+                      {selectedCompany.nome}
+                    </p>
+                    <p className="text-xs text-bigster-text-muted mt-1">
+                      {selectedCompany.citta} - CAP {selectedCompany.cap}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-bigster-text-muted">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="text-sm">Non selezionata</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Fattura */}
+              <div className="bg-bigster-surface border border-bigster-border rounded-none p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <FileText className="h-4 w-4 text-bigster-text-muted" />
+                  <span className="text-xs font-semibold text-bigster-text-muted uppercase">
+                    Fattura
+                  </span>
+                </div>
+                {selectedInvoiceId ? (
+                  <div>
+                    <p className="font-semibold text-sm text-bigster-text">
+                      Fattura #{selectedInvoiceId}
+                    </p>
+                    <p className="text-xs text-bigster-text-muted mt-1">
+                      Selezionata
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 text-bigster-text-muted">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="text-sm">Non selezionata</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+
+      {/* Step Description Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
         className="mb-6"
       >
         <Card className="shadow-bigster-card border border-bigster-border rounded-none bg-bigster-surface">
@@ -262,7 +367,7 @@ export default function CreateSelectionPage() {
         </Card>
       </motion.div>
 
-      {/* Content - I dati non si perdono! */}
+      {/* Content */}
       <motion.div
         key={currentStep}
         initial={{ opacity: 0, x: 20 }}
@@ -296,43 +401,11 @@ export default function CreateSelectionPage() {
           <SelectionForm onSubmit={handleSubmit} isLoading={isLoading} />
         )}
       </motion.div>
-
-      {/* Debug Info */}
-      {process.env.NODE_ENV === "development" && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="mt-6"
-        >
-          <Card className="shadow-bigster-card border border-bigster-border rounded-none">
-            <CardContent className="p-4">
-              <p className="text-xs text-bigster-text-muted mb-2 font-semibold">
-                Debug Info (solo development):
-              </p>
-              <div className="space-y-1 text-xs text-bigster-text-muted">
-                <p>Current Step: {currentStep}</p>
-                <p>
-                  Selected Consultant ID:{" "}
-                  {selectedConsultantId || "Non selezionato"}
-                </p>
-                <p>
-                  Selected Company ID: {selectedCompanyId || "Non selezionato"}
-                </p>
-                <p>
-                  Selected Invoice ID: {selectedInvoiceId || "Non selezionato"}
-                </p>
-                <p>Can Proceed: {canProceed() ? "Yes" : "No"}</p>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
     </motion.div>
   );
 }
 
-// Step Indicator - CLICKABLE
+// Step Indicator - PIÙ GRANDE E EVIDENTE
 interface StepIndicatorProps {
   step: number;
   label: string;
@@ -354,24 +427,34 @@ function StepIndicator({
     <button
       onClick={onClick}
       disabled={!isClickable}
-      className={`flex flex-col items-center gap-2 ${
-        isClickable ? "cursor-pointer" : "cursor-not-allowed"
+      className={`flex flex-col items-center gap-2 transition-all ${
+        isClickable
+          ? "cursor-pointer hover:scale-105"
+          : "cursor-not-allowed opacity-60"
       }`}
     >
-      <div
-        className={`w-10 h-10 flex items-center justify-center font-semibold text-sm border-2 transition-all rounded-none ${
+      <motion.div
+        animate={{
+          scale: isActive ? 1.1 : 1,
+        }}
+        transition={{ duration: 0.2 }}
+        className={`w-14 h-14 flex items-center justify-center font-bold text-base border-3 transition-all rounded-none ${
           isCompleted
-            ? "bg-bigster-primary border-yellow-200 text-bigster-primary-text"
+            ? "bg-bigster-primary border-yellow-200 text-bigster-primary-text shadow-md"
             : isActive
-            ? "bg-bigster-surface border-bigster-text text-bigster-text"
+            ? "bg-bigster-surface border-bigster-text text-bigster-text shadow-lg ring-2 ring-bigster-text ring-offset-2"
             : "bg-bigster-surface border-bigster-border text-bigster-text-muted"
         }`}
       >
-        {isCompleted ? <Check className="h-5 w-5" /> : step}
-      </div>
+        {isCompleted ? <Check className="h-6 w-6" /> : step}
+      </motion.div>
       <span
-        className={`text-xs font-medium text-center ${
-          isActive ? "text-bigster-text" : "text-bigster-text-muted"
+        className={`text-sm font-semibold text-center ${
+          isActive
+            ? "text-bigster-text"
+            : isCompleted
+            ? "text-bigster-text"
+            : "text-bigster-text-muted"
         }`}
       >
         {label}

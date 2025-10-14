@@ -9,24 +9,15 @@ import {
 
 // ========== Base Types ==========
 
-export interface Company {
+export interface CompanyBase {
   id: number;
   nome: string;
-  partita_iva?: string | null;
-  codice_fiscale?: string | null;
-  citta?: string | null;
-  provincia?: string | null;
-  regione?: string | null;
-  cap?: string | null;
-  indirizzo?: string | null;
-  telefono?: string | null;
-  email_referente?: string | null;
-  nome_referente?: string | null;
-  cognome_referente?: string | null;
-  numero_dipendenti?: number | null;
-  fatturato?: string | null;
-  settore_attivita?: string | null;
-  note?: string | null;
+  partita_iva: string;
+  indirizzo: string;
+  citta: string;
+  cap: string;
+  telefono: string;
+  email: string;
   data_creazione: string;
   data_modifica: string;
 }
@@ -40,10 +31,10 @@ export interface UserBasic {
 // ========== Response Types ==========
 
 // Response per create, update
-export interface CompanyResponse extends Company {}
+export interface CompanyResponse extends CompanyBase {}
 
 // Response per getAll
-export interface CompanyListItem extends Company {
+export interface CompanyListItem extends CompanyBase {
   _count: {
     annunci: number;
     selezioni: number;
@@ -52,7 +43,7 @@ export interface CompanyListItem extends Company {
 }
 
 // Response per getById
-export interface CompanyDetail extends Company {
+export interface CompanyDetail extends CompanyBase {
   annunci: Array<{
     id: number;
     titolo: string;
@@ -96,19 +87,10 @@ export interface CompanyDetail extends Company {
 export interface CompanySearchResult {
   id: number;
   nome: string;
-  citta?: string | null;
-  provincia?: string | null;
-  regione?: string | null;
-  settore_attivita?: string | null;
+  citta: string;
 }
 
 // ========== Stats Types ==========
-
-export interface CompanyRegionStats {
-  regione: string;
-  numero_aziende: number;
-  media_dipendenti: number;
-}
 
 export interface CompanyStatsResponse {
   company: {
@@ -129,52 +111,29 @@ export interface CompanyStatsResponse {
 
 export interface CreateCompanyPayload {
   nome: string;
-  partita_iva?: string;
-  codice_fiscale?: string;
-  citta?: string;
-  provincia?: string;
-  regione?: string;
-  cap?: string;
-  indirizzo?: string;
-  telefono?: string;
-  email_referente?: string;
-  nome_referente?: string;
-  cognome_referente?: string;
-  numero_dipendenti?: number;
-  fatturato?: string;
-  settore_attivita?: string;
-  note?: string;
+  partita_iva: string;
+  indirizzo: string;
+  citta: string;
+  cap: string;
+  telefono: string;
+  email: string;
 }
 
 export interface UpdateCompanyPayload {
   nome?: string;
-  partita_iva?: string | null;
-  codice_fiscale?: string | null;
-  citta?: string | null;
-  provincia?: string | null;
-  regione?: string | null;
-  cap?: string | null;
-  indirizzo?: string | null;
-  telefono?: string | null;
-  email_referente?: string | null;
-  nome_referente?: string | null;
-  cognome_referente?: string | null;
-  numero_dipendenti?: number | null;
-  fatturato?: string | null;
-  settore_attivita?: string | null;
-  note?: string | null;
+  partita_iva?: string;
+  indirizzo?: string;
+  citta?: string;
+  cap?: string;
+  telefono?: string;
+  email?: string;
 }
 
 // ========== Query Params ==========
 
 export interface GetCompaniesQueryParams {
   search?: string;
-  regione?: string;
-  provincia?: string;
   citta?: string;
-  settore_attivita?: string;
-  min_dipendenti?: number;
-  max_dipendenti?: number;
 }
 
 // ========== API Response Wrappers ==========
@@ -190,7 +149,13 @@ export const isCompanyResponse = (obj: any): obj is CompanyResponse => {
     obj &&
     typeof obj === "object" &&
     typeof obj.id === "number" &&
-    typeof obj.nome === "string"
+    typeof obj.nome === "string" &&
+    typeof obj.partita_iva === "string" &&
+    typeof obj.indirizzo === "string" &&
+    typeof obj.citta === "string" &&
+    typeof obj.cap === "string" &&
+    typeof obj.telefono === "string" &&
+    typeof obj.email === "string"
   );
 };
 

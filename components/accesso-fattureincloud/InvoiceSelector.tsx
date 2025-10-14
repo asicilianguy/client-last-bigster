@@ -12,12 +12,15 @@ import {
   Download,
   AlertCircle,
   X,
+  RefreshCw,
+  Pin,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Invoice, useFattureInCloudAuth } from "@/hooks/useFattureInCloudAuth";
 import { useGetCompanyByIdQuery } from "@/lib/redux/features/companies/companiesApiSlice";
+import { useInvoicesCache } from "@/app/contexts/InvoicesContext";
 
 type SortOption = "date-desc" | "date-asc" | "amount-desc" | "amount-asc";
 type FilterCode = "ALL" | "AV" | "INS" | "MDO";
@@ -25,7 +28,7 @@ type FilterCode = "ALL" | "AV" | "INS" | "MDO";
 interface InvoiceSelectorProps {
   companyId: number;
   onSelect: (invoiceId: number) => void;
-  selectedId?: number | null; // NEW: per mostrare quale è selezionato
+  selectedId?: number | null;
 }
 
 const inputBase =
@@ -44,7 +47,14 @@ export default function InvoiceSelector({
   const [searchTerm, setSearchTerm] = useState("");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
-  const { isAuthenticated, isLoading, fetchInvoices } = useFattureInCloudAuth({
+  const { isCached, getCacheAge } = useInvoicesCache();
+
+  const {
+    isAuthenticated,
+    isLoading,
+    fetchInvoices,
+    companyId: ficCompanyId,
+  } = useFattureInCloudAuth({
     clientId: "MTtGdO45g82xfjERs9lGODOmXHRuaBWM",
     clientSecret:
       "XRm8t8N4l5jEwJMEKM6p02zYCJ6BJcxfDVSYgUeeRUVZMmxbFgfFowBetpT4Kig0",
@@ -53,26 +63,36 @@ export default function InvoiceSelector({
     companyId: 709890,
   });
 
-  const handleLoadInvoices = async () => {
+  const handleLoadInvoices = async (forceRefresh: boolean = false) => {
     try {
       setIsLoadingInvoices(true);
-      const data = await fetchInvoices();
+      const data = await fetchInvoices(forceRefresh);
       setInvoices(data);
     } catch (err) {
-      console.error(err);
+      console.error("Error loading invoices:", err);
     } finally {
       setIsLoadingInvoices(false);
     }
   };
 
   useEffect(() => {
-    if (isAuthenticated && company) {
-      handleLoadInvoices();
+    if (isAuthenticated && company && invoices.length === 0) {
+      handleLoadInvoices(false);
     }
   }, [isAuthenticated, company]);
 
+  const selectedInvoice = useMemo(
+    () => invoices.find((inv) => inv.id === selectedId),
+    [invoices, selectedId]
+  );
+
   const filteredAndSortedInvoices = useMemo(() => {
     let filtered = [...invoices];
+
+    // Rimuovi l'elemento selezionato dalla lista principale
+    if (selectedId) {
+      filtered = filtered.filter((inv) => inv.id !== selectedId);
+    }
 
     if (filterCode !== "ALL") {
       filtered = filtered.filter((invoice) =>
@@ -105,7 +125,7 @@ export default function InvoiceSelector({
     });
 
     return filtered;
-  }, [invoices, filterCode, searchTerm, sortBy]);
+  }, [invoices, filterCode, searchTerm, sortBy, selectedId]);
 
   const codeCounts = useMemo(() => {
     const counts = {
@@ -135,10 +155,85 @@ export default function InvoiceSelector({
   const hasActiveFilters =
     filterCode !== "ALL" || searchTerm || sortBy !== "date-desc";
 
+  const cacheInfo = useMemo(() => {
+    if (!ficCompanyId) return null;
+
+    const cached = isCached(ficCompanyId);
+    const age = getCacheAge(ficCompanyId);
+
+    return {
+      isCached: cached,
+      age: age ? Math.round(age / 1000) : null,
+      ageText: age ? `${Math.round(age / 1000)}s fa` : null,
+    };
+  }, [ficCompanyId, isCached, getCacheAge, invoices.length]);
+
   const CodeBadge = ({ code }: { code: string }) => (
     <span className="inline-flex items-center px-2 py-1 text-xs font-semibold border border-bigster-border bg-bigster-surface text-bigster-text rounded-none">
       {code}
     </span>
+  );
+
+  const InvoiceCard = ({
+    invoice,
+    isPinned = false,
+  }: {
+    invoice: Invoice;
+    isPinned?: boolean;
+  }) => (
+    <motion.button
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3 }}
+      onClick={() => onSelect(invoice.id)}
+      className={`w-full p-4 text-left hover:bg-bigster-surface transition-colors ${
+        isPinned ? "bg-bigster-surface" : ""
+      }`}
+    >
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            {isPinned && <Pin className="h-4 w-4 text-bigster-text" />}
+            <FileText className="h-5 w-5 text-bigster-text-muted" />
+            <h4 className="font-semibold text-base text-bigster-text">
+              Fattura {invoice.number}
+            </h4>
+            {isPinned && (
+              <span className="px-2 py-0.5 text-xs font-semibold bg-bigster-primary text-bigster-primary-text border border-yellow-200 rounded-none">
+                Selezionato
+              </span>
+            )}
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm text-bigster-text-muted flex items-center gap-2">
+              <Calendar className="h-4 w-4" />
+              {new Date(invoice.date).toLocaleDateString("it-IT")}
+            </p>
+            <p className="text-sm text-bigster-text-muted">
+              Contratto:{" "}
+              <span className="font-medium text-bigster-text">
+                {invoice.contract_number || "N/D"}
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <div className="text-right bg-bigster-surface p-3 border border-bigster-border rounded-none">
+          <p className="font-semibold text-xl text-bigster-text flex items-center gap-1">
+            <Euro className="h-5 w-5" />
+            {invoice.amount_gross.toFixed(2)}
+          </p>
+        </div>
+      </div>
+
+      {invoice.items_codes && invoice.items_codes.length > 0 && (
+        <div className="flex gap-2 flex-wrap">
+          {invoice.items_codes.map((code, idx) => (
+            <CodeBadge key={idx} code={code} />
+          ))}
+        </div>
+      )}
+    </motion.button>
   );
 
   if (isLoading || !company) {
@@ -167,6 +262,7 @@ export default function InvoiceSelector({
 
   return (
     <div className="space-y-6">
+      {/* Company Info with Cache Badge */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -174,22 +270,37 @@ export default function InvoiceSelector({
       >
         <Card className="shadow-bigster-card border border-bigster-border rounded-none bg-bigster-surface">
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <Building className="h-6 w-6 text-bigster-text-muted" />
-              <div>
-                <h3 className="font-semibold text-base text-bigster-text">
-                  {company.nome}
-                </h3>
-                <p className="text-sm text-bigster-text-muted">
-                  {company.citta}, {company.provincia}
-                </p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Building className="h-6 w-6 text-bigster-text-muted" />
+                <div>
+                  <h3 className="font-semibold text-base text-bigster-text">
+                    {company.nome}
+                  </h3>
+                  <p className="text-sm text-bigster-text-muted">
+                    {company.citta}, CAP ({company.cap})
+                  </p>
+                </div>
               </div>
+
+              {cacheInfo?.isCached && invoices.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-1 text-xs font-semibold bg-green-50 text-green-700 border border-green-200 rounded-none">
+                    📦 Cached
+                  </span>
+                  {cacheInfo.ageText && (
+                    <span className="text-xs text-bigster-text-muted">
+                      {cacheInfo.ageText}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
       </motion.div>
 
-      {invoices.length === 0 && (
+      {invoices.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -198,7 +309,7 @@ export default function InvoiceSelector({
           <Card className="shadow-bigster-card border border-bigster-border rounded-none">
             <CardContent className="p-6 text-center">
               <Button
-                onClick={handleLoadInvoices}
+                onClick={() => handleLoadInvoices(false)}
                 disabled={isLoadingInvoices}
                 className="rounded-none bg-bigster-primary text-bigster-primary-text border border-yellow-200 hover:opacity-90"
               >
@@ -217,10 +328,9 @@ export default function InvoiceSelector({
             </CardContent>
           </Card>
         </motion.div>
-      )}
-
-      {invoices.length > 0 && (
+      ) : (
         <>
+          {/* Toolbar */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -266,16 +376,31 @@ export default function InvoiceSelector({
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as SortOption)}
-                className={`${inputBase} w-[200px]`}
+                className={`${inputBase} !w-[200px]`}
               >
                 <option value="date-desc">Data (più recente)</option>
                 <option value="date-asc">Data (più vecchia)</option>
                 <option value="amount-desc">Importo (maggiore)</option>
                 <option value="amount-asc">Importo (minore)</option>
               </select>
+
+              <Button
+                variant="outline"
+                onClick={() => handleLoadInvoices(true)}
+                disabled={isLoadingInvoices}
+                className="rounded-none border border-bigster-border bg-bigster-surface text-bigster-text px-3 py-2 hover:bg-bigster-surface"
+                title="Ricarica fatture (bypass cache)"
+              >
+                <RefreshCw
+                  className={`h-5 w-5 ${
+                    isLoadingInvoices ? "animate-spin" : ""
+                  }`}
+                />
+              </Button>
             </div>
           </motion.div>
 
+          {/* Filters Modal */}
           {isFiltersOpen && (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
               <motion.div
@@ -343,16 +468,38 @@ export default function InvoiceSelector({
             </div>
           )}
 
+          {/* Selezione Pinnata */}
+          {selectedInvoice && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+            >
+              <Card className="shadow-bigster-card border-2 border-bigster-primary rounded-none">
+                <CardHeader className="bg-bigster-primary">
+                  <CardTitle className="text-base font-semibold text-bigster-primary-text flex items-center gap-2">
+                    <Pin className="h-5 w-5" />
+                    Selezione corrente
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <InvoiceCard invoice={selectedInvoice} isPinned={true} />
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Invoices List */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.2 }}
+            transition={{ duration: 0.3, delay: selectedInvoice ? 0.3 : 0.2 }}
           >
             <Card className="shadow-bigster-card border border-bigster-border rounded-none">
               <CardHeader className="bg-bigster-surface">
                 <CardTitle className="text-lg font-semibold text-bigster-text">
                   <span className="font-normal text-bigster-text-muted mr-2">
-                    Trovate:
+                    {selectedInvoice ? "Altre fatture:" : "Trovate:"}
                   </span>
                   {filteredAndSortedInvoices.length}
                 </CardTitle>
@@ -360,62 +507,7 @@ export default function InvoiceSelector({
               <CardContent className="p-0">
                 <div className="divide-y divide-bigster-border">
                   {filteredAndSortedInvoices.map((invoice, index) => (
-                    <motion.button
-                      key={invoice.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.03 }}
-                      onClick={() => onSelect(invoice.id)}
-                      className={`w-full p-4 text-left hover:bg-bigster-surface transition-colors ${
-                        selectedId === invoice.id ? "bg-bigster-surface" : ""
-                      }`}
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <FileText className="h-5 w-5 text-bigster-text-muted" />
-                            <h4 className="font-semibold text-base text-bigster-text">
-                              Fattura {invoice.number}
-                            </h4>
-                            {selectedId === invoice.id && (
-                              <span className="px-2 py-0.5 text-xs font-semibold bg-bigster-primary text-bigster-primary-text border border-yellow-200 rounded-none">
-                                Selezionato
-                              </span>
-                            )}
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-sm text-bigster-text-muted flex items-center gap-2">
-                              <Calendar className="h-4 w-4" />
-                              {new Date(invoice.date).toLocaleDateString(
-                                "it-IT"
-                              )}
-                            </p>
-                            <p className="text-sm text-bigster-text-muted">
-                              Contratto:{" "}
-                              <span className="font-medium text-bigster-text">
-                                {invoice.contract_number || "N/D"}
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="text-right bg-bigster-surface p-3 border border-bigster-border rounded-none">
-                          <p className="font-semibold text-xl text-bigster-text flex items-center gap-1">
-                            <Euro className="h-5 w-5" />
-                            {invoice.amount_gross.toFixed(2)}
-                          </p>
-                        </div>
-                      </div>
-
-                      {invoice.items_codes &&
-                        invoice.items_codes.length > 0 && (
-                          <div className="flex gap-2 flex-wrap">
-                            {invoice.items_codes.map((code, idx) => (
-                              <CodeBadge key={idx} code={code} />
-                            ))}
-                          </div>
-                        )}
-                    </motion.button>
+                    <InvoiceCard key={invoice.id} invoice={invoice} />
                   ))}
                 </div>
               </CardContent>

@@ -4,7 +4,6 @@ import type {
   CompanyDetail,
   CompanyResponse,
   CompanySearchResult,
-  CompanyRegionStats,
   CompanyStatsResponse,
   CreateCompanyPayload,
   UpdateCompanyPayload,
@@ -51,14 +50,6 @@ export const companiesApiSlice = apiSlice.injectEndpoints({
         response.data,
     }),
 
-    // Get companies statistics by region
-    getCompaniesByRegionStats: builder.query<CompanyRegionStats[], void>({
-      query: () => `/companies/stats-by-region`,
-      transformResponse: (response: { data: CompanyRegionStats[] }) =>
-        response.data,
-      providesTags: [{ type: "Company" as const, id: "REGION_STATS" }],
-    }),
-
     // Get company statistics
     getCompanyStats: builder.query<CompanyStatsResponse, number>({
       query: (id) => `/companies/${id}/stats`,
@@ -78,10 +69,7 @@ export const companiesApiSlice = apiSlice.injectEndpoints({
         body: newCompany,
       }),
       transformResponse: (response: { data: CompanyResponse }) => response.data,
-      invalidatesTags: [
-        { type: "Company", id: "LIST" },
-        { type: "Company", id: "REGION_STATS" },
-      ],
+      invalidatesTags: [{ type: "Company", id: "LIST" }],
     }),
 
     // Update company
@@ -98,7 +86,6 @@ export const companiesApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (result, error, { id }) => [
         { type: "Company", id },
         { type: "Company", id: "LIST" },
-        { type: "Company", id: "REGION_STATS" },
         { type: "Company", id: `STATS_${id}` },
       ],
     }),
@@ -109,10 +96,7 @@ export const companiesApiSlice = apiSlice.injectEndpoints({
         url: `/companies/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: [
-        { type: "Company", id: "LIST" },
-        { type: "Company", id: "REGION_STATS" },
-      ],
+      invalidatesTags: [{ type: "Company", id: "LIST" }],
     }),
   }),
 });
@@ -121,7 +105,6 @@ export const {
   useGetCompaniesQuery,
   useGetCompanyByIdQuery,
   useSearchCompaniesQuery,
-  useGetCompaniesByRegionStatsQuery,
   useGetCompanyStatsQuery,
   useCreateCompanyMutation,
   useUpdateCompanyMutation,

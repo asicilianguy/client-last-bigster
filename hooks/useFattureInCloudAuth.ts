@@ -1,14 +1,19 @@
+// ============================================================================
+// 2. hooks/useFattureInCloudAuth.ts - UPDATED WITH CACHING
+// ============================================================================
+
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
-import { Scope } from "@fattureincloud/fattureincloud-ts-sdk";
+import { useInvoicesCache } from "@/app/contexts/InvoicesContext";
+import type { Invoice } from "@/app/contexts/InvoicesContext";
 
 // Types
 export interface FattureInCloudConfig {
   clientId: string;
   clientSecret: string;
   redirectUri: string;
-  companyIndex?: number; // Quale company selezionare (default: 0)
-  companyId: number; // NUOVO: Company ID specifica
+  companyIndex?: number;
+  companyId: number;
 }
 
 export interface FattureInCloudAuthState {
@@ -29,40 +34,17 @@ export interface CompanyInfo {
   tax_code?: string;
 }
 
-export interface Invoice {
-  id: number;
-  type: string;
-  amount_net: number;
-  amount_vat: number;
-  amount_gross: number;
-  entity: {
-    name: string;
-    vat_number: string;
-    tax_code: string;
-    address_street: string;
-    address_postal_code: string;
-    address_city: string;
-    address_province: string;
-    country: string;
-    id: number;
-  };
-  contract_number: string;
-  date: string;
-  number: string;
-  url: string;
-  service_name: string;
-  // NUOVI CAMPI
-  service_code?: string;
-  items_codes?: string[];
-  items_names?: string[];
-}
+// Re-export Invoice type
+export type { Invoice };
 
-// Hook principale - COMPLETAMENTE STANDALONE
 export function useFattureInCloudAuth(config: FattureInCloudConfig) {
   const searchParams = useSearchParams();
   const companyIndex = config.companyIndex ?? 0;
 
-  // State
+  // Get cache context
+  const { getInvoices, setInvoices, isCached, getCacheAge } =
+    useInvoicesCache();
+
   const [authState, setAuthState] = useState<FattureInCloudAuthState>({
     isAuthenticated: false,
     isLoading: true,
@@ -198,25 +180,63 @@ export function useFattureInCloudAuth(config: FattureInCloudConfig) {
     return await response.json();
   }, []);
 
-  const fetchInvoices = useCallback(async (): Promise<Invoice[]> => {
-    if (!authState.accessToken || !authState.companyId) {
-      throw new Error("Not authenticated");
-    }
+  // UPDATED: fetchInvoices with caching
+  const fetchInvoices = useCallback(
+    async (forceRefresh: boolean = false): Promise<Invoice[]> => {
+      if (!authState.accessToken || !authState.companyId) {
+        throw new Error("Not authenticated");
+      }
 
-    const response = await fetch(
-      `/api/fattureincloud/invoices?token=${encodeURIComponent(
-        authState.accessToken
-      )}&companyId=${authState.companyId}`
-    );
+      const companyId = authState.companyId;
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to fetch invoices");
-    }
+      // 1. Check cache FIRST (unless forceRefresh)
+      if (!forceRefresh && isCached(companyId)) {
+        const cached = getInvoices(companyId);
+        if (cached) {
+          const age = getCacheAge(companyId);
+          console.log(
+            `📦 Returning cached invoices (${cached.length} items, age: ${
+              age ? Math.round(age / 1000) : 0
+            }s)`
+          );
+          return cached;
+        }
+      }
 
-    const data = await response.json();
-    return data.data || [];
-  }, [authState.accessToken, authState.companyId]);
+      // 2. Fetch from API
+      console.log(`🌐 Fetching invoices from API for company ${companyId}...`);
+
+      const response = await fetch(
+        `/api/fattureincloud/invoices?token=${encodeURIComponent(
+          authState.accessToken
+        )}&companyId=${companyId}`
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to fetch invoices");
+      }
+
+      const data = await response.json();
+      const invoices: Invoice[] = data.data || [];
+
+      // 3. Save to cache
+      setInvoices(companyId, invoices);
+      console.log(
+        `✅ Cached ${invoices.length} invoices for company ${companyId}`
+      );
+
+      return invoices;
+    },
+    [
+      authState.accessToken,
+      authState.companyId,
+      getInvoices,
+      setInvoices,
+      isCached,
+      getCacheAge,
+    ]
+  );
 
   // ==========================================
   // AUTHORIZATION FLOW
@@ -225,18 +245,15 @@ export function useFattureInCloudAuth(config: FattureInCloudConfig) {
   const startAuthorization = useCallback(
     (additionalData?: Record<string, string>) => {
       try {
-        // Salva dati aggiuntivi
         if (additionalData) {
           Object.entries(additionalData).forEach(([key, value]) => {
             localStorage.setItem(`fic_${key}`, value);
           });
         }
 
-        // Genera state casuale
         const state = Math.random().toString(36).substring(2, 15);
         localStorage.setItem("fic_state", state);
 
-        // Genera URL e reindirizza
         const authUrl = generateAuthUrl(state);
         window.location.href = authUrl;
       } catch (error) {
@@ -268,11 +285,9 @@ export function useFattureInCloudAuth(config: FattureInCloudConfig) {
           const companiesList = companiesData.data.companies;
           setCompanies(companiesList);
 
-          // NUOVO: Seleziona company per ID o per index
           let selectedCompany;
 
           if (config.companyId) {
-            // Cerca per ID specifico
             selectedCompany = companiesList.find(
               (c: CompanyInfo) => c.id === config.companyId
             );
@@ -280,7 +295,6 @@ export function useFattureInCloudAuth(config: FattureInCloudConfig) {
               throw new Error(`Company con ID ${config.companyId} non trovata`);
             }
           } else {
-            // Usa l'indice (default: 0)
             selectedCompany = companiesList[companyIndex] || companiesList[0];
           }
 
@@ -297,7 +311,16 @@ export function useFattureInCloudAuth(config: FattureInCloudConfig) {
           throw new Error("Nessuna company trovata");
         }
       } catch (error) {
-        // ... resto uguale
+        console.error("Error retrieving token:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        setAuthState((prev) => ({
+          ...prev,
+          error: errorMessage,
+          isLoading: false,
+        }));
+        clearStorage();
+        return { success: false, error: errorMessage };
       }
     },
     [
@@ -327,14 +350,12 @@ export function useFattureInCloudAuth(config: FattureInCloudConfig) {
         return { success: false, reason: "No session found" };
       }
 
-      // Verifica validità token
       if (!isTokenValid(expiresAt)) {
         console.warn("Token expired, clearing session");
         clearStorage();
         return { success: false, reason: "Token expired" };
       }
 
-      // Imposta stato
       setAuthState({
         isAuthenticated: true,
         isLoading: false,
@@ -345,7 +366,6 @@ export function useFattureInCloudAuth(config: FattureInCloudConfig) {
         error: null,
       });
 
-      // Ricarica companies (opzionale)
       try {
         const companiesData = await fetchCompanies(accessToken);
         if (companiesData?.data?.companies) {
@@ -371,7 +391,6 @@ export function useFattureInCloudAuth(config: FattureInCloudConfig) {
   // EFFECTS
   // ==========================================
 
-  // Gestione callback OAuth2
   useEffect(() => {
     const handleOAuthCallback = async () => {
       const code = searchParams.get("code");
@@ -390,7 +409,6 @@ export function useFattureInCloudAuth(config: FattureInCloudConfig) {
 
       await retrieveToken(code);
 
-      // Pulisci URL
       const url = new URL(window.location.href);
       url.searchParams.delete("code");
       url.searchParams.delete("state");
@@ -402,7 +420,6 @@ export function useFattureInCloudAuth(config: FattureInCloudConfig) {
     handleOAuthCallback();
   }, [searchParams, retrieveToken, loadExistingSession]);
 
-  // Carica sessione all'avvio
   useEffect(() => {
     const code = searchParams.get("code");
 
@@ -412,17 +429,12 @@ export function useFattureInCloudAuth(config: FattureInCloudConfig) {
   }, []);
 
   return {
-    // State
     ...authState,
     companies,
-
-    // Functions
     startAuthorization,
     logout,
     fetchInvoices,
     clearStorage,
-
-    // Utilities
     isTokenValid: isTokenValid(authState.expiresAt?.toString() || null),
   };
 }

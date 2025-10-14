@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { User, Search, Filter, X, Briefcase, Mail } from "lucide-react";
+import { User, Search, Filter, X, Briefcase, Mail, Pin } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -17,7 +17,7 @@ type ConsultantSortOption =
 
 interface ConsultantSelectorProps {
   onSelect: (consultantId: number) => void;
-  selectedId?: number | null; // NEW: per mostrare quale è selezionato
+  selectedId?: number | null;
 }
 
 const inputBase =
@@ -27,7 +27,6 @@ export default function ConsultantSelector({
   onSelect,
   selectedId,
 }: ConsultantSelectorProps) {
-  // RTK Query hook - con caching automatico!
   const { data, isLoading, error } = useGetConsultantsQuery();
   const consultants = data?.consultants || [];
 
@@ -37,8 +36,18 @@ export default function ConsultantSelector({
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
+  const selectedConsultant = useMemo(
+    () => consultants.find((cons) => cons.id === selectedId),
+    [consultants, selectedId]
+  );
+
   const filteredAndSortedConsultants = useMemo(() => {
     let filtered = [...consultants];
+
+    // Rimuovi l'elemento selezionato dalla lista principale
+    if (selectedId) {
+      filtered = filtered.filter((cons) => cons.id !== selectedId);
+    }
 
     if (areaFilter !== "ALL") {
       filtered = filtered.filter(
@@ -79,7 +88,7 @@ export default function ConsultantSelector({
     });
 
     return filtered;
-  }, [consultants, areaFilter, roleFilter, searchTerm, sortBy]);
+  }, [consultants, areaFilter, roleFilter, searchTerm, sortBy, selectedId]);
 
   const uniqueAreas = useMemo(() => {
     const areas = new Set(
@@ -130,6 +139,74 @@ export default function ConsultantSelector({
     roleFilter !== "ALL" ||
     searchTerm ||
     sortBy !== "name-asc";
+
+  const ConsultantCard = ({
+    consultant,
+    isPinned = false,
+  }: {
+    consultant: Consultant;
+    isPinned?: boolean;
+  }) => (
+    <motion.button
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3 }}
+      onClick={() => onSelect(consultant.id)}
+      className={`w-full p-4 text-left hover:bg-bigster-surface transition-colors ${
+        isPinned ? "bg-bigster-surface" : ""
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        {isPinned && <Pin className="h-4 w-4 text-bigster-text mt-1" />}
+        <User className="h-5 w-5 text-bigster-text-muted flex-shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-2">
+            <h4 className="font-semibold text-base text-bigster-text">
+              {consultant.fullName}
+            </h4>
+            {isPinned && (
+              <span className="px-2 py-0.5 text-xs font-semibold bg-bigster-primary text-bigster-primary-text border border-yellow-200 rounded-none">
+                Selezionato
+              </span>
+            )}
+          </div>
+          <div className="space-y-1">
+            {consultant.email && (
+              <div className="flex items-center gap-2 text-sm text-bigster-text-muted">
+                <Mail className="h-4 w-4 flex-shrink-0" />
+                <span>{consultant.email}</span>
+              </div>
+            )}
+            {consultant.role && (
+              <p className="text-sm text-bigster-text-muted">
+                <span className="font-medium text-bigster-text">Ruolo:</span>{" "}
+                {consultant.role}
+              </p>
+            )}
+            <div className="flex items-center gap-3 flex-wrap">
+              {consultant.area && (
+                <span
+                  className="inline-flex items-center px-2 py-1 text-xs font-semibold border border-bigster-border rounded-none"
+                  style={{
+                    backgroundColor: consultant.areaColor || "#f3f4f6",
+                    color: consultant.areaColor ? "#000" : "#666",
+                  }}
+                >
+                  {consultant.area}
+                </span>
+              )}
+              {consultant.companies > 0 && (
+                <div className="flex items-center gap-1 text-sm text-bigster-text-muted">
+                  <Briefcase className="h-4 w-4 flex-shrink-0" />
+                  <span>{consultant.companies} aziende</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.button>
+  );
 
   if (isLoading) {
     return (
@@ -200,7 +277,7 @@ export default function ConsultantSelector({
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as ConsultantSortOption)}
-            className={`${inputBase} w-[200px]`}
+            className={`${inputBase} !w-[200px]`}
           >
             <option value="name-asc">Nome (A-Z)</option>
             <option value="name-desc">Nome (Z-A)</option>
@@ -316,94 +393,56 @@ export default function ConsultantSelector({
         </div>
       )}
 
+      {/* Selezione Pinnata */}
+      {selectedConsultant && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          <Card className="shadow-bigster-card border-2 border-bigster-primary rounded-none">
+            <CardHeader className="bg-bigster-primary">
+              <CardTitle className="text-base font-semibold text-bigster-primary-text flex items-center gap-2">
+                <Pin className="h-5 w-5" />
+                Selezione corrente
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <ConsultantCard consultant={selectedConsultant} isPinned={true} />
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
       {/* Consultants List */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
+        transition={{
+          duration: 0.3,
+          delay: selectedConsultant ? 0.2 : 0.1,
+        }}
       >
         <Card className="shadow-bigster-card border border-bigster-border rounded-none">
           <CardHeader className="bg-bigster-surface">
             <CardTitle className="text-lg font-semibold text-bigster-text">
               <span className="font-normal text-bigster-text-muted mr-2">
-                Trovati:
+                {selectedConsultant ? "Altri consulenti:" : "Trovati:"}
               </span>
               {filteredAndSortedConsultants.length}
-              {filteredAndSortedConsultants.length !== consultants.length && (
+              {filteredAndSortedConsultants.length !==
+                consultants.length - (selectedConsultant ? 1 : 0) && (
                 <span className="text-sm font-normal text-bigster-text-muted ml-2">
-                  su {consultants.length}
+                  su {consultants.length - (selectedConsultant ? 1 : 0)}
                 </span>
               )}
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <div className="divide-y divide-bigster-border">
-              {filteredAndSortedConsultants.map(
-                (consultant: Consultant, index: number) => (
-                  <motion.button
-                    key={consultant.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.03 }}
-                    onClick={() => onSelect(consultant.id)}
-                    className={`w-full p-4 text-left hover:bg-bigster-surface transition-colors ${
-                      selectedId === consultant.id ? "bg-bigster-surface" : ""
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <User className="h-5 w-5 text-bigster-text-muted flex-shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h4 className="font-semibold text-base text-bigster-text">
-                            {consultant.fullName}
-                          </h4>
-                          {selectedId === consultant.id && (
-                            <span className="px-2 py-0.5 text-xs font-semibold bg-bigster-primary text-bigster-primary-text border border-yellow-200 rounded-none">
-                              Selezionato
-                            </span>
-                          )}
-                        </div>
-                        <div className="space-y-1">
-                          {consultant.email && (
-                            <div className="flex items-center gap-2 text-sm text-bigster-text-muted">
-                              <Mail className="h-4 w-4 flex-shrink-0" />
-                              <span>{consultant.email}</span>
-                            </div>
-                          )}
-                          {consultant.role && (
-                            <p className="text-sm text-bigster-text-muted">
-                              <span className="font-medium text-bigster-text">
-                                Ruolo:
-                              </span>{" "}
-                              {consultant.role}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-3 flex-wrap">
-                            {consultant.area && (
-                              <span
-                                className="inline-flex items-center px-2 py-1 text-xs font-semibold border border-bigster-border rounded-none"
-                                style={{
-                                  backgroundColor:
-                                    consultant.areaColor || "#f3f4f6",
-                                  color: consultant.areaColor ? "#000" : "#666",
-                                }}
-                              >
-                                {consultant.area}
-                              </span>
-                            )}
-                            {consultant.companies > 0 && (
-                              <div className="flex items-center gap-1 text-sm text-bigster-text-muted">
-                                <Briefcase className="h-4 w-4 flex-shrink-0" />
-                                <span>{consultant.companies} aziende</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.button>
-                )
-              )}
+              {filteredAndSortedConsultants.map((consultant: Consultant) => (
+                <ConsultantCard key={consultant.id} consultant={consultant} />
+              ))}
             </div>
           </CardContent>
         </Card>
