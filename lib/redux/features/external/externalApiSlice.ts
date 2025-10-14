@@ -33,12 +33,27 @@ export interface InvoicesApiResponse {
   invoices: Invoice[];
 }
 
+// Types for Companies (Fatture in Cloud)
+export interface CompanyInfo {
+  id: number;
+  name: string;
+  type: string;
+  vat_number?: string;
+  tax_code?: string;
+}
+
+export interface CompaniesApiResponse {
+  data: {
+    companies: CompanyInfo[];
+  };
+}
+
 export const externalApiSlice = createApi({
   reducerPath: "externalApi",
   baseQuery: fetchBaseQuery({
     baseUrl: "/api",
   }),
-  tagTypes: ["Consultants", "Invoices"],
+  tagTypes: ["Consultants", "Invoices", "Companies"],
   endpoints: (builder) => ({
     // GET Consultants
     getConsultants: builder.query<ConsultantsApiResponse, void>({
@@ -46,12 +61,26 @@ export const externalApiSlice = createApi({
       providesTags: ["Consultants"],
     }),
 
-    // GET Invoices (potrebbe richiedere parametri in futuro)
+    // GET Invoices
     getInvoices: builder.query<InvoicesApiResponse, void>({
       query: () => "/invoices",
       providesTags: ["Invoices"],
     }),
+
+    // GET Companies (Fatture in Cloud)
+    getCompanies: builder.query<CompaniesApiResponse, { token: string }>({
+      query: ({ token }) => ({
+        url: "/fattureincloud/companies",
+        params: { token },
+      }),
+      providesTags: ["Companies"],
+    }),
   }),
 });
 
-export const { useGetConsultantsQuery, useGetInvoicesQuery } = externalApiSlice;
+export const {
+  useGetConsultantsQuery,
+  useGetInvoicesQuery,
+  useGetCompaniesQuery,
+  useLazyGetCompaniesQuery,
+} = externalApiSlice;

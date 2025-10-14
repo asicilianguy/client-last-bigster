@@ -1,10 +1,11 @@
 // ============================================================================
-// 2. hooks/useFattureInCloudAuth.ts - UPDATED WITH CACHING
+// 2. hooks/useFattureInCloudAuth.ts - UPDATED WITH RTK QUERY
 // ============================================================================
 
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useInvoicesCache } from "@/app/contexts/InvoicesContext";
+import { useLazyGetCompaniesQuery } from "@/lib/redux/features/external/externalApiSlice";
 import type { Invoice } from "@/app/contexts/InvoicesContext";
 
 // Types
@@ -44,6 +45,9 @@ export function useFattureInCloudAuth(config: FattureInCloudConfig) {
   // Get cache context
   const { getInvoices, setInvoices, isCached, getCacheAge } =
     useInvoicesCache();
+
+  // RTK Query lazy hook for companies
+  const [triggerGetCompanies] = useLazyGetCompaniesQuery();
 
   const [authState, setAuthState] = useState<FattureInCloudAuthState>({
     isAuthenticated: false,
@@ -141,7 +145,7 @@ export function useFattureInCloudAuth(config: FattureInCloudConfig) {
   );
 
   // ==========================================
-  // API CALLS - FETCH DIRETTE
+  // API CALLS
   // ==========================================
 
   const fetchToken = useCallback(
@@ -159,7 +163,9 @@ export function useFattureInCloudAuth(config: FattureInCloudConfig) {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to fetch token");
+        // throw new Error(error.error || "Failed to fetch token");
+      } else {
+        return await response.json();
       }
 
       return await response.json();
@@ -167,18 +173,22 @@ export function useFattureInCloudAuth(config: FattureInCloudConfig) {
     [config.clientId, config.clientSecret, config.redirectUri]
   );
 
-  const fetchCompanies = useCallback(async (accessToken: string) => {
-    const response = await fetch(
-      `/api/fattureincloud/companies?token=${encodeURIComponent(accessToken)}`
-    );
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || "Failed to fetch companies");
-    }
-
-    return await response.json();
-  }, []);
+  // UPDATED: fetchCompanies using RTK Query
+  const fetchCompanies = useCallback(
+    async (accessToken: string) => {
+      try {
+        const result = await triggerGetCompanies({
+          token: accessToken,
+        }).unwrap();
+        return result;
+      } catch (error: any) {
+        throw new Error(
+          error?.data?.error || error?.message || "Failed to fetch companies"
+        );
+      }
+    },
+    [triggerGetCompanies]
+  );
 
   // UPDATED: fetchInvoices with caching
   const fetchInvoices = useCallback(
