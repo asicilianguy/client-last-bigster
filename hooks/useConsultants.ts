@@ -1,43 +1,29 @@
-import {
-  Consultant,
-  ConsultantsApiResponse,
-} from "@/lib/redux/features/external/externalApiSlice";
-import { useState, useEffect } from "react";
+import { useGetConsulentiQuery } from "@/lib/redux/features/users/usersApiSlice";
+import type { UserWithSelectionCount } from "@/types/user";
 
+/**
+ * Hook personalizzato per ottenere la lista dei consulenti
+ * Wrapper attorno a useGetConsulentiQuery per mantenere la stessa interfaccia
+ */
 export function useConsultants() {
-  const [consultants, setConsultants] = useState<Consultant[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    data: consultants = [],
+    isLoading,
+    error: queryError,
+  } = useGetConsulentiQuery();
 
-  useEffect(() => {
-    const fetchConsultants = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+  // Trasforma l'errore RTK Query in stringa per retrocompatibilità
+  const error = queryError
+    ? "data" in queryError
+      ? JSON.stringify(queryError.data)
+      : "error" in queryError
+      ? String(queryError.error)
+      : "Errore nel caricamento dei consulenti"
+    : null;
 
-        const response = await fetch("/api/consultants");
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data: ConsultantsApiResponse = await response.json();
-
-        if (data.success) {
-          setConsultants(data.consultants);
-        } else {
-          throw new Error("Failed to fetch consultants");
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
-        console.error("Error fetching consultants:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchConsultants();
-  }, []);
-
-  return { consultants, isLoading, error };
+  return {
+    consultants: consultants as UserWithSelectionCount[],
+    isLoading,
+    error,
+  };
 }

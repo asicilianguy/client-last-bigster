@@ -9,17 +9,22 @@ import {
   User,
   Building2,
   FileText,
+  PlusCircle,
+  LogOut,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
 import ConsultantSelector from "@/components/accesso-fattureincloud/ConsultantSelector";
 import CompanySelector from "@/components/accesso-fattureincloud/CompanySelector";
 import InvoiceSelector from "@/components/accesso-fattureincloud/InvoiceSelector";
 import SelectionForm from "@/components/accesso-fattureincloud/SelectionForm";
 import { useCreateSelectionMutation } from "@/lib/redux/features/selections/selectionsApiSlice";
-import { useGetConsultantsQuery } from "@/lib/redux/features/external/externalApiSlice";
+import { useGetConsulentiQuery } from "@/lib/redux/features/users/usersApiSlice";
 import { useGetCompaniesQuery } from "@/lib/redux/features/companies/companiesApiSlice";
+import { useLogoutMutation } from "@/lib/redux/features/auth/authApiSlice";
+import { clearCredentials } from "@/lib/redux/features/auth/authSlice";
 import { useNotify } from "@/hooks/use-notify";
 import type { CreateSelectionPayload } from "@/types/selection";
 import { PackageType } from "@/types/enums";
@@ -36,14 +41,17 @@ interface SelectionDraft {
 
 export default function CreateSelectionPage() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const notify = useNotify();
+
   const [createSelection, { isLoading }] = useCreateSelectionMutation();
+  const [logout] = useLogoutMutation();
 
   // Queries per ottenere i dati completi
-  const { data: consultantsData } = useGetConsultantsQuery();
+  const { data: consultants } = useGetConsulentiQuery();
   const { data: companies } = useGetCompaniesQuery();
 
-  // Inizializza gli stati dal localStorage
+  // Stati del wizard
   const [selectedConsultantId, setSelectedConsultantId] = useState<
     number | null
   >(null);
@@ -55,6 +63,7 @@ export default function CreateSelectionPage() {
   );
   const [currentStep, setCurrentStep] = useState<CreationStep>("consultant");
   const [isInitialized, setIsInitialized] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Carica i dati dal localStorage all'avvio
   useEffect(() => {
@@ -93,7 +102,7 @@ export default function CreateSelectionPage() {
       }
     }
     setIsInitialized(true);
-  }, []);
+  }, [notify]);
 
   // Sincronizza con localStorage quando cambiano i valori
   useEffect(() => {
@@ -114,7 +123,7 @@ export default function CreateSelectionPage() {
   ]);
 
   // Ottieni i dati completi per il riepilogo
-  const selectedConsultant = consultantsData?.consultants?.find(
+  const selectedConsultant = consultants?.find(
     (c) => c.id === selectedConsultantId
   );
   const selectedCompany = companies?.find((c) => c.id === selectedCompanyId);
@@ -166,7 +175,6 @@ export default function CreateSelectionPage() {
 
       const creationPromise = createSelection(payload).unwrap();
 
-      // Usa promise notification per mostrare lo stato
       await notify.promise(creationPromise, {
         loading: "Creazione selezione in corso...",
         success: "Selezione creata con successo!",
@@ -176,10 +184,8 @@ export default function CreateSelectionPage() {
       // Pulisci il localStorage dopo la creazione riuscita
       localStorage.removeItem(STORAGE_KEY);
 
-      // Breve delay prima del redirect per permettere all'utente di vedere la notifica
-      // setTimeout(() => {
-      //   router.push("/selezioni");
-      // }, 800);
+      // Mostra la modale di scelta
+      setShowSuccessModal(true);
     } catch (error: any) {
       console.error("Errore nella creazione della selezione:", error);
 
@@ -197,9 +203,47 @@ export default function CreateSelectionPage() {
           "Permessi insufficienti",
           "Non hai i permessi per creare selezioni"
         );
-      } else {
-        // Errore generico già gestito dalla promise notification
       }
+    }
+  };
+
+  const handleCreateAnother = () => {
+    setShowSuccessModal(false);
+    // Reset tutti gli stati
+    setSelectedConsultantId(null);
+    setSelectedCompanyId(null);
+    setSelectedInvoiceId(null);
+    setCurrentStep("consultant");
+    localStorage.removeItem(STORAGE_KEY);
+    notify.info("Nuova selezione", "Inizia una nuova creazione");
+  };
+
+  const handleCloseAndLogout = async () => {
+    setShowSuccessModal(false);
+
+    try {
+      // Esegui il logout tramite API
+      await logout().unwrap();
+
+      // Pulisci lo stato Redux
+      dispatch(clearCredentials());
+
+      notify.success("Logout effettuato", "Sessione terminata correttamente");
+
+      // Redirect al login dopo un breve delay
+      setTimeout(() => {
+        router.push("/login");
+      }, 500);
+    } catch (error) {
+      console.error("Errore durante il logout:", error);
+
+      // Anche in caso di errore, pulisci lo stato locale e fai logout
+      dispatch(clearCredentials());
+      notify.warning("Logout locale", "Sessione terminata localmente");
+
+      setTimeout(() => {
+        router.push("/login");
+      }, 500);
     }
   };
 
@@ -329,7 +373,7 @@ export default function CreateSelectionPage() {
         </div>
       </div>
 
-      {/* Progress Indicator - Minimalista */}
+      {/* Progress Indicator */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -381,7 +425,7 @@ export default function CreateSelectionPage() {
         </Card>
       </motion.div>
 
-      {/* RIEPILOGO SELEZIONI - Compatto */}
+      {/* RIEPILOGO SELEZIONI */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -402,13 +446,11 @@ export default function CreateSelectionPage() {
                 {selectedConsultant ? (
                   <div>
                     <p className="font-semibold text-sm text-bigster-text">
-                      {selectedConsultant.fullName}
+                      {selectedConsultant.nome} {selectedConsultant.cognome}
                     </p>
-                    {selectedConsultant.area && (
-                      <p className="text-xs text-bigster-text-muted">
-                        {selectedConsultant.area}
-                      </p>
-                    )}
+                    <p className="text-xs text-bigster-text-muted">
+                      {selectedConsultant.email}
+                    </p>
                   </div>
                 ) : (
                   <span className="text-sm text-bigster-text-muted">—</span>
@@ -462,7 +504,7 @@ export default function CreateSelectionPage() {
         </Card>
       </motion.div>
 
-      {/* Step Description - Minimale */}
+      {/* Step Description */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -510,11 +552,64 @@ export default function CreateSelectionPage() {
           <SelectionForm onSubmit={handleSubmit} isLoading={isLoading} />
         )}
       </motion.div>
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+            className="w-full max-w-md mx-4"
+          >
+            <Card className="shadow-bigster-card border border-bigster-border rounded-none bg-bigster-surface">
+              <CardContent className="p-6">
+                {/* Header */}
+                <div className="flex flex-col items-center text-center mb-6">
+                  <div
+                    className="w-16 h-16 flex items-center justify-center border-2 border-yellow-200 rounded-none mb-4"
+                    style={{ backgroundColor: "#e4d72b" }}
+                  >
+                    <Check className="h-8 w-8 text-bigster-primary-text" />
+                  </div>
+                  <h2 className="text-xl font-bold text-bigster-text mb-2">
+                    Selezione Creata!
+                  </h2>
+                  <p className="text-sm text-bigster-text-muted">
+                    La selezione è stata salvata con successo. Cosa vuoi fare
+                    ora?
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <div className="space-y-3">
+                  <Button
+                    onClick={handleCreateAnother}
+                    className="w-full rounded-none bg-bigster-primary text-bigster-primary-text border border-yellow-200 hover:opacity-90"
+                  >
+                    <PlusCircle className="h-5 w-5 mr-2" />
+                    Crea un'altra selezione
+                  </Button>
+
+                  <Button
+                    onClick={handleCloseAndLogout}
+                    variant="outline"
+                    className="w-full rounded-none border border-bigster-border bg-bigster-surface text-bigster-text hover:bg-bigster-background"
+                  >
+                    <LogOut className="h-5 w-5 mr-2" />
+                    Chiudi e termina sessione
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 }
 
-// Step Indicator - Minimalista
+// Step Indicator Component
 interface StepIndicatorProps {
   step: number;
   label: string;
