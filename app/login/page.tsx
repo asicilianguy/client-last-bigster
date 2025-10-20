@@ -23,6 +23,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import CustomDialog from "@/components/ui/bigster/CustomDialog";
+import { UserRole } from "@/types/enums";
 
 const loginSchema = z.object({
   email: z.string().email("Email non valida"),
@@ -56,17 +57,19 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      const loginPromise = login(data).unwrap();
+      const result = await login(data).unwrap();
 
-      await notify.promise(loginPromise, {
-        loading: "Accesso in corso...",
-        success: "Login effettuato con successo!",
-        error: "Credenziali non valide",
-      });
+      notify.success("Login effettuato", "Accesso completato con successo!");
 
-      // Breve delay per permettere all'utente di vedere la notifica di successo
+      // Redirect in base al ruolo dell'utente
+      const userRole = result.user.ruolo;
+
       setTimeout(() => {
-        router.push("/amministrazione");
+        if (userRole === UserRole.AMMINISTRAZIONE) {
+          router.push("/amministrazione");
+        } else {
+          router.push("/selezioni");
+        }
       }, 500);
     } catch (err: any) {
       // Gestione errori specifici
@@ -95,8 +98,12 @@ export default function LoginPage() {
           "Nessuna connessione",
           "Verifica la tua connessione internet e riprova."
         );
+      } else {
+        notify.error(
+          "Errore di accesso",
+          "Si è verificato un errore imprevisto. Riprova."
+        );
       }
-      // L'errore generico è già gestito dalla promise notification
     }
   };
 

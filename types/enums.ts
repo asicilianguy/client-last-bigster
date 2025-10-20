@@ -7,6 +7,7 @@ export enum UserRole {
   CONSULENTE = "CONSULENTE",
   DIPENDENTE = "DIPENDENTE",
   DEVELOPER = "DEVELOPER",
+  AMMINISTRAZIONE = "AMMINISTRAZIONE",
 }
 
 export enum Seniority {
