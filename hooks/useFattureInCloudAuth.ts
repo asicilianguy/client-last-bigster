@@ -76,20 +76,41 @@ export function useFattureInCloudAuth(config: FattureInCloudConfig) {
       refreshToken: string;
       expiresIn: number;
     }) => {
-      localStorage.setItem("fic_accessToken", tokenData.accessToken);
-      localStorage.setItem("fic_refreshToken", tokenData.refreshToken);
+      // Verifica che i dati essenziali siano presenti
+      if (
+        !tokenData.accessToken ||
+        !tokenData.refreshToken ||
+        !tokenData.expiresIn
+      ) {
+        console.error("Token data incompleto:", tokenData);
+        return;
+      }
 
-      const expiresAt = Date.now() + tokenData.expiresIn * 1000;
-      localStorage.setItem("fic_expiresAt", expiresAt.toString());
+      // Verifica che localStorage sia disponibile
+      try {
+        if (typeof window === "undefined" || !window.localStorage) {
+          console.error("localStorage non disponibile");
+          return;
+        }
 
-      setAuthState((prev) => ({
-        ...prev,
-        accessToken: tokenData.accessToken,
-        refreshToken: tokenData.refreshToken,
-        expiresAt,
-        isAuthenticated: true,
-        error: null,
-      }));
+        // Salva i token
+        localStorage.setItem("fic_accessToken", tokenData.accessToken);
+        localStorage.setItem("fic_refreshToken", tokenData.refreshToken);
+
+        const expiresAt = Date.now() + tokenData.expiresIn * 1000;
+        localStorage.setItem("fic_expiresAt", expiresAt.toString());
+
+        setAuthState((prev) => ({
+          ...prev,
+          accessToken: tokenData.accessToken,
+          refreshToken: tokenData.refreshToken,
+          expiresAt,
+          isAuthenticated: true,
+          error: null,
+        }));
+      } catch (error) {
+        console.error("Errore nel salvataggio dei token:", error);
+      }
     },
     []
   );

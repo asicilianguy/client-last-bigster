@@ -6,14 +6,10 @@ import { User, Search, Filter, X, Briefcase, Mail, Pin } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { useGetConsultantsQuery } from "@/lib/redux/features/external/externalApiSlice";
-import type { Consultant } from "@/lib/redux/features/external/externalApiSlice";
+import { useGetConsulentiQuery } from "@/lib/redux/features/users/usersApiSlice";
+import type { UserWithSelectionCount } from "@/types/user";
 
-type ConsultantSortOption =
-  | "name-asc"
-  | "name-desc"
-  | "companies-desc"
-  | "area";
+type ConsultantSortOption = "name-asc" | "name-desc" | "selections-desc";
 
 interface ConsultantSelectorProps {
   onSelect: (consultantId: number) => void;
@@ -27,13 +23,10 @@ export default function ConsultantSelector({
   onSelect,
   selectedId,
 }: ConsultantSelectorProps) {
-  const { data, isLoading, error } = useGetConsultantsQuery();
-  const consultants = data?.consultants || [];
+  const { data: consultants = [], isLoading, error } = useGetConsulentiQuery();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<ConsultantSortOption>("name-asc");
-  const [areaFilter, setAreaFilter] = useState<string>("ALL");
-  const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   const selectedConsultant = useMemo(
@@ -49,164 +42,107 @@ export default function ConsultantSelector({
       filtered = filtered.filter((cons) => cons.id !== selectedId);
     }
 
-    if (areaFilter !== "ALL") {
-      filtered = filtered.filter(
-        (consultant) => consultant.area === areaFilter
-      );
-    }
-
-    if (roleFilter !== "ALL") {
-      filtered = filtered.filter(
-        (consultant) => consultant.role === roleFilter
-      );
-    }
-
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter(
         (consultant) =>
-          consultant.fullName.toLowerCase().includes(search) ||
-          consultant.email.toLowerCase().includes(search) ||
-          consultant.area.toLowerCase().includes(search) ||
-          consultant.role.toLowerCase().includes(search)
+          consultant.nome.toLowerCase().includes(search) ||
+          consultant.cognome.toLowerCase().includes(search) ||
+          consultant.email.toLowerCase().includes(search)
       );
     }
 
     filtered.sort((a, b) => {
       switch (sortBy) {
         case "name-asc":
-          return a.fullName.localeCompare(b.fullName);
+          return `${a.cognome} ${a.nome}`.localeCompare(
+            `${b.cognome} ${b.nome}`
+          );
         case "name-desc":
-          return b.fullName.localeCompare(a.fullName);
-        case "companies-desc":
-          return b.companies - a.companies;
-        case "area":
-          return a.area.localeCompare(b.area);
+          return `${b.cognome} ${b.nome}`.localeCompare(
+            `${a.cognome} ${a.nome}`
+          );
+        case "selections-desc":
+          return (
+            (b._count?.selezioni_come_consulente || 0) -
+            (a._count?.selezioni_come_consulente || 0)
+          );
         default:
           return 0;
       }
     });
 
     return filtered;
-  }, [consultants, areaFilter, roleFilter, searchTerm, sortBy, selectedId]);
-
-  const uniqueAreas = useMemo(() => {
-    const areas = new Set(
-      consultants.map((c) => c.area).filter((a): a is string => !!a)
-    );
-    return Array.from(areas).sort();
-  }, [consultants]);
-
-  const uniqueRoles = useMemo(() => {
-    const roles = new Set(
-      consultants.map((c) => c.role).filter((r): r is string => !!r)
-    );
-    return Array.from(roles).sort();
-  }, [consultants]);
-
-  const areaStats = useMemo(() => {
-    const stats: Record<string, number> = { ALL: consultants.length };
-    consultants.forEach((consultant) => {
-      if (consultant.area) {
-        stats[consultant.area] = (stats[consultant.area] || 0) + 1;
-      }
-    });
-    return stats;
-  }, [consultants]);
-
-  const roleStats = useMemo(() => {
-    const stats: Record<string, number> = { ALL: consultants.length };
-    consultants.forEach((consultant) => {
-      if (consultant.role) {
-        stats[consultant.role] = (stats[consultant.role] || 0) + 1;
-      }
-    });
-    return stats;
-  }, [consultants]);
-
-  const activeFiltersCount =
-    (areaFilter !== "ALL" ? 1 : 0) + (roleFilter !== "ALL" ? 1 : 0);
+  }, [consultants, searchTerm, sortBy, selectedId]);
 
   const clearAllFilters = () => {
-    setAreaFilter("ALL");
-    setRoleFilter("ALL");
     setSearchTerm("");
     setSortBy("name-asc");
   };
 
-  const hasActiveFilters =
-    areaFilter !== "ALL" ||
-    roleFilter !== "ALL" ||
-    searchTerm ||
-    sortBy !== "name-asc";
+  const hasActiveFilters = searchTerm || sortBy !== "name-asc";
 
   const ConsultantCard = ({
     consultant,
     isPinned = false,
   }: {
-    consultant: Consultant;
+    consultant: UserWithSelectionCount;
     isPinned?: boolean;
-  }) => (
-    <motion.button
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.3 }}
-      onClick={() => onSelect(consultant.id)}
-      className={`w-full p-4 text-left hover:bg-bigster-surface transition-colors ${
-        isPinned ? "bg-bigster-surface" : ""
-      }`}
-    >
-      <div className="flex items-start gap-3">
-        {isPinned && <Pin className="h-4 w-4 text-bigster-text mt-1" />}
-        <User className="h-5 w-5 text-bigster-text-muted flex-shrink-0 mt-0.5" />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            <h4 className="font-semibold text-base text-bigster-text">
-              {consultant.fullName}
-            </h4>
-            {isPinned && (
-              <span className="px-2 py-0.5 text-xs font-semibold bg-bigster-primary text-bigster-primary-text border border-yellow-200 rounded-none">
-                Selezionato
-              </span>
-            )}
-          </div>
-          <div className="space-y-1">
-            {consultant.email && (
-              <div className="flex items-center gap-2 text-sm text-bigster-text-muted">
-                <Mail className="h-4 w-4 flex-shrink-0" />
-                <span>{consultant.email}</span>
-              </div>
-            )}
-            {consultant.role && (
-              <p className="text-sm text-bigster-text-muted">
-                <span className="font-medium text-bigster-text">Ruolo:</span>{" "}
-                {consultant.role}
-              </p>
-            )}
-            <div className="flex items-center gap-3 flex-wrap">
-              {consultant.area && (
-                <span
-                  className="inline-flex items-center px-2 py-1 text-xs font-semibold border border-bigster-border rounded-none"
-                  style={{
-                    backgroundColor: consultant.areaColor || "#f3f4f6",
-                    color: consultant.areaColor ? "#000" : "#666",
-                  }}
-                >
-                  {consultant.area}
+  }) => {
+    const fullName = `${consultant.nome} ${consultant.cognome}`;
+    const selectionsCount = consultant._count?.selezioni_come_consulente || 0;
+
+    return (
+      <motion.button
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.3 }}
+        onClick={() => onSelect(consultant.id)}
+        className={`w-full p-4 text-left hover:bg-bigster-surface transition-colors ${
+          isPinned ? "bg-bigster-surface" : ""
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          {isPinned && <Pin className="h-4 w-4 text-bigster-text mt-1" />}
+          <User className="h-5 w-5 text-bigster-text-muted flex-shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2">
+              <h4 className="font-semibold text-base text-bigster-text">
+                {fullName}
+              </h4>
+              {isPinned && (
+                <span className="px-2 py-0.5 text-xs font-semibold bg-bigster-primary text-bigster-primary-text border border-yellow-200 rounded-none">
+                  Selezionato
                 </span>
               )}
-              {consultant.companies > 0 && (
-                <div className="flex items-center gap-1 text-sm text-bigster-text-muted">
-                  <Briefcase className="h-4 w-4 flex-shrink-0" />
-                  <span>{consultant.companies} aziende</span>
+            </div>
+            <div className="space-y-1">
+              {consultant.email && (
+                <div className="flex items-center gap-2 text-sm text-bigster-text-muted">
+                  <Mail className="h-4 w-4 flex-shrink-0" />
+                  <span>{consultant.email}</span>
                 </div>
               )}
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="inline-flex items-center px-2 py-1 text-xs font-semibold border border-bigster-border rounded-none bg-bigster-surface text-bigster-text">
+                  CONSULENTE
+                </span>
+                {selectionsCount > 0 && (
+                  <div className="flex items-center gap-1 text-sm text-bigster-text-muted">
+                    <Briefcase className="h-4 w-4 flex-shrink-0" />
+                    <span>
+                      {selectionsCount}{" "}
+                      {selectionsCount === 1 ? "selezione" : "selezioni"}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </motion.button>
-  );
+      </motion.button>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -226,7 +162,7 @@ export default function ConsultantSelector({
           <p className="text-sm text-bigster-text-muted">
             {error && "data" in error
               ? JSON.stringify(error.data)
-              : "Unknown error"}
+              : "Errore sconosciuto"}
           </p>
         </CardContent>
       </Card>
@@ -253,7 +189,7 @@ export default function ConsultantSelector({
             <input
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Cerca per nome, email, area..."
+              placeholder="Cerca per nome, cognome, email..."
               className={`${inputBase} pl-10 w-[500px]`}
             />
           </div>
@@ -264,25 +200,16 @@ export default function ConsultantSelector({
             onClick={() => setIsFiltersOpen(true)}
           >
             <Filter className="h-5 w-5" />
-            {activeFiltersCount > 0 && (
-              <span
-                className="absolute -top-2 -right-2 w-5 h-5 rounded-full text-bigster-primary-text text-xs flex items-center justify-center"
-                style={{ backgroundColor: "#e4d72b" }}
-              >
-                {activeFiltersCount}
-              </span>
-            )}
           </Button>
 
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as ConsultantSortOption)}
-            className={`${inputBase} !!w-[200px]`}
+            className={`${inputBase} w-[220px]`}
           >
             <option value="name-asc">Nome (A-Z)</option>
             <option value="name-desc">Nome (Z-A)</option>
-            <option value="companies-desc">Aziende (maggiore)</option>
-            <option value="area">Area (A-Z)</option>
+            <option value="selections-desc">Selezioni (maggiore)</option>
           </select>
         </div>
       </motion.div>
@@ -297,7 +224,7 @@ export default function ConsultantSelector({
           >
             <div className="flex items-center justify-between p-5 border-b border-bigster-border">
               <h2 className="text-lg font-semibold text-bigster-text">
-                Filtra consulenti
+                Filtra e ordina
               </h2>
               <button
                 onClick={() => setIsFiltersOpen(false)}
@@ -310,63 +237,40 @@ export default function ConsultantSelector({
             <div className="space-y-5 p-5">
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-bigster-text">
-                  Filtra per area
+                  Ordina per
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <Button
-                    onClick={() => setAreaFilter("ALL")}
+                    onClick={() => setSortBy("name-asc")}
                     className={`rounded-none border ${
-                      areaFilter === "ALL"
+                      sortBy === "name-asc"
                         ? "bg-bigster-primary text-bigster-primary-text border-yellow-200"
                         : "bg-bigster-surface text-bigster-text border-bigster-border hover:bg-bigster-surface"
                     }`}
                   >
-                    Tutte ({areaStats.ALL})
+                    Nome (A-Z)
                   </Button>
-                  {uniqueAreas.map((area) => (
-                    <Button
-                      key={area}
-                      onClick={() => setAreaFilter(area)}
-                      className={`rounded-none border ${
-                        areaFilter === area
-                          ? "bg-bigster-primary text-bigster-primary-text border-yellow-200"
-                          : "bg-bigster-surface text-bigster-text border-bigster-border hover:bg-bigster-surface"
-                      }`}
-                    >
-                      {area} ({areaStats[area] || 0})
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-bigster-text">
-                  Filtra per ruolo
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   <Button
-                    onClick={() => setRoleFilter("ALL")}
+                    onClick={() => setSortBy("name-desc")}
                     className={`rounded-none border ${
-                      roleFilter === "ALL"
+                      sortBy === "name-desc"
                         ? "bg-bigster-primary text-bigster-primary-text border-yellow-200"
                         : "bg-bigster-surface text-bigster-text border-bigster-border hover:bg-bigster-surface"
                     }`}
                   >
-                    Tutti ({roleStats.ALL})
+                    Nome (Z-A)
                   </Button>
-                  {uniqueRoles.map((role) => (
-                    <Button
-                      key={role}
-                      onClick={() => setRoleFilter(role)}
-                      className={`rounded-none border ${
-                        roleFilter === role
-                          ? "bg-bigster-primary text-bigster-primary-text border-yellow-200"
-                          : "bg-bigster-surface text-bigster-text border-bigster-border hover:bg-bigster-surface"
-                      }`}
-                    >
-                      {role} ({roleStats[role] || 0})
-                    </Button>
-                  ))}
+                  <Button
+                    onClick={() => setSortBy("selections-desc")}
+                    className={`rounded-none border ${
+                      sortBy === "selections-desc"
+                        ? "bg-bigster-primary text-bigster-primary-text border-yellow-200"
+                        : "bg-bigster-surface text-bigster-text border-bigster-border hover:bg-bigster-surface"
+                    }`}
+                  >
+                    <Briefcase className="h-4 w-4 mr-2" />
+                    Selezioni
+                  </Button>
                 </div>
               </div>
 
@@ -439,11 +343,21 @@ export default function ConsultantSelector({
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="divide-y divide-bigster-border">
-              {filteredAndSortedConsultants.map((consultant: Consultant) => (
-                <ConsultantCard key={consultant.id} consultant={consultant} />
-              ))}
-            </div>
+            {filteredAndSortedConsultants.length === 0 ? (
+              <div className="p-8 text-center text-bigster-text-muted">
+                <p className="text-sm">
+                  {searchTerm
+                    ? "Nessun consulente trovato con i criteri di ricerca"
+                    : "Nessun consulente disponibile"}
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-bigster-border">
+                {filteredAndSortedConsultants.map((consultant) => (
+                  <ConsultantCard key={consultant.id} consultant={consultant} />
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </motion.div>

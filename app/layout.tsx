@@ -1,14 +1,10 @@
-// ============================================================================
-// 4. app/layout.tsx - UPDATED WITH PROVIDER
-// ============================================================================
-
 import type React from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ReduxProvider } from "@/lib/redux/provider";
 import { InvoicesProvider } from "@/app/contexts/InvoicesContext";
-import { Toaster } from "react-hot-toast";
+import { BigsterToaster } from "@/components/ui/bigster-toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,7 +25,7 @@ export default function RootLayout({
         <ReduxProvider>
           <InvoicesProvider>
             {children}
-            <Toaster position="top-right" />
+            <BigsterToaster />
           </InvoicesProvider>
         </ReduxProvider>
       </body>

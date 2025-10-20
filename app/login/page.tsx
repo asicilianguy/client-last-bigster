@@ -15,9 +15,9 @@ import {
 } from "@/components/ui/card";
 import { useLoginMutation } from "@/lib/redux/features/auth/authApiSlice";
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
+import { useNotify } from "@/hooks/use-notify";
 import Image from "next/image";
-import { Check, Key, Users, X } from "lucide-react";
+import { Check, Key, Users } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -41,6 +41,7 @@ type User = {
 
 export default function LoginPage() {
   const router = useRouter();
+  const notify = useNotify();
   const [login, { isLoading }] = useLoginMutation();
   const [showUserSelector, setShowUserSelector] = useState(false);
 
@@ -55,90 +56,84 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      await login(data).unwrap();
-      toast.success("Login effettuato con successo!");
-      router.push("/amministrazione");
+      const loginPromise = login(data).unwrap();
+
+      await notify.promise(loginPromise, {
+        loading: "Accesso in corso...",
+        success: "Login effettuato con successo!",
+        error: "Credenziali non valide",
+      });
+
+      // Breve delay per permettere all'utente di vedere la notifica di successo
+      setTimeout(() => {
+        router.push("/amministrazione");
+      }, 500);
     } catch (err: any) {
-      toast.error(err.data?.message || "Credenziali non valide.");
+      // Gestione errori specifici
+      if (err?.status === 401) {
+        notify.error(
+          "Accesso negato",
+          "Email o password non corretti. Riprova."
+        );
+      } else if (err?.status === 403) {
+        notify.error(
+          "Account disabilitato",
+          "Il tuo account è stato disabilitato. Contatta l'amministratore."
+        );
+      } else if (err?.status === 429) {
+        notify.error(
+          "Troppi tentativi",
+          "Hai superato il numero massimo di tentativi. Riprova tra qualche minuto."
+        );
+      } else if (err?.status === 500) {
+        notify.error(
+          "Errore del server",
+          "Si è verificato un problema. Riprova più tardi."
+        );
+      } else if (!navigator.onLine) {
+        notify.error(
+          "Nessuna connessione",
+          "Verifica la tua connessione internet e riprova."
+        );
+      }
+      // L'errore generico è già gestito dalla promise notification
     }
   };
 
   const availableUsers: User[] = [
     {
-      email: "ceo@dentalead.it",
+      email: "massimo.calore@dentalead.it",
       password: "admin123",
-      name: "Marco Bianchi",
+      name: "Massimo Calore",
       role: "CEO",
       roleBadgeColor: "bg-purple-500/20 text-purple-600 border-purple-500/30",
     },
     {
-      email: "responsabile.it@dentalead.it",
+      email: "sara.giunta@dentalead.it",
       password: "password123",
-      name: "Roberto Neri",
-      role: "Responsabile IT",
-      roleBadgeColor: "bg-blue-500/20 text-blue-600 border-blue-500/30",
-    },
-    {
-      email: "responsabile.consulenza@dentalead.it",
-      password: "password123",
-      name: "Laura Ferrari",
-      role: "Responsabile Consulenza",
-      roleBadgeColor: "bg-blue-500/20 text-blue-600 border-blue-500/30",
-    },
-    {
-      email: "responsabile.marketing@dentalead.it",
-      password: "password123",
-      name: "Marco Rossi",
-      role: "Responsabile Marketing",
-      roleBadgeColor: "bg-blue-500/20 text-blue-600 border-blue-500/30",
-    },
-    {
-      email: "responsabile.risorseumane@dentalead.it",
-      password: "password123",
-      name: "Giulia Bianchi",
+      name: "Sara Giunta",
       role: "Responsabile Risorse Umane",
       roleBadgeColor: "bg-blue-500/20 text-blue-600 border-blue-500/30",
     },
     {
-      email: "mario.verdi@dentalead.it",
+      email: "giulia.oggiana@dentalead.it",
       password: "password123",
-      name: "Mario Verdi",
+      name: "Giulia Oggiana",
       role: "Risorsa Umana",
       roleBadgeColor: "bg-amber-500/20 text-amber-600 border-amber-500/30",
     },
     {
-      email: "sara.marini@dentalead.it",
+      email: "giovanna.human@dentalead.it",
       password: "password123",
-      name: "Sara Marini",
+      name: "Giovanna Human",
       role: "Risorsa Umana",
       roleBadgeColor: "bg-amber-500/20 text-amber-600 border-amber-500/30",
     },
     {
-      email: "luigi.ricci@dentalead.it",
+      email: "elisabetta.nuzzo@dentalead.it",
       password: "password123",
-      name: "Luigi Ricci",
-      role: "Risorsa Umana",
-      roleBadgeColor: "bg-amber-500/20 text-amber-600 border-amber-500/30",
-    },
-    {
-      email: "anna.conti@dentalead.it",
-      password: "password123",
-      name: "Anna Conti",
-      role: "Risorsa Umana",
-      roleBadgeColor: "bg-amber-500/20 text-amber-600 border-amber-500/30",
-    },
-    {
-      email: "paolo.esposito@dentalead.it",
-      password: "password123",
-      name: "Paolo Esposito",
-      role: "Risorsa Umana",
-      roleBadgeColor: "bg-amber-500/20 text-amber-600 border-amber-500/30",
-    },
-    {
-      email: "developer@dentalead.it",
-      password: "dev123",
-      name: "Developer Test",
-      role: "Developer",
+      name: "Elisabetta Nuzzo",
+      role: "Amministrazione",
       roleBadgeColor: "bg-green-500/20 text-green-600 border-green-500/30",
     },
   ];
@@ -147,7 +142,10 @@ export default function LoginPage() {
     setValue("email", user.email);
     setValue("password", user.password);
     setShowUserSelector(false);
-    toast.success(`Credenziali impostate per ${user.name}`);
+    notify.success(
+      "Credenziali impostate",
+      `Pronto per accedere come ${user.name}`
+    );
   };
 
   return (
@@ -185,12 +183,18 @@ export default function LoginPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Password</Label>
-                <a
-                  href="#"
+                <button
+                  type="button"
+                  onClick={() =>
+                    notify.info(
+                      "Recupero password",
+                      "Contatta l'amministratore per reimpostare la password"
+                    )
+                  }
                   className="text-sm font-medium text-primary hover:underline"
                 >
                   Dimenticata?
-                </a>
+                </button>
               </div>
               <Input
                 id="password"
@@ -223,6 +227,7 @@ export default function LoginPage() {
                 variant="default"
                 onClick={() => setShowUserSelector(!showUserSelector)}
                 className="px-3"
+                title="Seleziona utente di test"
               >
                 <Users size={18} />
               </Button>

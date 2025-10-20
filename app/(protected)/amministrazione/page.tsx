@@ -20,6 +20,7 @@ import SelectionForm from "@/components/accesso-fattureincloud/SelectionForm";
 import { useCreateSelectionMutation } from "@/lib/redux/features/selections/selectionsApiSlice";
 import { useGetConsultantsQuery } from "@/lib/redux/features/external/externalApiSlice";
 import { useGetCompaniesQuery } from "@/lib/redux/features/companies/companiesApiSlice";
+import { useNotify } from "@/hooks/use-notify";
 import type { CreateSelectionPayload } from "@/types/selection";
 import { PackageType } from "@/types/enums";
 
@@ -35,6 +36,7 @@ interface SelectionDraft {
 
 export default function CreateSelectionPage() {
   const router = useRouter();
+  const notify = useNotify();
   const [createSelection, { isLoading }] = useCreateSelectionMutation();
 
   // Queries per ottenere i dati completi
@@ -73,9 +75,21 @@ export default function CreateSelectionPage() {
         } else if (draft.consultantId) {
           setCurrentStep("company");
         }
+
+        // Notifica il ripristino della bozza
+        if (draft.consultantId || draft.companyId || draft.invoiceId) {
+          notify.info(
+            "Bozza ripristinata",
+            "Hai una bozza salvata in precedenza"
+          );
+        }
       } catch (error) {
         console.error("Errore nel caricamento della bozza:", error);
         localStorage.removeItem(STORAGE_KEY);
+        notify.error(
+          "Errore nel ripristino",
+          "Non è stato possibile recuperare la bozza salvata"
+        );
       }
     }
     setIsInitialized(true);
@@ -107,14 +121,17 @@ export default function CreateSelectionPage() {
 
   const handleConsultantSelect = (consultantId: number) => {
     setSelectedConsultantId(consultantId);
+    notify.success("Consulente selezionato");
   };
 
   const handleCompanySelect = (companyId: number) => {
     setSelectedCompanyId(companyId);
+    notify.success("Azienda selezionata");
   };
 
   const handleInvoiceSelect = (invoiceId: number) => {
     setSelectedInvoiceId(invoiceId);
+    notify.success("Fattura selezionata");
   };
 
   const handleNext = () => {
@@ -132,7 +149,10 @@ export default function CreateSelectionPage() {
     pacchetto: "BASE" | "MDO";
   }) => {
     if (!selectedConsultantId || !selectedCompanyId || !selectedInvoiceId) {
-      console.error("Dati mancanti per la creazione della selezione");
+      notify.error(
+        "Dati mancanti",
+        "Completa tutti i passaggi prima di procedere"
+      );
       return;
     }
 
@@ -144,14 +164,42 @@ export default function CreateSelectionPage() {
         consulente_id: selectedConsultantId,
       };
 
-      await createSelection(payload).unwrap();
+      const creationPromise = createSelection(payload).unwrap();
+
+      // Usa promise notification per mostrare lo stato
+      await notify.promise(creationPromise, {
+        loading: "Creazione selezione in corso...",
+        success: "Selezione creata con successo!",
+        error: "Errore nella creazione della selezione",
+      });
 
       // Pulisci il localStorage dopo la creazione riuscita
       localStorage.removeItem(STORAGE_KEY);
 
-      router.push("/selezioni");
-    } catch (error) {
+      // Breve delay prima del redirect per permettere all'utente di vedere la notifica
+      // setTimeout(() => {
+      //   router.push("/selezioni");
+      // }, 800);
+    } catch (error: any) {
       console.error("Errore nella creazione della selezione:", error);
+
+      // Gestione errori specifici
+      if (error?.status === 400) {
+        notify.error(
+          "Dati non validi",
+          error?.data?.message || "Controlla i dati inseriti"
+        );
+      } else if (error?.status === 401) {
+        notify.error("Sessione scaduta", "Effettua nuovamente il login");
+        setTimeout(() => router.push("/login"), 1500);
+      } else if (error?.status === 403) {
+        notify.error(
+          "Permessi insufficienti",
+          "Non hai i permessi per creare selezioni"
+        );
+      } else {
+        // Errore generico già gestito dalla promise notification
+      }
     }
   };
 
@@ -163,7 +211,20 @@ export default function CreateSelectionPage() {
     } else if (currentStep === "company") {
       setCurrentStep("consultant");
     } else {
-      router.back();
+      // Chiedi conferma se ci sono dati salvati
+      if (selectedConsultantId || selectedCompanyId || selectedInvoiceId) {
+        notify.richWarning(
+          "Uscire dalla creazione?",
+          "La bozza verrà salvata automaticamente",
+          {
+            actionLabel: "Esci",
+            actionOnClick: () => router.back(),
+            cancelLabel: "Resta",
+          }
+        );
+      } else {
+        router.back();
+      }
     }
   };
 

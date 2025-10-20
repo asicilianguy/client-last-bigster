@@ -33,7 +33,7 @@ export const usersApiSlice = apiSlice.injectEndpoints({
       providesTags: (result, error, id) => [{ type: "User", id }],
     }),
 
-    // Get all consulenti
+    // Get all consulenti (only accessible by AMMINISTRAZIONE)
     getConsulenti: builder.query<UserWithSelectionCount[], void>({
       query: () => "/users/consulenti",
       providesTags: (result) =>
@@ -57,17 +57,44 @@ export const usersApiSlice = apiSlice.injectEndpoints({
           : [{ type: "User", id: "HR" }],
     }),
 
+    // Get all Responsabili Risorse Umane
+    getResponsabiliRU: builder.query<UserWithSelectionCount[], void>({
+      query: () => "/users/responsabili-ru",
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: "User" as const, id })),
+              { type: "User", id: "RESPONSABILI_RU" },
+            ]
+          : [{ type: "User", id: "RESPONSABILI_RU" }],
+    }),
+
+    // Get all Amministrazione users
+    getAmministrazione: builder.query<UserResponse[], void>({
+      query: () => "/users/amministrazione",
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: "User" as const, id })),
+              { type: "User", id: "AMMINISTRAZIONE" },
+            ]
+          : [{ type: "User", id: "AMMINISTRAZIONE" }],
+    }),
+
+    // Get users by specific role
+    getUsersByRole: builder.query<UserResponse[], UserRole>({
+      query: (role) => `/users/by-role/${role}`,
+      providesTags: (result, error, role) => [
+        { type: "User" as const, id: `ROLE_${role}` },
+      ],
+    }),
+
     // Get user statistics
     getUserStats: builder.query<UserStatsResponse, number>({
       query: (id) => `/users/${id}/stats`,
-      providesTags: (result, error, id) => [{ type: "User", id }],
-    }),
-
-    // Get users by role (backward compatibility)
-    getUsersByRole: builder.query<UserResponse[], UserRole>({
-      query: (role) => ({ url: "/users", params: { ruolo: role } }),
-      providesTags: (result, error, role) => [
-        { type: "User" as const, id: `ROLE_${role}` },
+      providesTags: (result, error, id) => [
+        { type: "User", id },
+        { type: "User", id: "STATS" },
       ],
     }),
 
@@ -78,7 +105,13 @@ export const usersApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         body: newUser,
       }),
-      invalidatesTags: [{ type: "User", id: "LIST" }],
+      invalidatesTags: [
+        { type: "User", id: "LIST" },
+        { type: "User", id: "CONSULENTI" },
+        { type: "User", id: "HR" },
+        { type: "User", id: "RESPONSABILI_RU" },
+        { type: "User", id: "AMMINISTRAZIONE" },
+      ],
     }),
 
     // Update user
@@ -94,6 +127,11 @@ export const usersApiSlice = apiSlice.injectEndpoints({
       invalidatesTags: (result, error, { id }) => [
         { type: "User", id },
         { type: "User", id: "LIST" },
+        { type: "User", id: "CONSULENTI" },
+        { type: "User", id: "HR" },
+        { type: "User", id: "RESPONSABILI_RU" },
+        { type: "User", id: "AMMINISTRAZIONE" },
+        { type: "User", id: "STATS" },
       ],
     }),
 
@@ -103,7 +141,14 @@ export const usersApiSlice = apiSlice.injectEndpoints({
         url: `/users/${id}`,
         method: "DELETE",
       }),
-      invalidatesTags: [{ type: "User", id: "LIST" }],
+      invalidatesTags: (result, error, id) => [
+        { type: "User", id },
+        { type: "User", id: "LIST" },
+        { type: "User", id: "CONSULENTI" },
+        { type: "User", id: "HR" },
+        { type: "User", id: "RESPONSABILI_RU" },
+        { type: "User", id: "AMMINISTRAZIONE" },
+      ],
     }),
 
     // Change password
@@ -116,6 +161,7 @@ export const usersApiSlice = apiSlice.injectEndpoints({
         method: "POST",
         body: { old_password, new_password },
       }),
+      // Non invalida cache perché il cambio password non modifica i dati pubblici
     }),
   }),
 });
@@ -125,8 +171,10 @@ export const {
   useGetUserByIdQuery,
   useGetConsulentiQuery,
   useGetHRQuery,
-  useGetUserStatsQuery,
+  useGetResponsabiliRUQuery,
+  useGetAmministrazioneQuery,
   useGetUsersByRoleQuery,
+  useGetUserStatsQuery,
   useRegisterMutation,
   useUpdateUserMutation,
   useDeleteUserMutation,
