@@ -23,7 +23,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import CustomDialog from "@/components/ui/bigster/CustomDialog";
-import { UserRole } from "@/types/enums";
+import { UserRole } from "@/types/user";
 
 const loginSchema = z.object({
   email: z.string().email("Email non valida"),

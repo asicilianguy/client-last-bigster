@@ -1,48 +1,65 @@
 // hooks/use-user-role.ts
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "@/lib/redux/features/auth/authSlice";
-import { UserRole } from "@/types/enums";
+import { UserRole } from "@/types/user";
 
 export function useUserRole() {
   const user = useSelector(selectCurrentUser);
 
   const role = user?.ruolo;
 
-  // Convenience methods for role checks
+  // Ruoli base
   const isCEO = role === UserRole.CEO;
-  const isResponsabile = role === UserRole.RESPONSABILE_REPARTO;
+  const isResponsabileHR = role === UserRole.RESPONSABILE_RISORSE_UMANE;
   const isHR = role === UserRole.RISORSA_UMANA;
+  const isAmministrazione = role === UserRole.AMMINISTRAZIONE;
   const isDeveloper = role === UserRole.DEVELOPER;
-  const isResponsabileHR = isResponsabile && user?.reparto_id === 12;
 
-  // Permission-based checks for specific actions
-  const canCreateSelection = isResponsabile || isDeveloper;
-  const canApproveSelection = isCEO || isDeveloper;
-  const canAssignHR = isCEO || isDeveloper;
-  const canManageAnnouncements = isHR || isCEO || isDeveloper;
-  const canManageApplications = isHR || isCEO || isDeveloper;
+  // Gruppi di permessi
+  // Responsabile HR ha i permessi più alti (vede e può fare tutto)
+  // CEO ha permessi alti ma leggermente inferiori
+  const hasFullAccess = isResponsabileHR || isDeveloper;
+  const hasHighAccess = isCEO || hasFullAccess;
 
-  // Check if the user is a department manager for a specific department
-  const isDepartmentManager = (
-    departmentId: number | null | undefined
-  ): boolean => {
-    if (!user || !departmentId) return false;
-    return user.reparto_id === departmentId && isResponsabile;
+  // Permission-based checks per azioni specifiche
+  const canCreateSelection = isAmministrazione || isDeveloper; // Solo amministrazione crea selezioni
+  const canApproveSelection = isCEO || isResponsabileHR || isDeveloper;
+  const canAssignHR = isCEO || isResponsabileHR || isDeveloper;
+  const canManageAnnouncements = isHR || hasHighAccess;
+  const canManageApplications = isHR || hasHighAccess;
+  const canChangeSelectionStatus = isHR || hasHighAccess;
+  const canViewAllSelections = hasHighAccess;
+
+  // Le HR vedono solo le loro selezioni assegnate
+  const canViewSelection = (selection: {
+    risorsa_umana_id?: number | null;
+  }): boolean => {
+    if (hasHighAccess) return true;
+    if (isHR) return selection.risorsa_umana_id === user?.id;
+    return false;
   };
 
   return {
     role,
+    // Ruoli individuali
     isCEO,
-    isResponsabile,
     isResponsabileHR,
     isHR,
+    isAmministrazione,
     isDeveloper,
+    // Gruppi di permessi
+    hasFullAccess,
+    hasHighAccess,
+    // Permessi specifici
     canCreateSelection,
     canApproveSelection,
     canAssignHR,
     canManageAnnouncements,
     canManageApplications,
-    isDepartmentManager,
+    canChangeSelectionStatus,
+    canViewAllSelections,
+    canViewSelection,
+    // User object
     user,
   };
 }

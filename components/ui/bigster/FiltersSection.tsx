@@ -35,7 +35,7 @@ import {
   X,
   Filter,
 } from "lucide-react";
-import { User } from "@/types";
+import { UserResponse } from "@/types/user"; // FIX 1: Usa UserResponse
 import { useUserRole } from "@/hooks/use-user-role";
 
 interface FiltersSectionProps {
@@ -51,7 +51,7 @@ interface FiltersSectionProps {
   setSortBy: (sort: string) => void;
   departmentsData?: any;
   professionalFiguresData?: any;
-  user: User;
+  user: UserResponse | null; // FIX 1: Cambia tipo
 }
 
 export function FiltersSection({
@@ -69,7 +69,7 @@ export function FiltersSection({
   professionalFiguresData,
   user,
 }: FiltersSectionProps) {
-  const { isCEO, isResponsabile } = useUserRole();
+  const { isCEO, hasFullAccess } = useUserRole(); // FIX 2: Usa hasFullAccess
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const hasActiveFilters =
@@ -103,15 +103,9 @@ export function FiltersSection({
           </h3>
           <div className="relative">
             <span className="absolute top-2.5 left-2.5">
-              <Search
-                width={18}
-                height={18}
-                color="#6c4e06
-"
-              />
+              <Search width={18} height={18} color="#6c4e06" />
             </span>
             <input
-              // type="text"
               placeholder="Cerca per titolo, figura professionale o reparto..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -225,9 +219,7 @@ export function FiltersSection({
                       <Select
                         value={departmentFilter}
                         onValueChange={setDepartmentFilter}
-                        disabled={
-                          !(isCEO || (isResponsabile && user.reparto_id === 12))
-                        }
+                        disabled={!hasFullAccess} // FIX 2: Usa hasFullAccess invece di isCEO || isResponsabile
                       >
                         <SelectTrigger
                           className="border rounded-md shadow-sm transition-all duration-200 hover:shadow-md py-2"
@@ -338,23 +330,7 @@ export function FiltersSection({
                         </SelectTrigger>
                         <SelectContent className="shadow-lg border rounded-md">
                           <SelectItem value="all">Tutti gli stati</SelectItem>
-                          <SelectItem value="CREATA">Creata</SelectItem>
-                          <SelectItem value="APPROVATA">Approvata</SelectItem>
-                          <SelectItem value="IN_CORSO">In Corso</SelectItem>
-                          <SelectItem value="ANNUNCI_PUBBLICATI">
-                            Annunci Pubblicati
-                          </SelectItem>
-                          <SelectItem value="CANDIDATURE_RICEVUTE">
-                            Candidature Ricevute
-                          </SelectItem>
-                          <SelectItem value="COLLOQUI_IN_CORSO">
-                            Colloqui in Corso
-                          </SelectItem>
-                          <SelectItem value="COLLOQUI_CEO">
-                            Colloqui CEO
-                          </SelectItem>
-                          <SelectItem value="CHIUSA">Chiusa</SelectItem>
-                          <SelectItem value="ANNULLATA">Annullata</SelectItem>
+                          {/* Aggiungi qui gli stati del nuovo schema */}
                         </SelectContent>
                       </Select>
                     </div>
@@ -374,14 +350,6 @@ export function FiltersSection({
                     onClick={() => {
                       clearAllFilters();
                       setIsDialogOpen(false);
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor =
-                        "rgba(239, 68, 68, 0.1)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor =
-                        "rgba(239, 68, 68, 0.05)";
                     }}
                   >
                     <X className="h-4 w-4" /> Cancella tutti i filtri

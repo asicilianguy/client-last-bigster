@@ -5,7 +5,7 @@ import {
   SelectionStatus,
   PackageType,
   InvoiceType,
-} from "./enums";
+} from "./selection";
 
 // ========== Base Types ==========
 
