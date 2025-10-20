@@ -167,8 +167,6 @@ export function useFattureInCloudAuth(config: FattureInCloudConfig) {
       } else {
         return await response.json();
       }
-
-      return await response.json();
     },
     [config.clientId, config.clientSecret, config.redirectUri]
   );
