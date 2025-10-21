@@ -21,6 +21,7 @@ export const apiSlice = createApi({
     "Selection",
     "ProfessionalFigure",
     "User",
+    "Auth",
     "Announcement",
     "Application",
     "Company", // Aggiunto nuovo tag type

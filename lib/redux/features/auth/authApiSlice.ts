@@ -8,30 +8,12 @@ import type {
   LogoutResponse,
   AuthErrorResponse,
 } from "@/types/auth";
+import { apiSlice } from "../api/apiSlice";
 
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:3000/api";
 
-export const authApiSlice = createApi({
-  reducerPath: "authApi",
-  baseQuery: fetchBaseQuery({
-    baseUrl: `${API_BASE_URL}/auth`,
-    prepareHeaders: (headers, { getState }) => {
-      // Recupera il token dallo state (se hai uno slice per l'auth)
-      // const token = (getState() as RootState).auth.token;
-
-      // Oppure dal localStorage
-      const token = localStorage.getItem("token");
-
-      if (token) {
-        headers.set("authorization", `Bearer ${token}`);
-      }
-
-      headers.set("Content-Type", "application/json");
-      return headers;
-    },
-  }),
-  tagTypes: ["Auth"],
+export const authApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // Login
     login: builder.mutation<LoginResponse, LoginPayload>({
