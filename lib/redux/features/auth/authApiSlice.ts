@@ -1,6 +1,3 @@
-// store/api/authApiSlice.ts
-
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type {
   LoginPayload,
   LoginResponse,
@@ -10,15 +7,12 @@ import type {
 } from "@/types/auth";
 import { apiSlice } from "../api/apiSlice";
 
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:3000/api";
-
 export const authApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // Login
     login: builder.mutation<LoginResponse, LoginPayload>({
       query: (credentials) => ({
-        url: "/login",
+        url: "/auth/login", // ✅ Diventerà: http://localhost:3000/api/auth/login
         method: "POST",
         body: credentials,
       }),
@@ -28,7 +22,6 @@ export const authApiSlice = apiSlice.injectEndpoints({
       }) => {
         return response.data;
       },
-      // Dopo il login con successo, salva il token
       async onQueryStarted(arg, { queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
@@ -43,7 +36,7 @@ export const authApiSlice = apiSlice.injectEndpoints({
     // Verifica token
     verifyToken: builder.query<VerifyTokenResponse, void>({
       query: () => ({
-        url: "/verify",
+        url: "/auth/verify", // ✅ Diventerà: http://localhost:3000/api/auth/verify
         method: "GET",
       }),
       providesTags: ["Auth"],
@@ -58,10 +51,9 @@ export const authApiSlice = apiSlice.injectEndpoints({
     // Logout
     logout: builder.mutation<LogoutResponse, void>({
       query: () => ({
-        url: "/logout",
+        url: "/auth/logout", // ✅ Diventerà: http://localhost:3000/api/auth/logout
         method: "POST",
       }),
-      // Dopo il logout, rimuovi il token
       async onQueryStarted(arg, { queryFulfilled }) {
         try {
           await queryFulfilled;

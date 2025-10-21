@@ -27,7 +27,7 @@ import { useLogoutMutation } from "@/lib/redux/features/auth/authApiSlice";
 import { clearCredentials } from "@/lib/redux/features/auth/authSlice";
 import { useNotify } from "@/hooks/use-notify";
 import type { CreateSelectionPayload } from "@/types/selection";
-import { PackageType } from "@/types/enums";
+import { PackageType } from "@/types/user";
 
 type CreationStep = "consultant" | "company" | "invoice" | "form";
 
