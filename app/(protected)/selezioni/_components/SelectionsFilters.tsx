@@ -1,24 +1,19 @@
 // ============================================
-// FILE 3: app/(protected)/selezioni/_components/SelectionsFilters.tsx
-// POSIZIONE: app/(protected)/selezioni/_components/SelectionsFilters.tsx
+// FILE: app/(protected)/selezioni/_components/SelectionsFilters.tsx
 // ============================================
 
 "use client";
 
 import { useState, useMemo } from "react";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import { Search, Filter, X, ArrowUpDown, ChevronDown } from "lucide-react";
-import { SelectionStatus, PackageType } from "@/types/selection";
+import { SelectionStatus } from "@/types/selection";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { StandardSelect } from "@/components/ui/StandardSelect";
 
 const inputBase =
-  "w-full rounded-none bg-bigster-surface border border-bigster-border text-bigster-text placeholder:text-bigster-text-muted focus:outline-none focus:ring-0 focus:border-bigster-text px-4 py-2 text-sm";
+  "w-full rounded-none bg-bigster-surface border border-bigster-border text-bigster-text placeholder:text-bigster-text-muted focus:outline-none focus:ring-0 focus:border-bigster-text px-4 py-2 text-sm transition-colors appearance-none";
 
 const STATUS_OPTIONS = [
   { value: SelectionStatus.FATTURA_AV_SALDATA, label: "Fattura AV Saldata" },
@@ -77,7 +72,6 @@ export function SelectionsFilters({
     hr: false,
     company: false,
     dates: false,
-    advanced: false,
   });
 
   // Lista HR unici
@@ -123,6 +117,116 @@ export function SelectionsFilters({
     });
     return Array.from(map.values());
   }, [accessibleSelections]);
+
+  // Lista città uniche dalle companies
+  const cittaList = useMemo(() => {
+    const cittaSet = new Set<string>();
+    companiesList.forEach((c: any) => {
+      if (c.citta) {
+        cittaSet.add(c.citta);
+      }
+    });
+    return Array.from(cittaSet).sort();
+  }, [companiesList]);
+
+  // Lista CAP unici dalle companies
+  const capList = useMemo(() => {
+    const capSet = new Set<string>();
+    companiesList.forEach((c: any) => {
+      if (c.cap) {
+        capSet.add(c.cap);
+      }
+    });
+    return Array.from(capSet).sort();
+  }, [companiesList]);
+
+  // Opzioni per StandardSelect - Status
+  const statusOptions = useMemo(
+    () =>
+      STATUS_OPTIONS.map((opt) => ({
+        value: opt.value,
+        label: opt.label,
+      })),
+    []
+  );
+
+  // Opzioni per StandardSelect - Pacchetto
+  const packageOptions = useMemo(
+    () => [
+      { value: "BASE", label: "BASE" },
+      { value: "MDO", label: "MDO" },
+    ],
+    []
+  );
+
+  // Opzioni per StandardSelect - HR Status
+  const hrStatusOptions = useMemo(
+    () => [
+      { value: "assigned", label: "Solo assegnate" },
+      { value: "unassigned", label: "Solo non assegnate" },
+    ],
+    []
+  );
+
+  // Opzioni per StandardSelect - Figure
+  const figureOptions = useMemo(
+    () =>
+      figureList.map((f: any) => ({
+        value: f.id.toString(),
+        label: `${f.nome} - ${f.seniority}`,
+      })),
+    [figureList]
+  );
+
+  // Opzioni per SearchableSelect - Consulenti
+  const consulentiOptions = useMemo(
+    () =>
+      consulentiList.map((c: any) => ({
+        value: c.id.toString(),
+        label: `${c.nome} ${c.cognome}`,
+      })),
+    [consulentiList]
+  );
+
+  // Opzioni per SearchableSelect - HR
+  const hrOptions = useMemo(
+    () =>
+      hrList.map((hr: any) => ({
+        value: hr.id.toString(),
+        label: `${hr.nome} ${hr.cognome}`,
+      })),
+    [hrList]
+  );
+
+  // Opzioni per SearchableSelect - Companies
+  const companiesOptions = useMemo(
+    () =>
+      companiesList.map((c: any) => ({
+        value: c.id.toString(),
+        label: c.nome,
+      })),
+    [companiesList]
+  );
+
+  // Opzioni per SearchableSelect - Città
+  const cittaOptions = useMemo(
+    () =>
+      cittaList.map((citta) => ({
+        value: citta,
+        label: citta,
+      })),
+    [cittaList]
+  );
+
+  // Opzioni per SearchableSelect - CAP
+  const capOptions = useMemo(
+    () =>
+      capList.map((cap) => ({
+        value: cap,
+        label: cap,
+      })),
+    [capList]
+  );
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections((prev) => ({
@@ -203,7 +307,7 @@ export function SelectionsFilters({
       <Dialog open={isFilterDialogOpen} onOpenChange={setIsFilterDialogOpen}>
         <DialogContent className="rounded-md bg-bigster-surface border border-bigster-border max-w-2xl max-h-[80vh] overflow-y-auto shadow-lg">
           <DialogHeader
-            title="Filtra e Ordina"
+            title="Filtra Selezioni"
             onClose={() => setIsFilterDialogOpen(false)}
           />
 
@@ -226,64 +330,37 @@ export function SelectionsFilters({
               {expandedSections.base && (
                 <div className="p-4 space-y-4">
                   {/* Stato */}
-                  <div>
-                    <label className="text-sm font-semibold text-bigster-text block mb-2">
-                      Stato Selezione
-                    </label>
-                    <select
-                      value={filters.stato}
-                      onChange={(e) =>
-                        setFilters({ ...filters, stato: e.target.value })
-                      }
-                      className={inputBase}
-                    >
-                      <option value="all">Tutti gli stati</option>
-                      {STATUS_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <StandardSelect
+                    label="Stato Selezione"
+                    value={filters.stato}
+                    onChange={(value) =>
+                      setFilters({ ...filters, stato: value })
+                    }
+                    options={statusOptions}
+                    emptyLabel="Tutti gli stati"
+                  />
 
                   {/* Pacchetto */}
-                  <div>
-                    <label className="text-sm font-semibold text-bigster-text block mb-2">
-                      Tipo Pacchetto
-                    </label>
-                    <select
-                      value={filters.pacchetto}
-                      onChange={(e) =>
-                        setFilters({ ...filters, pacchetto: e.target.value })
-                      }
-                      className={inputBase}
-                    >
-                      <option value="all">Tutti i pacchetti</option>
-                      <option value="BASE">BASE</option>
-                      <option value="MDO">MDO</option>
-                    </select>
-                  </div>
+                  <StandardSelect
+                    label="Tipo Pacchetto"
+                    value={filters.pacchetto}
+                    onChange={(value) =>
+                      setFilters({ ...filters, pacchetto: value })
+                    }
+                    options={packageOptions}
+                    emptyLabel="Tutti i pacchetti"
+                  />
 
                   {/* Figura Professionale */}
-                  <div>
-                    <label className="text-sm font-semibold text-bigster-text block mb-2">
-                      Figura Professionale
-                    </label>
-                    <select
-                      value={filters.figuraId}
-                      onChange={(e) =>
-                        setFilters({ ...filters, figuraId: e.target.value })
-                      }
-                      className={inputBase}
-                    >
-                      <option value="all">Tutte le figure</option>
-                      {figureList.map((f: any) => (
-                        <option key={f.id} value={f.id.toString()}>
-                          {f.nome} - {f.seniority}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <StandardSelect
+                    label="Figura Professionale"
+                    value={filters.figuraId}
+                    onChange={(value) =>
+                      setFilters({ ...filters, figuraId: value })
+                    }
+                    options={figureOptions}
+                    emptyLabel="Tutte le figure"
+                  />
                 </div>
               )}
             </div>
@@ -306,69 +383,44 @@ export function SelectionsFilters({
               {expandedSections.hr && (
                 <div className="p-4 space-y-4">
                   {/* HR Status */}
-                  <div>
-                    <label className="text-sm font-semibold text-bigster-text block mb-2">
-                      Stato Assegnazione HR
-                    </label>
-                    <select
-                      value={filters.hrStatus}
-                      onChange={(e) =>
-                        setFilters({ ...filters, hrStatus: e.target.value })
-                      }
-                      className={inputBase}
-                    >
-                      <option value="all">Tutte</option>
-                      <option value="assigned">Solo assegnate</option>
-                      <option value="unassigned">Solo non assegnate</option>
-                    </select>
-                  </div>
+                  <StandardSelect
+                    label="Stato Assegnazione HR"
+                    value={filters.hrStatus}
+                    onChange={(value) =>
+                      setFilters({ ...filters, hrStatus: value })
+                    }
+                    options={hrStatusOptions}
+                    emptyLabel="Tutte"
+                  />
 
-                  {/* HR Specifica */}
-                  <div>
-                    <label className="text-sm font-semibold text-bigster-text block mb-2">
-                      Risorsa Umana Specifica
-                    </label>
-                    <select
-                      value={filters.hrId}
-                      onChange={(e) =>
-                        setFilters({ ...filters, hrId: e.target.value })
-                      }
-                      className={inputBase}
-                    >
-                      <option value="all">Tutte le HR</option>
-                      {hrList.map((hr: any) => (
-                        <option key={hr.id} value={hr.id.toString()}>
-                          {hr.nome} {hr.cognome}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* HR Specifica - SEARCHABLE */}
+                  <SearchableSelect
+                    label="Risorsa Umana Specifica"
+                    value={filters.hrId}
+                    onChange={(value) =>
+                      setFilters({ ...filters, hrId: value })
+                    }
+                    options={hrOptions}
+                    placeholder="Cerca HR per nome..."
+                    emptyLabel="Tutte le HR"
+                  />
 
-                  {/* Consulente */}
-                  <div>
-                    <label className="text-sm font-semibold text-bigster-text block mb-2">
-                      Consulente
-                    </label>
-                    <select
-                      value={filters.consulenteId}
-                      onChange={(e) =>
-                        setFilters({ ...filters, consulenteId: e.target.value })
-                      }
-                      className={inputBase}
-                    >
-                      <option value="all">Tutti i consulenti</option>
-                      {consulentiList.map((c: any) => (
-                        <option key={c.id} value={c.id.toString()}>
-                          {c.nome} {c.cognome}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Consulente - SEARCHABLE */}
+                  <SearchableSelect
+                    label="Consulente"
+                    value={filters.consulenteId}
+                    onChange={(value) =>
+                      setFilters({ ...filters, consulenteId: value })
+                    }
+                    options={consulentiOptions}
+                    placeholder="Cerca consulente per nome..."
+                    emptyLabel="Tutti i consulenti"
+                  />
                 </div>
               )}
             </div>
 
-            {/* SEZIONE: Company (Nested) */}
+            {/* SEZIONE: Company */}
             <div className="border border-bigster-border">
               <button
                 onClick={() => toggleSection("company")}
@@ -385,28 +437,19 @@ export function SelectionsFilters({
               </button>
               {expandedSections.company && (
                 <div className="p-4 space-y-4">
-                  {/* Company ID */}
-                  <div>
-                    <label className="text-sm font-semibold text-bigster-text block mb-2">
-                      Cliente Specifico
-                    </label>
-                    <select
-                      value={filters.companyId}
-                      onChange={(e) =>
-                        setFilters({ ...filters, companyId: e.target.value })
-                      }
-                      className={inputBase}
-                    >
-                      <option value="all">Tutti i clienti</option>
-                      {companiesList.map((c: any) => (
-                        <option key={c.id} value={c.id.toString()}>
-                          {c.nome}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Company ID - SEARCHABLE */}
+                  <SearchableSelect
+                    label="Cliente Specifico"
+                    value={filters.companyId}
+                    onChange={(value) =>
+                      setFilters({ ...filters, companyId: value })
+                    }
+                    options={companiesOptions}
+                    placeholder="Cerca cliente per nome..."
+                    emptyLabel="Tutti i clienti"
+                  />
 
-                  {/* Company Nome */}
+                  {/* Company Nome - INPUT LIBERO */}
                   <div>
                     <label className="text-sm font-semibold text-bigster-text block mb-2">
                       Nome Cliente (ricerca)
@@ -422,39 +465,31 @@ export function SelectionsFilters({
                     />
                   </div>
 
-                  {/* Company Città */}
-                  <div>
-                    <label className="text-sm font-semibold text-bigster-text block mb-2">
-                      Città Cliente
-                    </label>
-                    <input
-                      type="text"
-                      value={filters.companyCitta}
-                      onChange={(e) =>
-                        setFilters({ ...filters, companyCitta: e.target.value })
-                      }
-                      placeholder="Es: Milano, Roma..."
-                      className={inputBase}
-                    />
-                  </div>
+                  {/* Company Città - SEARCHABLE */}
+                  <SearchableSelect
+                    label="Città Cliente"
+                    value={filters.companyCitta}
+                    onChange={(value) =>
+                      setFilters({ ...filters, companyCitta: value })
+                    }
+                    options={cittaOptions}
+                    placeholder="Cerca città..."
+                    emptyLabel="Tutte le città"
+                  />
 
-                  {/* Company CAP */}
-                  <div>
-                    <label className="text-sm font-semibold text-bigster-text block mb-2">
-                      CAP Cliente
-                    </label>
-                    <input
-                      type="text"
-                      value={filters.companyCap}
-                      onChange={(e) =>
-                        setFilters({ ...filters, companyCap: e.target.value })
-                      }
-                      placeholder="Es: 20100..."
-                      className={inputBase}
-                    />
-                  </div>
+                  {/* Company CAP - SEARCHABLE */}
+                  <SearchableSelect
+                    label="CAP Cliente"
+                    value={filters.companyCap}
+                    onChange={(value) =>
+                      setFilters({ ...filters, companyCap: value })
+                    }
+                    options={capOptions}
+                    placeholder="Cerca CAP..."
+                    emptyLabel="Tutti i CAP"
+                  />
 
-                  {/* Company Email */}
+                  {/* Company Email - INPUT LIBERO */}
                   <div>
                     <label className="text-sm font-semibold text-bigster-text block mb-2">
                       Email Cliente
@@ -571,22 +606,14 @@ export function SelectionsFilters({
                   clearAllFilters();
                   setIsFilterDialogOpen(false);
                 }}
-                className="flex items-center gap-2 w-full mt-4 rounded-md font-semibold shadow-sm hover:shadow-md transition-all duration-200 border"
+                className="w-full rounded-none border font-semibold"
                 style={{
                   borderColor: "#ef4444",
                   color: "#ef4444",
-                  backgroundColor: "rgba(239, 68, 68, 0.05)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor =
-                    "rgba(239, 68, 68, 0.1)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor =
-                    "rgba(239, 68, 68, 0.05)";
+                  backgroundColor: "rgba(239,68,68,0.05)",
                 }}
               >
-                <X className="h-4 w-4" />
+                <X className="h-4 w-4 mr-2" />
                 Cancella tutti i filtri
               </Button>
             </div>
