@@ -12,7 +12,7 @@ const Breadcrumb = ({ name, path }: BreadcrumbProps) => {
   return (
     <div className="flex items-center gap-[10px] py-[15px] px-[20px] bg-bigster-background text-bigster-text  ">
       <button
-        onClick={() => router.push(path)}
+        onClick={() => router.back()}
         className="flex items-center gap-[10px] border-none font-bold text-xl underline decoration-skip-ink-none"
       >
         <svg

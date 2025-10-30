@@ -91,12 +91,12 @@ export const selectionsApiSlice = apiSlice.injectEndpoints({
     }),
     assignHr: builder.mutation<
       SelectionResponse,
-      { id: number; risorsa_umana_id: number }
+      { id: number; risorsa_umana_id: number; note?: string }
     >({
-      query: ({ id, risorsa_umana_id }) => ({
+      query: ({ id, risorsa_umana_id, note }) => ({
         url: `/selections/${id}/assign-hr`,
         method: "POST",
-        body: { risorsa_umana_id },
+        body: { risorsa_umana_id, note },
       }),
       invalidatesTags: (result, error, { id }) => [
         { type: "Selection", id },

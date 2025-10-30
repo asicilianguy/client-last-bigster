@@ -28,15 +28,16 @@ const config = {
         foreground: "hsl(var(--foreground))",
 
         // BigSter palette
-        "bigster-primary": "#fde01c",
-        "bigster-background": "#efeac7",
-        "bigster-text": "#6c4e06",
-        "bigster-primary-text": "#6c4e06",
-        "bigster-surface": "#ffffff",
-        // "bigster-text": "#333333",
-        "bigster-text-muted": "#666666",
-        "bigster-border": "#d8d8d8",
-        "bigster-star": "#e4d72b",
+        "bigster-primary": "#fde01c", // Giallo principale (CTA, accenti)
+        "bigster-background": "#efeac7", // Giallo chiaro (SOLO sfondo pagina)
+        "bigster-text": "#6c4e06", // Marrone scuro (testo principale)
+        "bigster-primary-text": "#6c4e06", // Testo su giallo
+        "bigster-surface": "#ffffff", // Bianco (card principali)
+        "bigster-card-bg": "#f5f5f7", // NUOVO: Grigio chiaro moderno (nested cards, headers)
+        "bigster-muted-bg": "#fafafa", // NUOVO: Grigio chiarissimo (alternativa soft)
+        "bigster-text-muted": "#666666", // Grigio medio (testo secondario)
+        "bigster-border": "#d8d8d8", // Grigio chiaro (bordi)
+        "bigster-star": "#e4d72b", // Giallo scuro (stelle, rating)
 
         primary: {
           DEFAULT: "hsl(var(--primary))",
