@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, Megaphone, FileText } from "lucide-react";
+import { ArrowRight, Megaphone, FileText, RefreshCw } from "lucide-react";
 
 type SelectionStatus =
   | "FATTURA_AV_SALDATA"
@@ -16,81 +16,91 @@ type SelectionStatus =
   | "CANDIDATURE_RICEVUTE"
   | "COLLOQUI_IN_CORSO"
   | "PROPOSTA_CANDIDATI"
+  | "SELEZIONI_IN_SOSTITUZIONE"
   | "CHIUSA"
   | "ANNULLATA";
 
 interface StatusConfig {
   label: string;
-  step: number;
+  step: number | string;
   totalSteps: number;
+  isSpecial?: boolean; // Flag per stati speciali
 }
 
-// Configurazione stati con step progression (12 step totali)
+// Configurazione stati con step progression (11 step normali + stati speciali)
 const STATUS_CONFIG: Record<SelectionStatus, StatusConfig> = {
   FATTURA_AV_SALDATA: {
     label: "Fattura Saldata",
     step: 1,
-    totalSteps: 12,
+    totalSteps: 11,
   },
   HR_ASSEGNATA: {
     label: "HR Assegnata",
     step: 2,
-    totalSteps: 12,
+    totalSteps: 11,
   },
   PRIMA_CALL_COMPLETATA: {
     label: "Prima Call",
     step: 3,
-    totalSteps: 12,
+    totalSteps: 11,
   },
   RACCOLTA_JOB_IN_APPROVAZIONE_CLIENTE: {
     label: "Job in Approv.",
     step: 4,
-    totalSteps: 12,
+    totalSteps: 11,
   },
   RACCOLTA_JOB_APPROVATA_CLIENTE: {
     label: "Job Approvata",
     step: 5,
-    totalSteps: 12,
+    totalSteps: 11,
   },
   BOZZA_ANNUNCIO_IN_APPROVAZIONE_CEO: {
     label: "Bozza CEO",
     step: 6,
-    totalSteps: 12,
+    totalSteps: 11,
   },
   ANNUNCIO_APPROVATO: {
     label: "Annuncio OK",
     step: 7,
-    totalSteps: 12,
+    totalSteps: 11,
   },
   ANNUNCIO_PUBBLICATO: {
     label: "Pubblicato",
     step: 8,
-    totalSteps: 12,
+    totalSteps: 11,
   },
   CANDIDATURE_RICEVUTE: {
     label: "Candidature",
     step: 9,
-    totalSteps: 12,
+    totalSteps: 11,
   },
   COLLOQUI_IN_CORSO: {
     label: "Colloqui",
     step: 10,
-    totalSteps: 12,
+    totalSteps: 11,
   },
   PROPOSTA_CANDIDATI: {
     label: "Proposta",
     step: 11,
-    totalSteps: 12,
+    totalSteps: 11,
+  },
+  SELEZIONI_IN_SOSTITUZIONE: {
+    label: "In Sostituzione",
+    step: "↻",
+    totalSteps: 11,
+    isSpecial: true,
   },
   CHIUSA: {
     label: "Completata",
-    step: 12,
-    totalSteps: 12,
+    step: "✓",
+    totalSteps: 11,
+    isSpecial: true,
   },
   ANNULLATA: {
     label: "Annullata",
-    step: 0,
-    totalSteps: 12,
+    step: "✕",
+    totalSteps: 11,
+    isSpecial: true,
   },
 };
 
@@ -135,6 +145,38 @@ function SelectionCard({ selection, index = 0 }: SelectionCardProps) {
     STATUS_CONFIG[selection.stato as SelectionStatus] ||
     STATUS_CONFIG.HR_ASSEGNATA;
 
+  // Determina colore badge in base al tipo di stato
+  const getBadgeStyle = () => {
+    if (selection.stato === "ANNULLATA") {
+      return {
+        backgroundColor: "#fee2e2",
+        borderColor: "#ef4444",
+        color: "#ef4444",
+      };
+    }
+    if (selection.stato === "CHIUSA") {
+      return {
+        backgroundColor: "#d1fae5",
+        borderColor: "#10b981",
+        color: "#10b981",
+      };
+    }
+    if (selection.stato === "SELEZIONI_IN_SOSTITUZIONE") {
+      return {
+        backgroundColor: "#ffedd5",
+        borderColor: "#f97316",
+        color: "#f97316",
+      };
+    }
+    return {
+      backgroundColor: "white",
+      borderColor: "#6c4e06",
+      color: "#6c4e06",
+    };
+  };
+
+  const badgeStyle = getBadgeStyle();
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -156,16 +198,26 @@ function SelectionCard({ selection, index = 0 }: SelectionCardProps) {
         <div className="p-6 flex flex-col h-full">
           {/* Header con badge stato */}
           <div className="flex items-start justify-between mb-4">
-            <span
-              className="font-semibold text-xs px-3 py-1 border-2 whitespace-nowrap"
-              style={{
-                backgroundColor: "white",
-                borderColor: "#6c4e06",
-                color: "#6c4e06",
-              }}
-            >
-              {config.label} • {config.step}/{config.totalSteps}
-            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className="font-semibold text-xs px-3 py-1 border-2 whitespace-nowrap flex items-center gap-1.5"
+                style={badgeStyle}
+              >
+                {selection.stato === "SELEZIONI_IN_SOSTITUZIONE" && (
+                  <RefreshCw className="h-3 w-3" />
+                )}
+                {config.label}
+                {!config.isSpecial && (
+                  <>
+                    {" "}
+                    • {config.step}/{config.totalSteps}
+                  </>
+                )}
+                {config.isSpecial && typeof config.step === "string" && (
+                  <span className="ml-1 font-bold">{config.step}</span>
+                )}
+              </span>
+            </div>
           </div>
 
           {/* Titolo */}

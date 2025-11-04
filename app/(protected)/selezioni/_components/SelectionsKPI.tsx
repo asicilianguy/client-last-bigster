@@ -14,6 +14,7 @@ import {
   FileCheck,
   Megaphone,
   Users,
+  RefreshCw,
 } from "lucide-react";
 import { SelectionStatus } from "@/types/selection";
 
@@ -29,6 +30,7 @@ const STATUS_LABELS: Record<SelectionStatus, string> = {
   [SelectionStatus.CANDIDATURE_RICEVUTE]: "Candidature",
   [SelectionStatus.COLLOQUI_IN_CORSO]: "Colloqui",
   [SelectionStatus.PROPOSTA_CANDIDATI]: "Proposta",
+  [SelectionStatus.SELEZIONI_IN_SOSTITUZIONE]: "Sostituzione",
   [SelectionStatus.CHIUSA]: "Chiusa",
   [SelectionStatus.ANNULLATA]: "Annullata",
 };
@@ -93,6 +95,13 @@ export function SelectionsKPI({ data }: SelectionsKPIProps) {
       icon: Users,
       color: "#f59e0b",
       bgColor: "#fef3c7",
+    },
+    {
+      status: SelectionStatus.SELEZIONI_IN_SOSTITUZIONE,
+      label: "Sostituzione",
+      icon: RefreshCw,
+      color: "#f97316",
+      bgColor: "#ffedd5",
     },
   ];
 
@@ -252,7 +261,7 @@ export function SelectionsKPI({ data }: SelectionsKPIProps) {
         <h3 className="text-sm font-bold text-bigster-text mb-6 uppercase tracking-wide">
           Stati Chiave del Processo
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           {keyStates.map((state, index) => {
             const count = data.byStatus[state.status] || 0;
             const Icon = state.icon;

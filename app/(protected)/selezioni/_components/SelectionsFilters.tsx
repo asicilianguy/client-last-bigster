@@ -42,6 +42,10 @@ const STATUS_OPTIONS = [
   },
   { value: SelectionStatus.COLLOQUI_IN_CORSO, label: "Colloqui in Corso" },
   { value: SelectionStatus.PROPOSTA_CANDIDATI, label: "Proposta Candidati" },
+  {
+    value: SelectionStatus.SELEZIONI_IN_SOSTITUZIONE,
+    label: "Selezioni in Sostituzione",
+  },
   { value: SelectionStatus.CHIUSA, label: "Chiusa" },
   { value: SelectionStatus.ANNULLATA, label: "Annullata" },
 ];

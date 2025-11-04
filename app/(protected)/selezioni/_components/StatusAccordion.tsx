@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { SelectionStatus } from "@/types/selection";
-import { SelectionCard } from "./SelectionCard";
+import { SelectionCard } from "@/components/ui/bigster/SelectionCard";
 
 // Mappatura stati → label e colori
 const STATUS_CONFIG: Record<SelectionStatus, { label: string; color: string }> =
@@ -49,6 +49,10 @@ const STATUS_CONFIG: Record<SelectionStatus, { label: string; color: string }> =
     [SelectionStatus.PROPOSTA_CANDIDATI]: {
       label: "Proposta Candidati",
       color: "#3b82f6",
+    },
+    [SelectionStatus.SELEZIONI_IN_SOSTITUZIONE]: {
+      label: "Selezioni in Sostituzione",
+      color: "#f97316",
     },
     [SelectionStatus.CHIUSA]: { label: "Chiusa", color: "#6b7280" },
     [SelectionStatus.ANNULLATA]: { label: "Annullata", color: "#ef4444" },

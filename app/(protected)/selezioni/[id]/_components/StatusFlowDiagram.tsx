@@ -8,6 +8,7 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
+  RefreshCw,
 } from "lucide-react";
 import { SelectionDetail, SelectionStatus } from "@/types/selection";
 import { motion, AnimatePresence } from "framer-motion";
@@ -105,6 +106,8 @@ export function StatusFlowDiagram({ selection }: StatusFlowDiagramProps) {
   );
 
   const isAnnullata = selection.stato === SelectionStatus.ANNULLATA;
+  const isSostituzione =
+    selection.stato === SelectionStatus.SELEZIONI_IN_SOSTITUZIONE;
   const totalSteps = STATUS_FLOW.length;
   const completedSteps = currentStatusIndex + 1;
   const progressPercentage = Math.round((completedSteps / totalSteps) * 100);
@@ -155,15 +158,23 @@ export function StatusFlowDiagram({ selection }: StatusFlowDiagramProps) {
                 Flusso Stato Selezione
               </h2>
               <p className="text-xs text-bigster-text-muted">
-                Step {completedSteps} di {totalSteps} • {progressPercentage}%
-                completato
+                {isSostituzione ? (
+                  "Processo di sostituzione in corso"
+                ) : isAnnullata ? (
+                  "Selezione annullata"
+                ) : (
+                  <>
+                    Step {completedSteps} di {totalSteps} • {progressPercentage}
+                    % completato
+                  </>
+                )}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             {/* Quick Info quando collassato */}
-            {!isExpanded && !isAnnullata && (
+            {!isExpanded && !isAnnullata && !isSostituzione && (
               <div className="hidden sm:flex items-center gap-3">
                 <div className="text-right">
                   <p className="text-xs text-bigster-text-muted font-medium">
@@ -190,6 +201,15 @@ export function StatusFlowDiagram({ selection }: StatusFlowDiagramProps) {
               </div>
             )}
 
+            {!isExpanded && isSostituzione && (
+              <div className="flex items-center gap-2 px-3 py-1.5 border-2 border-orange-200 bg-orange-50">
+                <RefreshCw className="h-3 w-3 text-orange-600" />
+                <span className="text-xs font-semibold text-orange-700">
+                  In Sostituzione
+                </span>
+              </div>
+            )}
+
             {isExpanded ? (
               <ChevronUp className="h-5 w-5 text-bigster-text flex-shrink-0" />
             ) : (
@@ -198,8 +218,8 @@ export function StatusFlowDiagram({ selection }: StatusFlowDiagramProps) {
           </div>
         </button>
 
-        {/* Progress Bar - Solo quando collassato */}
-        {!isExpanded && !isAnnullata && (
+        {/* Progress Bar - Solo quando collassato e non annullata/sostituzione */}
+        {!isExpanded && !isAnnullata && !isSostituzione && (
           <div className="mt-3 h-1 bg-bigster-border overflow-hidden">
             <div
               className="h-full bg-bigster-primary"
@@ -235,6 +255,40 @@ export function StatusFlowDiagram({ selection }: StatusFlowDiagramProps) {
                       Questa selezione è stata annullata e non può proseguire
                       nel flusso
                     </p>
+                  </div>
+                </motion.div>
+              ) : isSostituzione ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="flex items-center justify-center gap-3 p-8 bg-orange-50 border-2 border-orange-200"
+                >
+                  <RefreshCw className="h-10 w-10 text-orange-600 flex-shrink-0" />
+                  <div>
+                    <p className="text-xl font-bold text-orange-800 mb-1">
+                      Selezione in Sostituzione
+                    </p>
+                    <p className="text-sm text-orange-700 mb-3">
+                      Questa selezione è in un processo di sostituzione. Il
+                      candidato inizialmente selezionato non è più disponibile e
+                      si sta cercando un sostituto.
+                    </p>
+                    <div className="flex items-start gap-2 p-3 bg-orange-100 border border-orange-300">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-orange-600" />
+                      </div>
+                      <p className="text-xs text-orange-800 leading-relaxed">
+                        Questo stato è speciale e non fa parte del flusso
+                        lineare standard. La selezione può tornare a uno stato
+                        precedente del processo per trovare un candidato
+                        sostitutivo.
+                      </p>
+                    </div>
+                    {currentStatusDate && (
+                      <p className="text-xs text-orange-600 mt-3">
+                        Aggiornato {getTimeAgo(currentStatusDate)}
+                      </p>
+                    )}
                   </div>
                 </motion.div>
               ) : (

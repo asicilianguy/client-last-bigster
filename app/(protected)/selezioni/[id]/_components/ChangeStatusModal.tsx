@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/bigster/dialog-custom";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, CheckCircle2, RefreshCw } from "lucide-react";
 import { SelectionDetail, SelectionStatus } from "@/types/selection";
 import { useNotify } from "@/hooks/use-notify";
 
@@ -42,7 +42,16 @@ const NEXT_STATES: Partial<Record<SelectionStatus, SelectionStatus[]>> = {
   [SelectionStatus.ANNUNCIO_PUBBLICATO]: [SelectionStatus.CANDIDATURE_RICEVUTE],
   [SelectionStatus.CANDIDATURE_RICEVUTE]: [SelectionStatus.COLLOQUI_IN_CORSO],
   [SelectionStatus.COLLOQUI_IN_CORSO]: [SelectionStatus.PROPOSTA_CANDIDATI],
-  [SelectionStatus.PROPOSTA_CANDIDATI]: [SelectionStatus.CHIUSA],
+  [SelectionStatus.PROPOSTA_CANDIDATI]: [
+    SelectionStatus.CHIUSA,
+    SelectionStatus.SELEZIONI_IN_SOSTITUZIONE,
+  ],
+  [SelectionStatus.SELEZIONI_IN_SOSTITUZIONE]: [
+    SelectionStatus.CANDIDATURE_RICEVUTE,
+    SelectionStatus.COLLOQUI_IN_CORSO,
+    SelectionStatus.PROPOSTA_CANDIDATI,
+    SelectionStatus.CHIUSA,
+  ],
 };
 
 const STATUS_LABELS: Record<SelectionStatus, string> = {
@@ -59,6 +68,7 @@ const STATUS_LABELS: Record<SelectionStatus, string> = {
   [SelectionStatus.CANDIDATURE_RICEVUTE]: "Candidature Ricevute",
   [SelectionStatus.COLLOQUI_IN_CORSO]: "Colloqui in Corso",
   [SelectionStatus.PROPOSTA_CANDIDATI]: "Proposta Candidati",
+  [SelectionStatus.SELEZIONI_IN_SOSTITUZIONE]: "Selezioni in Sostituzione",
   [SelectionStatus.CHIUSA]: "Chiusa",
   [SelectionStatus.ANNULLATA]: "Annullata",
 };
@@ -107,6 +117,11 @@ export function ChangeStatusModal({
     }
   };
 
+  // Helper per determinare se uno stato è speciale (richiede attenzione)
+  const isSpecialStatus = (status: SelectionStatus) => {
+    return status === SelectionStatus.SELEZIONI_IN_SOSTITUZIONE;
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="rounded-none bg-bigster-surface border border-bigster-border max-w-md">
@@ -151,6 +166,41 @@ export function ChangeStatusModal({
               </select>
             )}
           </div>
+
+          {/* Warning per stato SELEZIONI_IN_SOSTITUZIONE */}
+          {selectedStatus === SelectionStatus.SELEZIONI_IN_SOSTITUZIONE && (
+            <div className="p-4 border-2 border-orange-200 bg-orange-50 space-y-2">
+              <div className="flex items-start gap-2">
+                <RefreshCw className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-bold text-orange-800 mb-1">
+                    Stato Speciale: Sostituzione
+                  </p>
+                  <p className="text-xs text-orange-700 leading-relaxed">
+                    Questo stato indica che il candidato selezionato non è più
+                    disponibile e si sta cercando un sostituto. La selezione
+                    tornerà in uno stato precedente del processo per trovare un
+                    nuovo candidato.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Info quando si torna indietro da SELEZIONI_IN_SOSTITUZIONE */}
+          {selection.stato === SelectionStatus.SELEZIONI_IN_SOSTITUZIONE &&
+            selectedStatus &&
+            selectedStatus !== SelectionStatus.SELEZIONI_IN_SOSTITUZIONE &&
+            selectedStatus !== SelectionStatus.CHIUSA && (
+              <div className="p-4 border border-blue-200 bg-blue-50">
+                <p className="text-xs text-blue-800 leading-relaxed">
+                  <span className="font-semibold">Ripresa del processo:</span>{" "}
+                  La selezione tornerà nello stato "
+                  {STATUS_LABELS[selectedStatus]}" per continuare la ricerca di
+                  un candidato sostitutivo.
+                </p>
+              </div>
+            )}
 
           {/* Note */}
           <div className="space-y-2">

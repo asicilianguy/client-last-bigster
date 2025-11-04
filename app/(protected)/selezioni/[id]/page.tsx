@@ -155,6 +155,7 @@ function shouldShowJobCollections(stato: string): boolean {
     "CANDIDATURE_RICEVUTE",
     "COLLOQUI_IN_CORSO",
     "PROPOSTA_CANDIDATI",
+    "SELEZIONI_IN_SOSTITUZIONE",
     "CHIUSA",
   ];
   return visibleStates.includes(stato);
@@ -169,6 +170,7 @@ function shouldShowAnnouncements(stato: string): boolean {
     "CANDIDATURE_RICEVUTE",
     "COLLOQUI_IN_CORSO",
     "PROPOSTA_CANDIDATI",
+    "SELEZIONI_IN_SOSTITUZIONE",
     "CHIUSA",
   ];
   return visibleStates.includes(stato);

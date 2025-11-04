@@ -40,7 +40,7 @@ export default function SelezioniPage() {
   });
 
   const [sortBy, setSortBy] = useState<
-    "recent" | "oldest" | "title" | "company"
+    "recent" | "oldest" | "title" | "company" | "applications"
   >("recent");
 
   // Filtra selezioni accessibili
@@ -215,6 +215,7 @@ export default function SelezioniPage() {
       [SelectionStatus.CANDIDATURE_RICEVUTE]: 0,
       [SelectionStatus.COLLOQUI_IN_CORSO]: 0,
       [SelectionStatus.PROPOSTA_CANDIDATI]: 0,
+      [SelectionStatus.SELEZIONI_IN_SOSTITUZIONE]: 0,
       [SelectionStatus.CHIUSA]: 0,
       [SelectionStatus.ANNULLATA]: 0,
     };
