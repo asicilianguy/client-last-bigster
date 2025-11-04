@@ -1,3 +1,8 @@
+// ============================================
+// FILE: app/(protected)/selezioni/[id]/page.tsx
+// MODIFICA: Aggiunta SelectionDeadlineCard
+// ============================================
+
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
@@ -18,6 +23,7 @@ import { StatusFlowDiagram } from "./_components/StatusFlowDiagram";
 import { InvoicesSection } from "./_components/InvoicesSection";
 import { AnnouncementsSection } from "./_components/AnnouncementsSection";
 import { StatusHistorySection } from "./_components/StatusHistorySection";
+import { SelectionDeadlineCard } from "@/app/(protected)/selezioni/_components/SelectionDeadlineCard"; // ← NUOVO IMPORT
 
 export default function SelectionDetailPage() {
   const params = useParams();
@@ -115,6 +121,9 @@ export default function SelectionDetailPage() {
 
         {/* Card informazioni principali */}
         <SelectionInfoCard selection={selection} />
+
+        {/* ← NUOVA CARD SCADENZA (se applicabile) */}
+        <SelectionDeadlineCard selection={selection} />
 
         {/* Panel azioni in base allo stato */}
         <SelectionActionsPanel selection={selection} />

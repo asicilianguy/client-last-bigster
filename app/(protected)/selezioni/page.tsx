@@ -1,6 +1,6 @@
 // ============================================
-// FILE COMPLETO: app/(protected)/selezioni/page.tsx
-// QUESTO È IL FILE FINALE DA USARE
+// FILE: app/(protected)/selezioni/page.tsx
+// MODIFICA: Aggiunta componente SelectionsDeadlinesMonitor
 // ============================================
 
 "use client";
@@ -14,6 +14,7 @@ import { SelectionStatus } from "@/types/selection";
 import { SelectionsKPI } from "./_components/SelectionsKPI";
 import { SelectionsFilters } from "./_components/SelectionsFilters";
 import { SelectionsGrid } from "./_components/SelectionsGrid";
+import { SelectionsDeadlinesMonitor } from "./_components/SelectionsDeadlinesMonitor"; // ← NUOVO IMPORT
 
 export default function SelezioniPage() {
   const { data: selectionsData, isLoading } = useGetSelectionsQuery({});
@@ -322,6 +323,9 @@ export default function SelezioniPage() {
           clearAllFilters={clearAllFilters}
         />
       </motion.div>
+
+      {/* ← NUOVO COMPONENTE FLOATING */}
+      <SelectionsDeadlinesMonitor selections={accessibleSelections} />
     </div>
   );
 }
