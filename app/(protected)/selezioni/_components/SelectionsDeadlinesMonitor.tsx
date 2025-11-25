@@ -1,6 +1,6 @@
 // ============================================
 // FILE: app/(protected)/selezioni/_components/SelectionsDeadlinesMonitor.tsx
-// VERSIONE: Sempre visibile con empty state
+// VERSIONE: Con tab system per HR_ASSEGNATA e RACCOLTA_JOB_APPROVATA_CLIENTE
 // ============================================
 
 "use client";
@@ -16,8 +16,11 @@ import {
   AlertCircle,
   XCircle,
   ExternalLink,
+  Users,
+  FileCheck,
 } from "lucide-react";
 import Link from "next/link";
+import { useGetDeadlineMonitoringQuery } from "@/lib/redux/features/selections/selectionsApiSlice";
 import {
   getSelectionsWithDeadlines,
   sortByUrgency,
@@ -26,34 +29,84 @@ import {
   UrgencyLevel,
   type SelectionWithDeadline,
 } from "@/lib/utils/selection-deadlines";
+import { SelectionStatus } from "@/types/selection";
+import { Spinner } from "@/components/ui/spinner";
 
-interface SelectionsDeadlinesMonitorProps {
-  selections: any[];
-}
+type TabType = "hr_assegnata" | "job_approvata";
 
-export function SelectionsDeadlinesMonitor({
-  selections,
-}: SelectionsDeadlinesMonitorProps) {
+/**
+ * Componente floating per monitorare scadenze critiche delle selezioni
+ * Sistema a tab per visualizzare separatamente:
+ * - HR_ASSEGNATA (3 giorni)
+ * - RACCOLTA_JOB_APPROVATA_CLIENTE (60 giorni)
+ */
+export function SelectionsDeadlinesMonitor() {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>("hr_assegnata");
 
-  // Calcola selezioni con scadenze
-  const selectionsWithDeadlines = useMemo(() => {
-    return sortByUrgency(getSelectionsWithDeadlines(selections));
-  }, [selections]);
+  // ✅ USA IL NUOVO ENDPOINT OTTIMIZZATO
+  const {
+    data: selections,
+    isLoading,
+    error,
+  } = useGetDeadlineMonitoringQuery();
 
-  const hasDeadlines = selectionsWithDeadlines.length > 0;
+  // Calcola selezioni con scadenze e dividi per stato
+  const { hrAssegnataSelections, jobApprovataSelections, allSelections } =
+    useMemo(() => {
+      if (!selections) {
+        return {
+          hrAssegnataSelections: [],
+          jobApprovataSelections: [],
+          allSelections: [],
+        };
+      }
 
-  // Conta per urgenza
-  const counts = useMemo(() => {
+      const withDeadlines = getSelectionsWithDeadlines(selections);
+
+      return {
+        hrAssegnataSelections: sortByUrgency(
+          withDeadlines.filter((s) => s.stato === SelectionStatus.HR_ASSEGNATA)
+        ),
+        jobApprovataSelections: sortByUrgency(
+          withDeadlines.filter(
+            (s) => s.stato === SelectionStatus.RACCOLTA_JOB_APPROVATA_CLIENTE
+          )
+        ),
+        allSelections: sortByUrgency(withDeadlines),
+      };
+    }, [selections]);
+
+  const hasDeadlines = allSelections.length > 0;
+  const hasHrAssegnata = hrAssegnataSelections.length > 0;
+  const hasJobApprovata = jobApprovataSelections.length > 0;
+
+  // Auto-switch al tab con contenuto quando si espande
+  useMemo(() => {
+    if (isExpanded && hasDeadlines) {
+      if (activeTab === "hr_assegnata" && !hasHrAssegnata && hasJobApprovata) {
+        setActiveTab("job_approvata");
+      } else if (
+        activeTab === "job_approvata" &&
+        !hasJobApprovata &&
+        hasHrAssegnata
+      ) {
+        setActiveTab("hr_assegnata");
+      }
+    }
+  }, [isExpanded, hasDeadlines, hasHrAssegnata, hasJobApprovata, activeTab]);
+
+  // Conta per urgenza - GLOBALI
+  const globalCounts = useMemo(() => {
     const result = {
-      total: selectionsWithDeadlines.length,
+      total: allSelections.length,
       overdue: 0,
       critical: 0,
       warning: 0,
       ok: 0,
     };
 
-    selectionsWithDeadlines.forEach((s) => {
+    allSelections.forEach((s) => {
       switch (s.deadlineInfo.urgencyLevel) {
         case UrgencyLevel.OVERDUE:
           result.overdue++;
@@ -71,19 +124,149 @@ export function SelectionsDeadlinesMonitor({
     });
 
     return result;
-  }, [selectionsWithDeadlines]);
+  }, [allSelections]);
 
-  // Determina il colore principale del badge
+  // Conta per urgenza - HR_ASSEGNATA
+  const hrCounts = useMemo(() => {
+    const result = {
+      total: hrAssegnataSelections.length,
+      overdue: 0,
+      critical: 0,
+      warning: 0,
+      ok: 0,
+    };
+
+    hrAssegnataSelections.forEach((s) => {
+      switch (s.deadlineInfo.urgencyLevel) {
+        case UrgencyLevel.OVERDUE:
+          result.overdue++;
+          break;
+        case UrgencyLevel.CRITICAL:
+          result.critical++;
+          break;
+        case UrgencyLevel.WARNING:
+          result.warning++;
+          break;
+        case UrgencyLevel.OK:
+          result.ok++;
+          break;
+      }
+    });
+
+    return result;
+  }, [hrAssegnataSelections]);
+
+  // Conta per urgenza - RACCOLTA_JOB_APPROVATA_CLIENTE
+  const jobCounts = useMemo(() => {
+    const result = {
+      total: jobApprovataSelections.length,
+      overdue: 0,
+      critical: 0,
+      warning: 0,
+      ok: 0,
+    };
+
+    jobApprovataSelections.forEach((s) => {
+      switch (s.deadlineInfo.urgencyLevel) {
+        case UrgencyLevel.OVERDUE:
+          result.overdue++;
+          break;
+        case UrgencyLevel.CRITICAL:
+          result.critical++;
+          break;
+        case UrgencyLevel.WARNING:
+          result.warning++;
+          break;
+        case UrgencyLevel.OK:
+          result.ok++;
+          break;
+      }
+    });
+
+    return result;
+  }, [jobApprovataSelections]);
+
+  // Determina il colore del badge per ogni tab
+  const getTabBadgeColor = (counts: typeof hrCounts) => {
+    if (counts.overdue > 0) return "#ef4444";
+    if (counts.critical > 0) return "#f97316";
+    if (counts.warning > 0) return "#f59e0b";
+    if (counts.ok > 0) return "#10b981";
+    return "#6b7280";
+  };
+
+  const hrBadgeColor = getTabBadgeColor(hrCounts);
+  const jobBadgeColor = getTabBadgeColor(jobCounts);
+
+  // Colore principale del badge (basato sul worst case globale)
   const badgeColor = hasDeadlines
-    ? counts.overdue > 0
+    ? globalCounts.overdue > 0
       ? "#ef4444"
-      : counts.critical > 0
+      : globalCounts.critical > 0
       ? "#f97316"
-      : counts.warning > 0
+      : globalCounts.warning > 0
       ? "#f59e0b"
       : "#10b981"
-    : "#6b7280"; // grigio quando non ci sono scadenze
+    : "#6b7280";
 
+  // Selezioni da mostrare nel tab attivo
+  const activeSelections =
+    activeTab === "hr_assegnata"
+      ? hrAssegnataSelections
+      : jobApprovataSelections;
+
+  // ============================================
+  // LOADING STATE
+  // ============================================
+  if (isLoading) {
+    return (
+      <div className="fixed bottom-6 right-6 z-50">
+        <div
+          className="bg-bigster-surface border-2 shadow-2xl p-4"
+          style={{ borderColor: "#6b7280" }}
+        >
+          <div className="flex items-center gap-3">
+            <Spinner className="h-5 w-5 text-bigster-text" />
+            <div>
+              <p className="text-sm font-semibold text-bigster-text">
+                Caricamento scadenze...
+              </p>
+              <p className="text-xs text-bigster-text-muted">
+                Recupero dati in corso
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // ERROR STATE
+  // ============================================
+  if (error) {
+    return (
+      <div className="fixed bottom-6 right-6 z-50 max-w-md">
+        <div className="bg-bigster-surface border-2 border-red-400 shadow-2xl p-4">
+          <div className="flex items-start gap-3">
+            <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-red-800 mb-1">
+                Errore nel caricamento
+              </p>
+              <p className="text-xs text-red-700">
+                Impossibile recuperare i dati delle scadenze. Riprova più tardi.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // MAIN COMPONENT
+  // ============================================
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -95,10 +278,12 @@ export function SelectionsDeadlinesMonitor({
         className="bg-bigster-surface border-2 shadow-2xl overflow-hidden"
         style={{ borderColor: badgeColor }}
       >
-        {/* Header - Sempre visibile */}
+        {/* ============================================ */}
+        {/* HEADER - Sempre visibile */}
+        {/* ============================================ */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full px-5 py-4 flex items-center justify-between bg-bigster-card-bg hover:opacity-90 transition-opacity"
+          className="w-full px-5 py-4 flex items-center justify-between bg-bigster-card-bg hover:opacity-90 transition-opacity gap-6"
         >
           <div className="flex items-center gap-3">
             <div
@@ -124,8 +309,8 @@ export function SelectionsDeadlinesMonitor({
               <p className="text-xs text-bigster-text-muted">
                 {hasDeadlines ? (
                   <>
-                    {counts.total}{" "}
-                    {counts.total === 1 ? "selezione" : "selezioni"} da
+                    {globalCounts.total}{" "}
+                    {globalCounts.total === 1 ? "selezione" : "selezioni"} da
                     monitorare
                   </>
                 ) : (
@@ -136,31 +321,31 @@ export function SelectionsDeadlinesMonitor({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Badge contatori - solo se ci sono scadenze */}
+            {/* Badge contatori - solo se ci sono scadenze e non espanso */}
             {!isExpanded && hasDeadlines && (
               <div className="flex items-center gap-1.5">
-                {counts.overdue > 0 && (
+                {globalCounts.overdue > 0 && (
                   <span
                     className="px-2 py-0.5 text-xs font-bold rounded-full"
                     style={{ backgroundColor: "#fee2e2", color: "#ef4444" }}
                   >
-                    {counts.overdue}
+                    {globalCounts.overdue}
                   </span>
                 )}
-                {counts.critical > 0 && (
+                {globalCounts.critical > 0 && (
                   <span
                     className="px-2 py-0.5 text-xs font-bold rounded-full"
                     style={{ backgroundColor: "#ffedd5", color: "#f97316" }}
                   >
-                    {counts.critical}
+                    {globalCounts.critical}
                   </span>
                 )}
-                {counts.warning > 0 && (
+                {globalCounts.warning > 0 && (
                   <span
                     className="px-2 py-0.5 text-xs font-bold rounded-full"
                     style={{ backgroundColor: "#fef3c7", color: "#f59e0b" }}
                   >
-                    {counts.warning}
+                    {globalCounts.warning}
                   </span>
                 )}
               </div>
@@ -174,7 +359,9 @@ export function SelectionsDeadlinesMonitor({
           </div>
         </button>
 
-        {/* Content espandibile */}
+        {/* ============================================ */}
+        {/* CONTENT ESPANDIBILE */}
+        {/* ============================================ */}
         <AnimatePresence>
           {isExpanded && (
             <motion.div
@@ -186,10 +373,10 @@ export function SelectionsDeadlinesMonitor({
             >
               {hasDeadlines ? (
                 <>
-                  {/* Summary Stats */}
+                  {/* Summary Stats GLOBALI */}
                   <div className="px-5 py-4 bg-bigster-background border-t border-bigster-border">
                     <div className="grid grid-cols-2 gap-3">
-                      {counts.overdue > 0 && (
+                      {globalCounts.overdue > 0 && (
                         <div className="p-3 bg-red-50 border border-red-200">
                           <div className="flex items-center gap-2 mb-1">
                             <XCircle className="h-4 w-4 text-red-600" />
@@ -198,11 +385,11 @@ export function SelectionsDeadlinesMonitor({
                             </span>
                           </div>
                           <p className="text-2xl font-bold text-red-600">
-                            {counts.overdue}
+                            {globalCounts.overdue}
                           </p>
                         </div>
                       )}
-                      {counts.critical > 0 && (
+                      {globalCounts.critical > 0 && (
                         <div className="p-3 bg-orange-50 border border-orange-200">
                           <div className="flex items-center gap-2 mb-1">
                             <AlertTriangle className="h-4 w-4 text-orange-600" />
@@ -211,11 +398,11 @@ export function SelectionsDeadlinesMonitor({
                             </span>
                           </div>
                           <p className="text-2xl font-bold text-orange-600">
-                            {counts.critical}
+                            {globalCounts.critical}
                           </p>
                         </div>
                       )}
-                      {counts.warning > 0 && (
+                      {globalCounts.warning > 0 && (
                         <div className="p-3 bg-yellow-50 border border-yellow-200">
                           <div className="flex items-center gap-2 mb-1">
                             <AlertCircle className="h-4 w-4 text-yellow-600" />
@@ -224,11 +411,11 @@ export function SelectionsDeadlinesMonitor({
                             </span>
                           </div>
                           <p className="text-2xl font-bold text-yellow-600">
-                            {counts.warning}
+                            {globalCounts.warning}
                           </p>
                         </div>
                       )}
-                      {counts.ok > 0 && (
+                      {globalCounts.ok > 0 && (
                         <div className="p-3 bg-green-50 border border-green-200">
                           <div className="flex items-center gap-2 mb-1">
                             <CheckCircle2 className="h-4 w-4 text-green-600" />
@@ -237,27 +424,184 @@ export function SelectionsDeadlinesMonitor({
                             </span>
                           </div>
                           <p className="text-2xl font-bold text-green-600">
-                            {counts.ok}
+                            {globalCounts.ok}
                           </p>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  {/* Lista selezioni */}
-                  <div className="max-h-96 overflow-y-auto">
-                    <div className="divide-y divide-bigster-border">
-                      {selectionsWithDeadlines.map((selection) => (
-                        <SelectionDeadlineItem
-                          key={selection.id}
-                          selection={selection}
+                  {/* ============================================ */}
+                  {/* TAB BAR */}
+                  {/* ============================================ */}
+                  <div className="border-t border-bigster-border bg-bigster-card-bg">
+                    <div className="flex">
+                      {/* Tab 1: HR Assegnata */}
+                      <button
+                        onClick={() => setActiveTab("hr_assegnata")}
+                        disabled={!hasHrAssegnata}
+                        className={`flex-1 px-4 py-3 flex items-center justify-center gap-2 border-b-2 transition-all ${
+                          activeTab === "hr_assegnata"
+                            ? "border-bigster-text bg-bigster-surface"
+                            : "border-transparent hover:bg-bigster-muted-bg"
+                        } ${
+                          !hasHrAssegnata ? "opacity-40 cursor-not-allowed" : ""
+                        }`}
+                      >
+                        <Users
+                          className="h-4 w-4"
+                          style={{
+                            color:
+                              activeTab === "hr_assegnata"
+                                ? "#6c4e06"
+                                : "#666666",
+                          }}
                         />
-                      ))}
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`text-xs font-bold ${
+                              activeTab === "hr_assegnata"
+                                ? "text-bigster-text"
+                                : "text-bigster-text-muted"
+                            }`}
+                          >
+                            HR Assegnata
+                          </span>
+                          {hasHrAssegnata && (
+                            <span
+                              className="px-1.5 py-0.5 text-[10px] font-bold rounded-full"
+                              style={{
+                                backgroundColor:
+                                  activeTab === "hr_assegnata"
+                                    ? `${hrBadgeColor}20`
+                                    : "#f5f5f7",
+                                color:
+                                  activeTab === "hr_assegnata"
+                                    ? hrBadgeColor
+                                    : "#666666",
+                                border: `1px solid ${
+                                  activeTab === "hr_assegnata"
+                                    ? hrBadgeColor
+                                    : "#d8d8d8"
+                                }`,
+                              }}
+                            >
+                              {hrCounts.total}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+
+                      {/* Tab 2: Job Approvata Cliente */}
+                      <button
+                        onClick={() => setActiveTab("job_approvata")}
+                        disabled={!hasJobApprovata}
+                        className={`flex-1 px-4 py-3 flex items-center justify-center gap-2 border-b-2 transition-all ${
+                          activeTab === "job_approvata"
+                            ? "border-bigster-text bg-bigster-surface"
+                            : "border-transparent hover:bg-bigster-muted-bg"
+                        } ${
+                          !hasJobApprovata
+                            ? "opacity-40 cursor-not-allowed"
+                            : ""
+                        }`}
+                      >
+                        <FileCheck
+                          className="h-4 w-4"
+                          style={{
+                            color:
+                              activeTab === "job_approvata"
+                                ? "#6c4e06"
+                                : "#666666",
+                          }}
+                        />
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`text-xs font-bold ${
+                              activeTab === "job_approvata"
+                                ? "text-bigster-text"
+                                : "text-bigster-text-muted"
+                            }`}
+                          >
+                            Job Approvata
+                          </span>
+                          {hasJobApprovata && (
+                            <span
+                              className="px-1.5 py-0.5 text-[10px] font-bold rounded-full"
+                              style={{
+                                backgroundColor:
+                                  activeTab === "job_approvata"
+                                    ? `${jobBadgeColor}20`
+                                    : "#f5f5f7",
+                                color:
+                                  activeTab === "job_approvata"
+                                    ? jobBadgeColor
+                                    : "#666666",
+                                border: `1px solid ${
+                                  activeTab === "job_approvata"
+                                    ? jobBadgeColor
+                                    : "#d8d8d8"
+                                }`,
+                              }}
+                            >
+                              {jobCounts.total}
+                            </span>
+                          )}
+                        </div>
+                      </button>
                     </div>
+                  </div>
+
+                  {/* ============================================ */}
+                  {/* TAB CONTENT */}
+                  {/* ============================================ */}
+                  <div className="max-h-96 overflow-y-auto">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={activeTab}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {activeSelections.length > 0 ? (
+                          <div className="divide-y divide-bigster-border">
+                            {activeSelections.map((selection) => (
+                              <SelectionDeadlineItem
+                                key={selection.id}
+                                selection={selection}
+                              />
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="px-5 py-12 text-center bg-bigster-background">
+                            <div
+                              className="w-12 h-12 mx-auto mb-3 flex items-center justify-center"
+                              style={{
+                                backgroundColor: "#d1fae515",
+                                border: "2px solid #10b981",
+                              }}
+                            >
+                              <CheckCircle2 className="h-6 w-6 text-green-500" />
+                            </div>
+                            <p className="text-sm font-semibold text-bigster-text mb-1">
+                              Nessuna scadenza in questa categoria
+                            </p>
+                            <p className="text-xs text-bigster-text-muted">
+                              {activeTab === "hr_assegnata"
+                                ? "Non ci sono selezioni in 'HR Assegnata' da monitorare"
+                                : "Non ci sono selezioni in 'Job Approvata Cliente' da monitorare"}
+                            </p>
+                          </div>
+                        )}
+                      </motion.div>
+                    </AnimatePresence>
                   </div>
                 </>
               ) : (
-                // ← EMPTY STATE
+                // ============================================
+                // EMPTY STATE
+                // ============================================
                 <div className="px-5 py-12 text-center bg-bigster-background border-t border-bigster-border">
                   <div
                     className="w-16 h-16 mx-auto mb-4 flex items-center justify-center"
@@ -299,7 +643,9 @@ export function SelectionsDeadlinesMonitor({
   );
 }
 
-// Componente per singolo item nella lista
+// ============================================
+// COMPONENTE ITEM SINGOLO
+// ============================================
 function SelectionDeadlineItem({
   selection,
 }: {

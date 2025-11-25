@@ -273,7 +273,7 @@ export function StatusFlowDiagram({ selection }: StatusFlowDiagramProps) {
                       candidato inizialmente selezionato non è più disponibile e
                       si sta cercando un sostituto.
                     </p>
-                    <div className="flex items-start gap-2 p-3 bg-orange-100 border border-orange-300">
+                    <div className="flex items-center gap-2 p-3 bg-orange-100 border border-orange-300">
                       <div className="flex-shrink-0 mt-0.5">
                         <div className="w-1.5 h-1.5 rounded-full bg-orange-600" />
                       </div>

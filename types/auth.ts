@@ -1,6 +1,6 @@
 // types/auth.ts
 
-import { UserRole } from "./enums";
+import { UserRole } from "./user";
 
 // ========== Base Types ==========
 

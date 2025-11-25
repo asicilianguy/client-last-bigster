@@ -312,3 +312,28 @@ export const isSelectionListItem = (obj: any): obj is SelectionListItem => {
     obj.consulente !== undefined
   );
 };
+
+// ============================================
+// DEADLINE MONITORING
+// ============================================
+
+/**
+ * Dati minimi per il monitoraggio scadenze
+ * Usato da SelectionsDeadlinesMonitor (endpoint ottimizzato)
+ */
+export interface SelectionDeadlineMonitoring {
+  id: number;
+  titolo: string;
+  stato: SelectionStatus;
+  data_creazione: string;
+  company: {
+    id: number;
+    nome: string;
+  };
+  storico_stati: Array<{
+    id: number;
+    stato_nuovo: SelectionStatus;
+    data_cambio: string;
+    data_scadenza: string | null;
+  }>;
+}

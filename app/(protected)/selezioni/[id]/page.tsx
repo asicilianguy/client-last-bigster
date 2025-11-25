@@ -24,6 +24,7 @@ import { InvoicesSection } from "./_components/InvoicesSection";
 import { AnnouncementsSection } from "./_components/AnnouncementsSection";
 import { StatusHistorySection } from "./_components/StatusHistorySection";
 import { SelectionDeadlineCard } from "@/app/(protected)/selezioni/_components/SelectionDeadlineCard"; // ← NUOVO IMPORT
+import { JobDescriptionSection } from "./_components/job-description";
 
 export default function SelectionDetailPage() {
   const params = useParams();
@@ -127,6 +128,8 @@ export default function SelectionDetailPage() {
 
         {/* Panel azioni in base allo stato */}
         <SelectionActionsPanel selection={selection} />
+
+        <JobDescriptionSection selection={selection} />
 
         {/* Diagramma flusso stato */}
         <StatusFlowDiagram selection={selection} />

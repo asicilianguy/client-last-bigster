@@ -10,8 +10,16 @@ interface AuthState {
   isAuthenticated: boolean;
 }
 
-// Inizializza lo state dal localStorage
 const loadAuthFromStorage = (): AuthState => {
+  // Controlla se siamo in ambiente browser
+  if (typeof window === "undefined") {
+    return {
+      user: null,
+      token: null,
+      isAuthenticated: false,
+    };
+  }
+
   try {
     const token = localStorage.getItem("token");
     const userStr = localStorage.getItem("user");

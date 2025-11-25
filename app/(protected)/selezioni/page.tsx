@@ -325,7 +325,7 @@ export default function SelezioniPage() {
       </motion.div>
 
       {/* ← NUOVO COMPONENTE FLOATING */}
-      <SelectionsDeadlinesMonitor selections={accessibleSelections} />
+      <SelectionsDeadlinesMonitor />
     </div>
   );
 }

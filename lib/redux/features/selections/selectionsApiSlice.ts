@@ -11,6 +11,7 @@ import type {
   ChangeStatusPayload,
   GetSelectionsQueryParams,
   DeleteSelectionResponse,
+  SelectionDeadlineMonitoring,
 } from "@/types/selection";
 
 export const selectionsApiSlice = apiSlice.injectEndpoints({
@@ -117,6 +118,19 @@ export const selectionsApiSlice = apiSlice.injectEndpoints({
         { type: "Selection", id: "LIST" },
       ],
     }),
+    getDeadlineMonitoring: builder.query<SelectionDeadlineMonitoring[], void>({
+      query: () => "/selections/deadline-monitoring",
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({
+                type: "Selection" as const,
+                id,
+              })),
+              { type: "Selection", id: "DEADLINE_MONITORING" },
+            ]
+          : [{ type: "Selection", id: "DEADLINE_MONITORING" }],
+    }),
   }),
 });
 
@@ -130,4 +144,5 @@ export const {
   useDeleteSelectionMutation,
   useAssignHrMutation,
   useChangeSelectionStatusMutation,
+  useGetDeadlineMonitoringQuery,
 } = selectionsApiSlice;
