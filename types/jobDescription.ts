@@ -537,7 +537,11 @@ export const createDefaultAnalisiOrganizzativa = (): AnalisiOrganizzativa => ({
   },
   tratti_distintivi: "",
   obiettivi_di_sviluppo: "",
-  swot_analysis: "",
+  swot_analysis: `PUNTI DI FORZA:
+
+
+AREE DI MIGLIORAMENTO:
+`,
 });
 
 export const createDefaultAttivitaDO = (): AttivitaDO => ({

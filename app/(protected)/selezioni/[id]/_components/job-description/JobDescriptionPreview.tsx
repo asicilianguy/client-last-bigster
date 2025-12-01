@@ -107,7 +107,8 @@ export function JobDescriptionPreview({
           format: "a4",
           orientation: "portrait" as const,
         },
-        pagebreak: { mode: pagebreakModes },
+        // ✅ Cambiato: solo "css" per rispettare le classi break-inside-avoid
+        pagebreak: { mode: "css", avoid: ["tr", "td", ".break-inside-avoid"] },
       };
 
       // Genera come Blob invece che salvare
@@ -141,7 +142,8 @@ export function JobDescriptionPreview({
           format: "a4",
           orientation: "portrait" as const,
         },
-        pagebreak: { mode: pagebreakModes },
+        // ✅ Cambiato: solo "css" per rispettare le classi break-inside-avoid
+        pagebreak: { mode: "css", avoid: ["tr", "td", ".break-inside-avoid"] },
       };
 
       await html2pdf().set(opt).from(element).save();
@@ -330,7 +332,6 @@ export function JobDescriptionPreview({
           <div
             ref={printRef}
             className="bg-white p-8 shadow-lg mx-auto max-w-[210mm]"
-            style={{ minHeight: "297mm" }}
           >
             {/* Intestazione Documento */}
             <div className="text-center mb-8 pb-6 border-b-2 border-bigster-primary">
