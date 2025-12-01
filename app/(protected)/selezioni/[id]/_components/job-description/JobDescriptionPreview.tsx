@@ -957,7 +957,7 @@ export function JobDescriptionPreview({
                   minute: "2-digit",
                 })}
               </p>
-              {companyName && <p className="mt-1">{companyName}</p>}
+              {companyName && false && <p className="mt-1">{companyName}</p>}
             </div>
           </div>
         </div>
