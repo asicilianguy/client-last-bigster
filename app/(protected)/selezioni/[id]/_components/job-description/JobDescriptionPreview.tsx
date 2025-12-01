@@ -273,7 +273,7 @@ export function JobDescriptionPreview({
                   ? "DENTIST ORGANIZER (DO)"
                   : "ASSISTENTE DI STUDIO ODONTOIATRICO (ASO)"}
               </p>
-              {companyName && (
+              {companyName && false && (
                 <p className="text-sm text-gray-600 mt-2">{companyName}</p>
               )}
             </div>
