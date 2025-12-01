@@ -17,15 +17,13 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
+  Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import { SelectionDetail, SelectionStatus } from "@/types/selection";
 import JobDescriptionWizard from "./JobDescriptionWizard";
-import {
-  JobDescriptionType,
-  JobDescriptionForm,
-} from "@/types/jobDescription";
+import { JobDescriptionType, JobDescriptionForm } from "@/types/jobDescription";
+import { triggerFileImport } from "@/lib/utils/job-description-export-import";
 
 interface JobDescriptionSectionProps {
   selection: SelectionDetail;
@@ -57,7 +55,9 @@ export function JobDescriptionSection({
   selection,
 }: JobDescriptionSectionProps) {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [importedData, setImportedData] = useState<JobDescriptionForm | null>(
+    null
+  );
 
   // Verifica se la sezione deve essere visibile
   const isVisible = VISIBLE_STATES.includes(selection.stato as SelectionStatus);
@@ -79,20 +79,19 @@ export function JobDescriptionSection({
   const hasExistingData = selection.raccolte_job?.length > 0;
   const existingJobCollection = selection.raccolte_job?.[0];
 
-  // Handler per salvataggio
-  const handleSave = async (data: JobDescriptionForm) => {
-    setIsLoading(true);
-    try {
-      // TODO: Implementare la chiamata API per salvare
-      console.log("Salvataggio Job Description:", data);
-      // await saveJobDescription({ selectionId: selection.id, data });
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simula delay
-    } catch (error) {
-      console.error("Errore nel salvataggio:", error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+  // Handler per import JSON
+  const handleImportJSON = () => {
+    triggerFileImport((formData) => {
+      setImportedData(formData);
+      setIsWizardOpen(true);
+      console.log("✅ Dati importati con successo");
+    });
+  };
+
+  // Handler per chiusura wizard
+  const handleWizardClose = () => {
+    setIsWizardOpen(false);
+    setImportedData(null); // Reset imported data
   };
 
   if (!isVisible) return null;
@@ -115,7 +114,9 @@ export function JobDescriptionSection({
                 </h2>
                 <p className="text-xs text-bigster-text-muted">
                   {selection.figura_professionale?.nome
-                    ? `${selection.figura_professionale.nome} (${determineType()})`
+                    ? `${
+                        selection.figura_professionale.nome
+                      } (${determineType()})`
                     : "Documento di raccolta requisiti"}
                 </p>
               </div>
@@ -148,31 +149,22 @@ export function JobDescriptionSection({
         {/* Content */}
         <div className="p-6">
           {isWizardOpen ? (
-            // Wizard Aperto
+            // Mostra il wizard
             <JobDescriptionWizard
               selectionId={selection.id}
               companyName={selection.company?.nome}
               figuraProfessionale={selection.figura_professionale?.nome}
-              onSave={handleSave}
-              onClose={() => setIsWizardOpen(false)}
+              initialData={importedData || undefined}
+              onClose={handleWizardClose}
             />
           ) : hasExistingData ? (
-            // Ha già dati - Mostra riepilogo
+            // Mostra card con dati esistenti
             <div className="space-y-4">
-              {/* Info raccolta esistente */}
-              <div className="p-4 bg-bigster-card-bg border border-bigster-border">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-5 bg-bigster-card-bg border border-bigster-border">
+                <div className="grid grid-cols-3 gap-4 mb-4">
                   <div>
                     <p className="text-xs font-semibold text-bigster-text-muted uppercase">
-                      Posizione
-                    </p>
-                    <p className="text-sm font-medium text-bigster-text">
-                      {existingJobCollection?.titolo_posizione || "-"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-bigster-text-muted uppercase">
-                      Data Creazione
+                      Creata il
                     </p>
                     <p className="text-sm font-medium text-bigster-text">
                       {existingJobCollection?.data_creazione
@@ -184,7 +176,7 @@ export function JobDescriptionSection({
                   </div>
                   <div>
                     <p className="text-xs font-semibold text-bigster-text-muted uppercase">
-                      Ultima Modifica
+                      Ultima modifica
                     </p>
                     <p className="text-sm font-medium text-bigster-text">
                       {existingJobCollection?.data_modifica
@@ -227,20 +219,19 @@ export function JobDescriptionSection({
                   Visualizza
                 </Button>
 
-                {isEditable &&
-                  !existingJobCollection?.inviata_al_cliente && (
-                    <Button
-                      variant="outline"
-                      className="rounded-none border border-blue-400 text-blue-600 hover:bg-blue-50"
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      Invia al Cliente
-                    </Button>
-                  )}
+                {isEditable && !existingJobCollection?.inviata_al_cliente && (
+                  <Button
+                    variant="outline"
+                    className="rounded-none border border-blue-400 text-blue-600 hover:bg-blue-50"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Invia al Cliente
+                  </Button>
+                )}
               </div>
             </div>
           ) : (
-            // Nessun dato - Mostra CTA per creare
+            // Nessun dato - Mostra CTA per creare o importare
             <div className="text-center py-8">
               <FileText className="h-12 w-12 text-bigster-text-muted mx-auto mb-4" />
               <h3 className="text-base font-semibold text-bigster-text mb-2">
@@ -248,18 +239,31 @@ export function JobDescriptionSection({
               </h3>
               <p className="text-sm text-bigster-text-muted mb-6 max-w-md mx-auto">
                 {isEditable
-                  ? "Avvia la compilazione della Job Description per raccogliere i requisiti del cliente durante la call."
+                  ? "Avvia la compilazione della Job Description o importa una raccolta esistente."
                   : "La raccolta job verrà compilata dalla risorsa HR assegnata."}
               </p>
 
               {isEditable && (
-                <Button
-                  onClick={() => setIsWizardOpen(true)}
-                  className="rounded-none bg-bigster-primary text-bigster-primary-text border border-yellow-200 hover:opacity-90"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Avvia Raccolta Job
-                </Button>
+                <div className="flex items-center justify-center gap-3">
+                  {/* Bottone Avvia */}
+                  <Button
+                    onClick={() => setIsWizardOpen(true)}
+                    className="rounded-none bg-bigster-primary text-bigster-primary-text border border-yellow-200 hover:opacity-90"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Avvia Raccolta Job
+                  </Button>
+
+                  {/* Bottone Importa */}
+                  <Button
+                    onClick={handleImportJSON}
+                    variant="outline"
+                    className="rounded-none border-2 border-blue-400 text-blue-600 hover:bg-blue-50"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Importa Raccolta Job
+                  </Button>
+                </div>
               )}
 
               {!isEditable && (

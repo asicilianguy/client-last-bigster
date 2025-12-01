@@ -116,10 +116,9 @@ export default function SelectionDetailPage() {
       transition={{ duration: 0.4 }}
       className="min-h-screen bg-bigster-background"
     >
-      <div className="container max-w-7xl mx-auto py-6 px-4 space-y-6">
-        {/* Header con breadcrumb e titolo */}
-        <SelectionHeader selection={selection} />
-
+      {/* Header con breadcrumb e titolo */}
+      <SelectionHeader selection={selection} />
+      <div className="mx-auto space-y-6 p-6">
         {/* Card informazioni principali */}
         <SelectionInfoCard selection={selection} />
 

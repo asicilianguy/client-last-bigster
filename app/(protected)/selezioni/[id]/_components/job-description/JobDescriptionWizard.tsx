@@ -10,23 +10,17 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
   ChevronRight,
-  Save,
   FileText,
   Building2,
   User,
-  Briefcase,
   GraduationCap,
   Gift,
   CheckSquare,
-  AlertCircle,
   Check,
-  X,
-  RefreshCw,
   Download,
   Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 
 import {
   JobDescriptionType,
@@ -38,6 +32,8 @@ import {
   createDefaultJobDescriptionDO,
   createDefaultJobDescriptionASO,
 } from "@/types/jobDescription";
+
+import { exportJobDescriptionAsJSON } from "@/lib/utils/job-description-export-import";
 
 // Import delle sezioni del wizard
 import { DatiAnagraficiSection } from "./sections/DatiAnagraficiSection";
@@ -56,6 +52,7 @@ import { ChiusuraSection } from "./sections/ChiusuraSection";
 
 // Import del componente Anteprima
 import { JobDescriptionPreview } from "./JobDescriptionPreview";
+import { useNotify } from "@/hooks/use-notify";
 
 // Styles
 const inputBase =
@@ -66,7 +63,6 @@ interface JobDescriptionWizardProps {
   companyName?: string;
   figuraProfessionale?: string;
   initialData?: Partial<JobDescriptionForm>;
-  onSave?: (data: JobDescriptionForm) => Promise<void>;
   onClose?: () => void;
 }
 
@@ -99,7 +95,6 @@ export function JobDescriptionWizard({
   companyName,
   figuraProfessionale,
   initialData,
-  onSave,
   onClose,
 }: JobDescriptionWizardProps) {
   // Determina il tipo in base alla figura professionale o ai dati iniziali
@@ -111,6 +106,7 @@ export function JobDescriptionWizard({
     return JobDescriptionType.DO;
   }, [initialData?.tipo, figuraProfessionale]);
 
+  const notify = useNotify();
   // State
   const [tipo, setTipo] = useState<JobDescriptionType>(determineType());
   const [formData, setFormData] = useState<JobDescriptionForm>(() => {
@@ -127,9 +123,6 @@ export function JobDescriptionWizard({
   const [completedSections, setCompletedSections] = useState<
     Set<WizardSection>
   >(new Set());
-  const [isDirty, setIsDirty] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [showPreview, setShowPreview] = useState(false);
 
   // Aggiorna i dati quando cambia il tipo
@@ -159,7 +152,6 @@ export function JobDescriptionWizard({
         ...prev,
         [key]: value,
       }));
-      setIsDirty(true);
     },
     []
   );
@@ -178,7 +170,6 @@ export function JobDescriptionWizard({
           [nestedKey]: value,
         },
       }));
-      setIsDirty(true);
     },
     []
   );
@@ -202,21 +193,16 @@ export function JobDescriptionWizard({
     }
   }, [currentIndex, currentSection]);
 
-  // Salvataggio
-  const handleSave = useCallback(async () => {
-    if (!onSave) return;
-
-    setIsSaving(true);
+  // Export JSON
+  const handleExportJSON = useCallback(() => {
     try {
-      await onSave(formData);
-      setIsDirty(false);
-      setLastSaved(new Date());
+      exportJobDescriptionAsJSON(formData, selectionId, companyName);
+      notify.success("Raccolta Job esportata con successo!");
     } catch (error) {
-      console.error("Errore durante il salvataggio:", error);
-    } finally {
-      setIsSaving(false);
+      console.error("Errore durante l'export:", error);
+      alert("❌ Errore durante l'export del file JSON");
     }
-  }, [formData, onSave]);
+  }, [formData, selectionId, companyName]);
 
   // Cambia tipo (DO/ASO)
   const handleTypeChange = useCallback(
@@ -243,7 +229,6 @@ export function JobDescriptionWizard({
       }
 
       setTipo(newType);
-      setIsDirty(true);
     },
     [tipo, formData]
   );
@@ -461,39 +446,23 @@ export function JobDescriptionWizard({
       {/* Footer Navigation */}
       <div className="px-6 py-4 border-t border-bigster-border bg-bigster-card-bg">
         <div className="flex items-center justify-between">
-          {/* Left: Status */}
-          <div className="flex items-center gap-4">
-            {isDirty && (
-              <span className="flex items-center gap-1.5 text-xs text-orange-600">
-                <AlertCircle className="h-3.5 w-3.5" />
-                Modifiche non salvate
-              </span>
-            )}
-            {lastSaved && !isDirty && (
-              <span className="flex items-center gap-1.5 text-xs text-green-600">
-                <Check className="h-3.5 w-3.5" />
-                Salvato alle {lastSaved.toLocaleTimeString("it-IT")}
-              </span>
-            )}
+          {/* Left: Export */}
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleExportJSON}
+              variant="outline"
+              className="rounded-none border-2 border-purple-400 text-purple-600 hover:bg-purple-50"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Esporta Raccolta
+            </Button>
+            <span className="text-xs text-bigster-text-muted">
+              Salva i tuoi progressi esportando il file JSON
+            </span>
           </div>
 
-          {/* Right: Actions */}
+          {/* Right: Navigation + Preview */}
           <div className="flex items-center gap-3">
-            {/* Salva */}
-            <Button
-              onClick={handleSave}
-              disabled={!isDirty || isSaving}
-              variant="outline"
-              className="rounded-none border border-bigster-border bg-bigster-surface text-bigster-text hover:bg-bigster-muted-bg"
-            >
-              {isSaving ? (
-                <Spinner className="h-4 w-4 mr-2" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Salva Bozza
-            </Button>
-
             {/* Navigazione */}
             <div className="flex items-center">
               <Button
@@ -515,7 +484,7 @@ export function JobDescriptionWizard({
               </Button>
             </div>
 
-            {/* Preview / Esporta (ultima sezione) */}
+            {/* Preview (ultima sezione) */}
             {currentIndex === WIZARD_STEPS.length - 1 && (
               <Button
                 onClick={() => setShowPreview(true)}
