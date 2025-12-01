@@ -19,9 +19,13 @@ import {
   Check,
   Star,
   Globe,
+  Upload,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { useJobCollectionUpload } from "@/hooks/useJobCollectionUpload";
 import {
   JobDescriptionForm,
   JobDescriptionType,
@@ -44,17 +48,26 @@ interface JobDescriptionPreviewProps {
   formData: JobDescriptionForm;
   tipo: JobDescriptionType;
   companyName?: string;
+  selectionId: number; // AGGIUNTO: ID selezione per upload S3
   onClose: () => void;
+  onUploadSuccess?: () => void; // AGGIUNTO: Callback dopo upload riuscito
 }
 
 export function JobDescriptionPreview({
   formData,
   tipo,
   companyName,
+  selectionId,
   onClose,
+  onUploadSuccess,
 }: JobDescriptionPreviewProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
+
+  // Hook per upload S3
+  const { uploadProgress, uploadNewPdf, resetProgress } =
+    useJobCollectionUpload();
 
   const analisi = formData.analisi_organizzativa;
   const profilo = formData.analisi_profilo;
@@ -63,7 +76,6 @@ export function JobDescriptionPreview({
 
   // Helper per ottenere il nome di un servizio (enum o personalizzato)
   const getServizioNome = (servizioId: string): string => {
-    // Controlla se è un enum
     if (
       Object.values(ServizioOdontoiatrico).includes(
         servizioId as ServizioOdontoiatrico
@@ -71,20 +83,47 @@ export function JobDescriptionPreview({
     ) {
       return SERVIZI_ODONTOIATRICI_LABELS[servizioId as ServizioOdontoiatrico];
     }
-    // Altrimenti cerca nei personalizzati
     const personalizzato = analisi.servizi_personalizzati?.find(
       (s) => s.id === servizioId
     );
     return personalizzato?.nome || servizioId;
   };
 
-  // Genera e scarica PDF
+  // Genera PDF come Blob (riutilizzabile)
+  const generatePdfBlob = async (): Promise<Blob | null> => {
+    try {
+      const html2pdf = (await import("html2pdf.js")).default;
+      const element = printRef.current;
+      if (!element) return null;
+
+      const margins: [number, number, number, number] = [10, 10, 10, 10];
+      const pagebreakModes = ["avoid-all", "css", "legacy"] as const;
+      const opt = {
+        margin: margins,
+        image: { type: "jpeg" as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: {
+          unit: "mm",
+          format: "a4",
+          orientation: "portrait" as const,
+        },
+        pagebreak: { mode: pagebreakModes },
+      };
+
+      // Genera come Blob invece che salvare
+      const blob = await html2pdf().set(opt).from(element).outputPdf("blob");
+      return blob;
+    } catch (error) {
+      console.error("Errore generazione PDF:", error);
+      return null;
+    }
+  };
+
+  // Genera e scarica PDF (comportamento originale)
   const handleDownloadPDF = async () => {
     setIsGenerating(true);
     try {
-      // Importa dinamicamente html2pdf per evitare errori SSR
       const html2pdf = (await import("html2pdf.js")).default;
-
       const element = printRef.current;
       if (!element) return;
 
@@ -108,10 +147,38 @@ export function JobDescriptionPreview({
       await html2pdf().set(opt).from(element).save();
     } catch (error) {
       console.error("Errore generazione PDF:", error);
-      // Fallback: stampa
       window.print();
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  // NUOVO: Carica PDF su S3
+  const handleUploadToS3 = async () => {
+    try {
+      // 1. Genera il PDF come Blob
+      const pdfBlob = await generatePdfBlob();
+      if (!pdfBlob) {
+        throw new Error("Impossibile generare il PDF");
+      }
+
+      // 2. Converti Blob in File
+      const fileName = `Job_Description_${tipo}_${
+        analisi.dati_anagrafici.ragione_sociale || "Documento"
+      }.pdf`;
+      const pdfFile = new File([pdfBlob], fileName, {
+        type: "application/pdf",
+      });
+
+      // 3. Upload su S3 usando l'hook
+      await uploadNewPdf(selectionId, pdfFile);
+
+      // 4. Successo
+      setUploadSuccess(true);
+      onUploadSuccess?.();
+    } catch (error) {
+      console.error("Errore upload S3:", error);
+      // L'errore è già gestito nell'hook (uploadProgress.error)
     }
   };
 
@@ -195,27 +262,26 @@ export function JobDescriptionPreview({
     );
   };
 
-  // Attività labels
+  // Labels
   const attivitaLabels =
     tipo === JobDescriptionType.DO ? ATTIVITA_DO_LABELS : ATTIVITA_ASO_LABELS;
-
-  // Competenze labels
   const competenzeLabels =
     tipo === JobDescriptionType.DO
       ? COMPETENZE_HARD_DO_LABELS
       : COMPETENZE_HARD_ASO_LABELS;
-
-  // Conoscenze labels
   const conoscenzeLabels =
     tipo === JobDescriptionType.DO
       ? CONOSCENZE_TECNICHE_DO_LABELS
       : CONOSCENZE_TECNICHE_ASO_LABELS;
-
-  // Caratteristiche labels
   const caratteristicheLabels =
     tipo === JobDescriptionType.DO
       ? CARATTERISTICHE_DO_LABELS
       : CARATTERISTICHE_ASO_LABELS;
+
+  // Stato upload in corso
+  const isUploading = ["getting-url", "uploading", "confirming"].includes(
+    uploadProgress.status
+  );
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
@@ -230,14 +296,16 @@ export function JobDescriptionPreview({
               onClick={handlePrint}
               variant="outline"
               className="rounded-none border border-bigster-border"
+              disabled={isUploading}
             >
               <Printer className="h-4 w-4 mr-2" />
               Stampa
             </Button>
             <Button
               onClick={handleDownloadPDF}
-              disabled={isGenerating}
-              className="rounded-none bg-bigster-primary text-bigster-primary-text border border-yellow-300"
+              disabled={isGenerating || isUploading}
+              variant="outline"
+              className="rounded-none border border-bigster-border"
             >
               {isGenerating ? (
                 <Spinner className="h-4 w-4 mr-2" />
@@ -250,6 +318,7 @@ export function JobDescriptionPreview({
               onClick={onClose}
               variant="outline"
               className="rounded-none border border-bigster-border"
+              disabled={isUploading}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -322,7 +391,7 @@ export function JobDescriptionPreview({
                 </div>
               </Section>
 
-              {/* Struttura - AGGIORNATA */}
+              {/* Struttura */}
               <Section title="Struttura ad Oggi" icon={User}>
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div className="p-3 bg-bigster-card-bg">
@@ -410,7 +479,7 @@ export function JobDescriptionPreview({
                 )}
               </Section>
 
-              {/* Servizi - AGGIORNATA */}
+              {/* Servizi */}
               <Section title="Servizi e Clientela" icon={Briefcase}>
                 <Field
                   label="Clienti / Segmenti"
@@ -418,7 +487,6 @@ export function JobDescriptionPreview({
                   fullWidth
                 />
 
-                {/* Servizi predefiniti attivi */}
                 {analisi.distribuzione_servizi?.some((s) => s.attivo) && (
                   <div className="mb-3">
                     <p className="text-xs font-semibold text-gray-500 mb-2">
@@ -444,7 +512,6 @@ export function JobDescriptionPreview({
                   </div>
                 )}
 
-                {/* Servizi personalizzati attivi */}
                 {(analisi.servizi_personalizzati?.filter(
                   (s) => s.attivo && s.nome
                 ).length ?? 0) > 0 && (
@@ -470,7 +537,6 @@ export function JobDescriptionPreview({
                   </div>
                 )}
 
-                {/* Servizi di punta - AGGIORNATA */}
                 {(analisi.servizi_di_punta?.length ?? 0) > 0 && (
                   <div className="mb-3">
                     <p className="text-xs font-semibold text-gray-500 mb-1">
@@ -730,7 +796,7 @@ export function JobDescriptionPreview({
               </Section>
             </div>
 
-            {/* SEZIONE 3: OFFERTA - AGGIORNATA */}
+            {/* SEZIONE 3: OFFERTA */}
             <div className="mb-8">
               <div className="bg-bigster-card-bg px-4 py-2 mb-4">
                 <h2 className="text-lg font-bold text-bigster-text">
@@ -786,7 +852,7 @@ export function JobDescriptionPreview({
                   </div>
                 )}
 
-                {/* Orario - AGGIORNATO */}
+                {/* Orario */}
                 <div className="mt-3">
                   <p className="text-xs font-semibold text-gray-500 mb-1">
                     ORARIO DI LAVORO
@@ -848,7 +914,7 @@ export function JobDescriptionPreview({
                   />
                 </div>
 
-                {/* Benefits - AGGIORNATI */}
+                {/* Benefits */}
                 <div className="mt-3">
                   <p className="text-xs font-semibold text-gray-500 mb-2">
                     BENEFITS
@@ -959,6 +1025,102 @@ export function JobDescriptionPreview({
               </p>
               {companyName && false && <p className="mt-1">{companyName}</p>}
             </div>
+          </div>
+        </div>
+
+        {/* Footer con CTA Upload S3 */}
+        <div className="px-6 py-4 border-t border-bigster-border bg-bigster-card-bg">
+          {/* Stato Success */}
+          {uploadSuccess && (
+            <div className="mb-4 p-4 bg-green-50 border-2 border-green-200 flex items-start gap-3">
+              <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-green-800">
+                  Job Collection caricata con successo!
+                </p>
+                <p className="text-xs text-green-700">
+                  Il documento è stato salvato e associato alla selezione.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Stato Errore */}
+          {uploadProgress.status === "error" && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+              <div>
+                <p className="text-xs font-semibold text-red-800">
+                  Errore durante il caricamento
+                </p>
+                <p className="text-xs text-red-700">
+                  {uploadProgress.error ||
+                    "Si è verificato un errore imprevisto"}
+                </p>
+              </div>
+              <Button
+                onClick={resetProgress}
+                variant="outline"
+                size="sm"
+                className="ml-auto rounded-none border-red-300 text-red-700 hover:bg-red-100"
+              >
+                Riprova
+              </Button>
+            </div>
+          )}
+
+          {/* Progress Bar durante upload */}
+          {isUploading && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-semibold text-bigster-text">
+                  {uploadProgress.status === "getting-url" &&
+                    "Preparazione upload..."}
+                  {uploadProgress.status === "uploading" &&
+                    "Caricamento in corso..."}
+                  {uploadProgress.status === "confirming" &&
+                    "Finalizzazione..."}
+                </span>
+                <span className="text-xs font-semibold text-bigster-text">
+                  {uploadProgress.progress}%
+                </span>
+              </div>
+              <div className="w-full h-2 bg-bigster-border">
+                <div
+                  className="h-full bg-bigster-primary transition-all duration-300"
+                  style={{ width: `${uploadProgress.progress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* CTA Principale */}
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-bigster-text-muted">
+              Carica il documento come Job Collection per questa selezione
+            </p>
+            <Button
+              onClick={handleUploadToS3}
+              disabled={isUploading || uploadSuccess}
+              className="rounded-none bg-bigster-primary text-bigster-primary-text border border-yellow-300 font-semibold px-6"
+            >
+              {isUploading ? (
+                <>
+                  <Spinner className="h-4 w-4 mr-2" />
+                  Caricamento...
+                </>
+              ) : uploadSuccess ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Caricato
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Carica su S3
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </div>

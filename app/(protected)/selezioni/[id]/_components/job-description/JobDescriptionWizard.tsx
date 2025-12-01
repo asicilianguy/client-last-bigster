@@ -505,6 +505,7 @@ export function JobDescriptionWizard({
           tipo={tipo}
           companyName={companyName}
           onClose={() => setShowPreview(false)}
+          selectionId={selectionId}
         />
       )}
     </div>

@@ -1,74 +1,102 @@
-import { ContractType, WorkMode } from "./enums";
+// types/jobCollection.ts
+
+// ========== Base Types ==========
+
+export interface SelectionBasic {
+  id: number;
+  titolo: string;
+  risorsa_umana_id?: number | null;
+  company?: {
+    id: number;
+    nome: string;
+  };
+}
+
+// ========== JobCollection Types ==========
 
 export interface JobCollectionBase {
   id: number;
   selezione_id: number;
-  titolo_posizione: string;
-  descrizione_ruolo: string;
-  competenze_richieste: string;
-  competenze_preferenziali?: string | null;
-  esperienza_richiesta?: string | null;
-  titoli_studio_richiesti?: string | null;
-  soft_skills?: string | null;
-  benefit_offerti?: string | null;
-  range_retributivo?: string | null;
-  sede_lavoro?: string | null;
-  modalita_lavoro?: WorkMode | null;
-  tipo_contratto?: ContractType | null;
-  orario_lavoro?: string | null;
-  note_aggiuntive?: string | null;
+  s3_key: string;
   inviata_al_cliente: boolean;
   data_invio_cliente?: string | null;
   approvata_dal_cliente: boolean;
   data_approvazione_cliente?: string | null;
   note_cliente?: string | null;
-  file_path?: string | null;
   data_creazione: string;
   data_modifica: string;
 }
 
-export interface JobCollectionResponse extends JobCollectionBase {}
+// ========== Response Types ==========
+
+// Response base con download URL
+export interface JobCollectionResponse extends JobCollectionBase {
+  download_url?: string;
+}
+
+// Response per getById con selezione inclusa
+export interface JobCollectionDetail extends JobCollectionBase {
+  download_url?: string;
+  selezione: SelectionBasic;
+}
+
+// Response per upload URL
+export interface UploadUrlResponse {
+  upload_url: string;
+  s3_key: string;
+  expires_in: number;
+}
+
+// Response per download URL
+export interface DownloadUrlResponse {
+  download_url: string;
+  expires_in: number;
+}
+
+// ========== Request Payloads ==========
 
 export interface CreateJobCollectionPayload {
   selezione_id: number;
-  titolo_posizione: string;
-  descrizione_ruolo: string;
-  competenze_richieste: string;
-  competenze_preferenziali?: string;
-  esperienza_richiesta?: string;
-  titoli_studio_richiesti?: string;
-  soft_skills?: string;
-  benefit_offerti?: string;
-  range_retributivo?: string;
-  sede_lavoro?: string;
-  modalita_lavoro?: WorkMode;
-  tipo_contratto?: ContractType;
-  orario_lavoro?: string;
-  note_aggiuntive?: string;
+  s3_key: string;
 }
 
 export interface UpdateJobCollectionPayload {
-  titolo_posizione?: string;
-  descrizione_ruolo?: string;
-  competenze_richieste?: string;
-  competenze_preferenziali?: string | null;
-  esperienza_richiesta?: string | null;
-  titoli_studio_richiesti?: string | null;
-  soft_skills?: string | null;
-  benefit_offerti?: string | null;
-  range_retributivo?: string | null;
-  sede_lavoro?: string | null;
-  modalita_lavoro?: WorkMode | null;
-  tipo_contratto?: ContractType | null;
-  orario_lavoro?: string | null;
-  note_aggiuntive?: string | null;
+  inviata_al_cliente?: boolean;
+  approvata_dal_cliente?: boolean;
+  note_cliente?: string | null;
 }
 
-export interface SendJobCollectionToClientPayload {
-  note_aggiuntive?: string;
+export interface ReplaceJobCollectionPdfPayload {
+  s3_key: string;
 }
 
-export interface ApproveJobCollectionPayload {
-  approvata_dal_cliente: boolean;
-  note_cliente?: string;
+// ========== API Response Wrappers ==========
+
+export interface DeleteJobCollectionResponse {
+  message: string;
 }
+
+// ========== Type Guards ==========
+
+export const isJobCollectionResponse = (
+  obj: any
+): obj is JobCollectionResponse => {
+  return (
+    obj &&
+    typeof obj === "object" &&
+    typeof obj.id === "number" &&
+    typeof obj.selezione_id === "number" &&
+    typeof obj.s3_key === "string"
+  );
+};
+
+export const isJobCollectionDetail = (obj: any): obj is JobCollectionDetail => {
+  return (
+    obj &&
+    typeof obj === "object" &&
+    typeof obj.id === "number" &&
+    typeof obj.selezione_id === "number" &&
+    typeof obj.s3_key === "string" &&
+    obj.selezione !== undefined // Controlliamo direttamente su obj (any)
+  );
+};

@@ -1,10 +1,11 @@
+// lib/redux/features/api/apiSlice.ts
+
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { RootState } from "../../store";
 
 const baseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api",
   prepareHeaders: (headers, { getState }) => {
-    // const token = (getState() as RootState).auth.token
     const token = localStorage.getItem("token");
 
     if (token) {
@@ -24,7 +25,8 @@ export const apiSlice = createApi({
     "Auth",
     "Announcement",
     "Application",
-    "Company", // Aggiunto nuovo tag type
+    "Company",
+    "JobCollection", // ← AGGIUNGI QUESTO
   ],
   endpoints: (builder) => ({}),
 });
