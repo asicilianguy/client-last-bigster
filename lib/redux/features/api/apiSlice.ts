@@ -26,7 +26,7 @@ export const apiSlice = createApi({
     "Announcement",
     "Application",
     "Company",
-    "JobCollection", // ← AGGIUNGI QUESTO
+    "JobCollection",
   ],
   endpoints: (builder) => ({}),
 });

@@ -1,3 +1,5 @@
+// types/selection.ts
+
 // ========== Enums (replicate from Prisma) ==========
 
 export enum UserRole {
@@ -116,14 +118,18 @@ export interface AnnouncementBasic {
   };
 }
 
+// ========== JobCollection (aggiornato per S3) ==========
+
 export interface JobCollectionBasic {
   id: number;
   selezione_id: number;
-  titolo_posizione: string;
-  descrizione_ruolo: string;
-  competenze_richieste: string;
+  s3_key: string;
+  s3_key_json?: string | null;
   inviata_al_cliente: boolean;
+  data_invio_cliente?: string | null;
   approvata_dal_cliente: boolean;
+  data_approvazione_cliente?: string | null;
+  note_cliente?: string | null;
   data_creazione: string;
   data_modifica: string;
 }
@@ -189,11 +195,10 @@ export interface SelectionListItem extends SelectionBase {
   fatture: InvoiceBasic[];
   _count: {
     annunci: number;
-    raccolte_job: number;
   };
 }
 
-// Response per getById
+// Response per getById (relazione 1:1 con JobCollection)
 export interface SelectionDetail extends SelectionBase {
   company: CompanyBasic;
   consulente: UserBasic;
@@ -201,7 +206,7 @@ export interface SelectionDetail extends SelectionBase {
   figura_professionale?: ProfessionalFigureBasic | null;
   fatture: InvoiceBasic[];
   annunci: AnnouncementBasic[];
-  raccolte_job: JobCollectionBasic[];
+  raccolta_job?: JobCollectionBasic | null; // Relazione 1:1 (singolo, non array)
   approvazioni_annuncio: AnnouncementApprovalBasic[];
   storico_stati: SelectionStatusHistoryBasic[];
 }

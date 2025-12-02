@@ -9,13 +9,14 @@ import type {
   CreateJobCollectionPayload,
   UpdateJobCollectionPayload,
   ReplaceJobCollectionPdfPayload,
+  UpdateJobCollectionJsonPayload,
   DeleteJobCollectionResponse,
 } from "@/types/jobCollection";
 
 export const jobCollectionsApiSlice = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     // ============================================
-    // UPLOAD URL ENDPOINTS
+    // UPLOAD URL ENDPOINTS - PDF
     // ============================================
 
     /**
@@ -36,6 +37,32 @@ export const jobCollectionsApiSlice = apiSlice.injectEndpoints({
     getReplacementUploadUrl: builder.mutation<UploadUrlResponse, number>({
       query: (id) => ({
         url: `/job-collections/${id}/replacement-upload-url`,
+        method: "POST",
+      }),
+    }),
+
+    // ============================================
+    // UPLOAD URL ENDPOINTS - JSON
+    // ============================================
+
+    /**
+     * Genera presigned URL per upload nuovo JSON (dati form)
+     * POST /job-collections/upload-json-url/:selectionId
+     */
+    getUploadJsonUrl: builder.mutation<UploadUrlResponse, number>({
+      query: (selectionId) => ({
+        url: `/job-collections/upload-json-url/${selectionId}`,
+        method: "POST",
+      }),
+    }),
+
+    /**
+     * Genera presigned URL per sostituzione JSON
+     * POST /job-collections/:id/replacement-upload-json-url
+     */
+    getReplacementUploadJsonUrl: builder.mutation<UploadUrlResponse, number>({
+      query: (id) => ({
+        url: `/job-collections/${id}/replacement-upload-json-url`,
         method: "POST",
       }),
     }),
@@ -149,6 +176,33 @@ export const jobCollectionsApiSlice = apiSlice.injectEndpoints({
     }),
 
     /**
+     * Aggiorna/Sostituisce il JSON (dopo upload completato)
+     * PUT /job-collections/:id/update-json
+     */
+    updateJobCollectionJson: builder.mutation<
+      JobCollectionResponse,
+      { id: number } & UpdateJobCollectionJsonPayload
+    >({
+      query: ({ id, s3_key_json }) => ({
+        url: `/job-collections/${id}/update-json`,
+        method: "PUT",
+        body: { s3_key_json },
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "JobCollection", id },
+        ...(result
+          ? [
+              {
+                type: "JobCollection" as const,
+                id: `SELECTION_${result.selezione_id}`,
+              },
+              { type: "Selection" as const, id: result.selezione_id },
+            ]
+          : []),
+      ],
+    }),
+
+    /**
      * Elimina JobCollection (e file S3)
      * DELETE /job-collections/:id
      */
@@ -161,42 +215,69 @@ export const jobCollectionsApiSlice = apiSlice.injectEndpoints({
     }),
 
     // ============================================
-    // DOWNLOAD URL ENDPOINT
+    // DOWNLOAD URL ENDPOINTS - PDF
     // ============================================
 
     /**
-     * Genera presigned URL per download
+     * Genera presigned URL per download PDF
      * GET /job-collections/:id/download-url
      */
     getDownloadUrl: builder.query<DownloadUrlResponse, number>({
       query: (id) => `/job-collections/${id}/download-url`,
-      // Non mettiamo providesTags perché l'URL è temporaneo e non va cachato a lungo
     }),
 
     /**
-     * Lazy query per download URL (per richieste on-demand)
+     * Lazy query per download URL PDF (per richieste on-demand)
      */
     lazyGetDownloadUrl: builder.query<DownloadUrlResponse, number>({
       query: (id) => `/job-collections/${id}/download-url`,
+    }),
+
+    // ============================================
+    // DOWNLOAD URL ENDPOINTS - JSON
+    // ============================================
+
+    /**
+     * Genera presigned URL per download JSON
+     * GET /job-collections/:id/download-json-url
+     */
+    getDownloadJsonUrl: builder.query<DownloadUrlResponse, number>({
+      query: (id) => `/job-collections/${id}/download-json-url`,
+    }),
+
+    /**
+     * Lazy query per download URL JSON (per richieste on-demand)
+     */
+    lazyGetDownloadJsonUrl: builder.query<DownloadUrlResponse, number>({
+      query: (id) => `/job-collections/${id}/download-json-url`,
     }),
   }),
 });
 
 // Export hooks
 export const {
-  // Mutations per upload
+  // Mutations per upload PDF
   useGetUploadUrlMutation,
   useGetReplacementUploadUrlMutation,
+
+  // Mutations per upload JSON
+  useGetUploadJsonUrlMutation,
+  useGetReplacementUploadJsonUrlMutation,
 
   // CRUD mutations
   useCreateJobCollectionMutation,
   useUpdateJobCollectionMutation,
   useReplaceJobCollectionPdfMutation,
+  useUpdateJobCollectionJsonMutation,
   useDeleteJobCollectionMutation,
 
-  // Queries
+  // Queries PDF
   useGetJobCollectionByIdQuery,
   useGetJobCollectionBySelectionIdQuery,
   useGetDownloadUrlQuery,
   useLazyGetDownloadUrlQuery,
+
+  // Queries JSON
+  useGetDownloadJsonUrlQuery,
+  useLazyGetDownloadJsonUrlQuery,
 } = jobCollectionsApiSlice;

@@ -18,6 +18,7 @@ export interface JobCollectionBase {
   id: number;
   selezione_id: number;
   s3_key: string;
+  s3_key_json?: string | null; // Nuovo campo per JSON
   inviata_al_cliente: boolean;
   data_invio_cliente?: string | null;
   approvata_dal_cliente: boolean;
@@ -29,25 +30,27 @@ export interface JobCollectionBase {
 
 // ========== Response Types ==========
 
-// Response base con download URL
+// Response base con download URLs
 export interface JobCollectionResponse extends JobCollectionBase {
   download_url?: string;
+  download_url_json?: string; // Presigned URL per download JSON
 }
 
 // Response per getById con selezione inclusa
 export interface JobCollectionDetail extends JobCollectionBase {
   download_url?: string;
+  download_url_json?: string;
   selezione: SelectionBasic;
 }
 
-// Response per upload URL
+// Response per upload URL (PDF o JSON)
 export interface UploadUrlResponse {
   upload_url: string;
   s3_key: string;
   expires_in: number;
 }
 
-// Response per download URL
+// Response per download URL (PDF o JSON)
 export interface DownloadUrlResponse {
   download_url: string;
   expires_in: number;
@@ -58,6 +61,7 @@ export interface DownloadUrlResponse {
 export interface CreateJobCollectionPayload {
   selezione_id: number;
   s3_key: string;
+  s3_key_json?: string; // Opzionale alla creazione
 }
 
 export interface UpdateJobCollectionPayload {
@@ -68,6 +72,10 @@ export interface UpdateJobCollectionPayload {
 
 export interface ReplaceJobCollectionPdfPayload {
   s3_key: string;
+}
+
+export interface UpdateJobCollectionJsonPayload {
+  s3_key_json: string;
 }
 
 // ========== API Response Wrappers ==========
@@ -97,6 +105,10 @@ export const isJobCollectionDetail = (obj: any): obj is JobCollectionDetail => {
     typeof obj.id === "number" &&
     typeof obj.selezione_id === "number" &&
     typeof obj.s3_key === "string" &&
-    obj.selezione !== undefined // Controlliamo direttamente su obj (any)
+    obj.selezione !== undefined
   );
+};
+
+export const hasJsonData = (obj: JobCollectionBase): boolean => {
+  return !!obj.s3_key_json;
 };
