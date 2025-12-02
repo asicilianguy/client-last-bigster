@@ -1,39 +1,32 @@
-// ========================================================================
 // app/(protected)/selezioni/[id]/_components/job-description/JobDescriptionWizard.tsx
-// Componente principale per la compilazione Job Description DO/ASO
-// ========================================================================
 
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
   ChevronRight,
-  FileText,
-  Building2,
-  User,
-  GraduationCap,
-  Gift,
-  CheckSquare,
   Check,
-  Download,
+  Save,
   Eye,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 
 import {
   JobDescriptionType,
   JobDescriptionForm,
-  JobDescriptionFormDO,
-  JobDescriptionFormASO,
   WizardSection,
   WIZARD_STEPS,
   createDefaultJobDescriptionDO,
   createDefaultJobDescriptionASO,
 } from "@/types/jobDescription";
 
-import { exportJobDescriptionAsJSON } from "@/lib/utils/job-description-export-import";
+// ✅ USA DIRETTAMENTE useJobCollectionUpload, non useJobCollectionData
+import { useJobCollectionUpload } from "@/hooks/useJobCollectionUpload";
 
 // Import delle sezioni del wizard
 import { DatiAnagraficiSection } from "./sections/DatiAnagraficiSection";
@@ -63,54 +56,36 @@ interface JobDescriptionWizardProps {
   companyName?: string;
   figuraProfessionale?: string;
   initialData?: Partial<JobDescriptionForm>;
+  jobCollectionId?: number; // Passato da JobDescriptionSection
+  hasExistingJson?: boolean;
   onClose?: () => void;
 }
-
-// Gruppi di sezioni per la navigazione
-const SECTION_GROUPS = {
-  organizzativa: {
-    label: "Analisi Organizzativa",
-    icon: Building2,
-    color: "#3b82f6",
-  },
-  profilo: {
-    label: "Analisi del Profilo",
-    icon: User,
-    color: "#8b5cf6",
-  },
-  offerta: {
-    label: "Offerta",
-    icon: Gift,
-    color: "#10b981",
-  },
-  chiusura: {
-    label: "Chiusura",
-    icon: CheckSquare,
-    color: "#f59e0b",
-  },
-};
 
 export function JobDescriptionWizard({
   selectionId,
   companyName,
   figuraProfessionale,
   initialData,
+  jobCollectionId,
+  hasExistingJson = false,
   onClose,
 }: JobDescriptionWizardProps) {
-  // Determina il tipo in base alla figura professionale o ai dati iniziali
-  const determineType = useCallback((): JobDescriptionType => {
+  const notify = useNotify();
+
+  // Determina tipo iniziale
+  const initialTipo = useMemo(() => {
     if (initialData?.tipo) return initialData.tipo;
-    if (figuraProfessionale?.toLowerCase().includes("aso")) {
+    const figuraLower = figuraProfessionale?.toLowerCase() || "";
+    if (figuraLower.includes("aso") || figuraLower.includes("assistente")) {
       return JobDescriptionType.ASO;
     }
     return JobDescriptionType.DO;
-  }, [initialData?.tipo, figuraProfessionale]);
+  }, [initialData, figuraProfessionale]);
 
-  const notify = useNotify();
-  // State
-  const [tipo, setTipo] = useState<JobDescriptionType>(determineType());
+  // Stati
+  const [tipo, setTipo] = useState<JobDescriptionType>(initialTipo);
   const [formData, setFormData] = useState<JobDescriptionForm>(() => {
-    if (initialData) {
+    if (initialData && "tipo" in initialData) {
       return initialData as JobDescriptionForm;
     }
     return tipo === JobDescriptionType.DO
@@ -124,17 +99,33 @@ export function JobDescriptionWizard({
     Set<WizardSection>
   >(new Set());
   const [showPreview, setShowPreview] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Aggiorna i dati quando cambia il tipo
+  // Ref per tracking modifiche
+  const initialFormDataRef = useRef<string>(JSON.stringify(formData));
+
+  // ✅ Hook per upload - usa direttamente questo
+  const { uploadProgress, uploadJson, resetProgress } =
+    useJobCollectionUpload();
+
+  // Stato derivato per isSaving
+  const isSaving =
+    uploadProgress.status === "uploading-json" ||
+    uploadProgress.status === "confirming" ||
+    uploadProgress.status === "getting-url";
+
+  // Aggiorna isDirty quando cambiano i dati
   useEffect(() => {
-    if (!initialData) {
-      setFormData(
-        tipo === JobDescriptionType.DO
-          ? createDefaultJobDescriptionDO()
-          : createDefaultJobDescriptionASO()
-      );
+    const currentJson = JSON.stringify(formData);
+    const isModified = currentJson !== initialFormDataRef.current;
+    setIsDirty(isModified);
+
+    // Reset saveSuccess quando si modifica
+    if (isModified && saveSuccess) {
+      setSaveSuccess(false);
     }
-  }, [tipo, initialData]);
+  }, [formData, saveSuccess]);
 
   // Indice della sezione corrente
   const currentIndex = useMemo(
@@ -187,29 +178,49 @@ export function JobDescriptionWizard({
 
   const goToNext = useCallback(() => {
     if (currentIndex < WIZARD_STEPS.length - 1) {
-      // Marca la sezione corrente come completata
       setCompletedSections((prev) => new Set([...prev, currentSection]));
       setCurrentSection(WIZARD_STEPS[currentIndex + 1].id);
     }
   }, [currentIndex, currentSection]);
 
-  // Export JSON
-  const handleExportJSON = useCallback(() => {
-    try {
-      exportJobDescriptionAsJSON(formData, selectionId, companyName);
-      notify.success("Raccolta Job esportata con successo!");
-    } catch (error) {
-      console.error("Errore durante l'export:", error);
-      alert("❌ Errore durante l'export del file JSON");
+  // ✅ Salva dati su S3 - usa direttamente uploadJson con jobCollectionId prop
+  const handleSaveData = useCallback(async () => {
+    if (!jobCollectionId) {
+      notify.warning(
+        "Devi prima generare il PDF dall'anteprima per creare la Job Collection."
+      );
+      return;
     }
-  }, [formData, selectionId, companyName]);
+
+    try {
+      // Prepara i dati JSON
+      const exportData = {
+        version: "1.0",
+        exportDate: new Date().toISOString(),
+        selectionId,
+        companyName: companyName || "N/A",
+        tipo: formData.tipo,
+        data: formData,
+      };
+
+      // Upload JSON usando jobCollectionId passato come prop
+      await uploadJson(jobCollectionId, exportData);
+
+      setSaveSuccess(true);
+      setIsDirty(false);
+      initialFormDataRef.current = JSON.stringify(formData);
+      notify.success("Dati salvati con successo!");
+    } catch (error: any) {
+      console.error("Errore salvataggio:", error);
+      notify.error(error?.message || "Errore durante il salvataggio dei dati");
+    }
+  }, [formData, jobCollectionId, selectionId, companyName, uploadJson, notify]);
 
   // Cambia tipo (DO/ASO)
   const handleTypeChange = useCallback(
     (newType: JobDescriptionType) => {
       if (newType === tipo) return;
 
-      // Mantieni i dati comuni (analisi organizzativa, offerta, chiusura)
       const commonData = {
         analisi_organizzativa: formData.analisi_organizzativa,
         offerta: formData.offerta,
@@ -232,6 +243,14 @@ export function JobDescriptionWizard({
     },
     [tipo, formData]
   );
+
+  // Callback dopo upload PDF riuscito (dalla preview)
+  const handleUploadSuccess = useCallback(() => {
+    // Aggiorna ref per evitare che isDirty sia true subito dopo
+    initialFormDataRef.current = JSON.stringify(formData);
+    setIsDirty(false);
+    setSaveSuccess(true);
+  }, [formData]);
 
   // Render della sezione corrente
   const renderCurrentSection = () => {
@@ -269,156 +288,109 @@ export function JobDescriptionWizard({
       case WizardSection.OFFERTA:
         return <OffertaSection {...sectionProps} />;
       case WizardSection.CHIUSURA:
-        return <ChiusuraSection {...sectionProps} companyName={companyName} />;
+        return <ChiusuraSection {...sectionProps} />;
       default:
         return null;
     }
   };
 
-  // Calcolo progresso
-  const progress = useMemo(() => {
-    return Math.round(((currentIndex + 1) / WIZARD_STEPS.length) * 100);
-  }, [currentIndex]);
-
   return (
-    <div className="bg-bigster-surface border border-bigster-border shadow-bigster-card">
-      {/* Header */}
+    <div className="border border-bigster-border bg-bigster-surface">
+      {/* Header con tipo selector */}
       <div className="px-6 py-4 border-b border-bigster-border bg-bigster-card-bg">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <FileText className="h-6 w-6 text-bigster-text" />
-            <div>
-              <h2 className="text-lg font-bold text-bigster-text">
-                Raccolta Job Description
-              </h2>
-              <p className="text-xs text-bigster-text-muted">
-                {companyName && `${companyName} • `}
-                {tipo === JobDescriptionType.DO
-                  ? "Dentist Organizer"
-                  : "Assistente di Studio Odontoiatrico"}
-              </p>
-            </div>
+          <div>
+            <h2 className="text-lg font-bold text-bigster-text">
+              Job Description Wizard
+            </h2>
+            <p className="text-xs text-bigster-text-muted">
+              {companyName && `${companyName} • `}
+              Compilazione guidata della raccolta job
+            </p>
           </div>
 
-          {/* Toggle Tipo */}
+          {/* Type selector */}
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-bigster-text-muted">
-              Tipo:
+            <span className="text-xs font-semibold text-bigster-text-muted mr-2">
+              TIPO:
             </span>
             <div className="flex">
-              <button
+              <Button
                 onClick={() => handleTypeChange(JobDescriptionType.DO)}
-                className={`px-3 py-1.5 text-xs font-semibold border transition-all ${
+                className={`rounded-none px-4 py-2 text-xs font-semibold ${
                   tipo === JobDescriptionType.DO
-                    ? "bg-bigster-primary text-bigster-primary-text border-yellow-200"
-                    : "bg-bigster-surface text-bigster-text border-bigster-border hover:bg-bigster-muted-bg"
+                    ? "bg-bigster-primary text-bigster-primary-text border-2 border-yellow-200"
+                    : "bg-bigster-surface text-bigster-text border border-bigster-border hover:bg-bigster-muted-bg"
                 }`}
               >
                 DO
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => handleTypeChange(JobDescriptionType.ASO)}
-                className={`px-3 py-1.5 text-xs font-semibold border-t border-b border-r transition-all ${
+                className={`rounded-none px-4 py-2 text-xs font-semibold ${
                   tipo === JobDescriptionType.ASO
-                    ? "bg-bigster-primary text-bigster-primary-text border-yellow-200"
-                    : "bg-bigster-surface text-bigster-text border-bigster-border hover:bg-bigster-muted-bg"
+                    ? "bg-bigster-primary text-bigster-primary-text border-2 border-yellow-200"
+                    : "bg-bigster-surface text-bigster-text border border-bigster-border hover:bg-bigster-muted-bg"
                 }`}
               >
                 ASO
-              </button>
+              </Button>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Progress Bar */}
-        <div className="mt-4">
-          <div className="flex items-center justify-between text-xs text-bigster-text-muted mb-2">
-            <span>
-              Sezione {currentIndex + 1} di {WIZARD_STEPS.length}
+      {/* Progress bar / Step indicator */}
+      <div className="px-6 py-3 border-b border-bigster-border bg-bigster-muted-bg">
+        <div className="flex items-center gap-1 overflow-x-auto">
+          {WIZARD_STEPS.map((step, index) => {
+            const isActive = step.id === currentSection;
+            const isCompleted = completedSections.has(step.id);
+            const isPast = index < currentIndex;
+
+            return (
+              <button
+                key={step.id}
+                onClick={() => goToSection(step.id)}
+                className={`flex items-center gap-1 px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-colors ${
+                  isActive
+                    ? "bg-bigster-primary text-bigster-primary-text"
+                    : isPast || isCompleted
+                    ? "bg-bigster-card-bg text-bigster-text hover:bg-bigster-border"
+                    : "bg-transparent text-bigster-text-muted hover:bg-bigster-card-bg"
+                }`}
+              >
+                {(isPast || isCompleted) && !isActive && (
+                  <Check className="h-3 w-3" />
+                )}
+                <span>{step.shortLabel}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Section info */}
+      <div className="px-6 py-3 border-b border-bigster-border">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-bigster-primary flex items-center justify-center">
+            <span className="text-sm font-bold text-bigster-primary-text">
+              {currentIndex + 1}
             </span>
-            <span>{progress}% completato</span>
           </div>
-          <div className="w-full h-2 bg-bigster-border">
-            <motion.div
-              className="h-full bg-bigster-primary"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.3 }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Navigation Tabs */}
-      <div className="border-b border-bigster-border bg-bigster-muted-bg">
-        <div className="px-6 py-3">
-          {/* Gruppi */}
-          <div className="flex gap-6 mb-3">
-            {Object.entries(SECTION_GROUPS).map(([key, group]) => {
-              const GroupIcon = group.icon;
-              const groupSteps = WIZARD_STEPS.filter((s) => s.group === key);
-              const isCurrentGroup = groupSteps.some(
-                (s) => s.id === currentSection
-              );
-              const completedInGroup = groupSteps.filter((s) =>
-                completedSections.has(s.id)
-              ).length;
-
-              return (
-                <div key={key} className="flex items-center gap-2">
-                  <GroupIcon
-                    className="h-4 w-4"
-                    style={{ color: isCurrentGroup ? group.color : "#666666" }}
-                  />
-                  <span
-                    className={`text-xs font-semibold ${
-                      isCurrentGroup
-                        ? "text-bigster-text"
-                        : "text-bigster-text-muted"
-                    }`}
-                  >
-                    {group.label}
-                  </span>
-                  <span className="text-xs text-bigster-text-muted">
-                    ({completedInGroup}/{groupSteps.length})
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Steps */}
-          <div className="flex flex-wrap gap-1">
-            {WIZARD_STEPS.map((step, index) => {
-              const isActive = step.id === currentSection;
-              const isCompleted = completedSections.has(step.id);
-              const isPast = index < currentIndex;
-
-              return (
-                <button
-                  key={step.id}
-                  onClick={() => goToSection(step.id)}
-                  className={`px-3 py-1.5 text-xs font-medium transition-all flex items-center gap-1.5 ${
-                    isActive
-                      ? "bg-bigster-primary text-bigster-primary-text"
-                      : isCompleted || isPast
-                      ? "bg-bigster-surface text-bigster-text border border-bigster-border"
-                      : "bg-transparent text-bigster-text-muted hover:bg-bigster-surface"
-                  }`}
-                >
-                  {isCompleted && !isActive && (
-                    <Check className="h-3 w-3 text-green-600" />
-                  )}
-                  <span>{step.shortLabel}</span>
-                </button>
-              );
-            })}
+          <div>
+            <h3 className="text-base font-semibold text-bigster-text">
+              {WIZARD_STEPS[currentIndex]?.label}
+            </h3>
+            <p className="text-xs text-bigster-text-muted">
+              {getStepDescription(currentSection, tipo)}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Content Area */}
-      <div className="p-6 min-h-[500px]">
+      {/* Contenuto sezione */}
+      <div className="p-6 min-h-[400px]">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentSection}
@@ -427,37 +399,60 @@ export function JobDescriptionWizard({
             exit={{ opacity: 0, x: -20 }}
             transition={{ duration: 0.2 }}
           >
-            {/* Section Title */}
-            <div className="mb-6">
-              <h3 className="text-xl font-bold text-bigster-text">
-                {WIZARD_STEPS[currentIndex]?.label}
-              </h3>
-              <p className="text-sm text-bigster-text-muted mt-1">
-                {getStepDescription(currentSection, tipo)}
-              </p>
-            </div>
-
-            {/* Section Content */}
             {renderCurrentSection()}
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Footer Navigation */}
+      {/* Footer con azioni */}
       <div className="px-6 py-4 border-t border-bigster-border bg-bigster-card-bg">
         <div className="flex items-center justify-between">
-          {/* Left: Export */}
+          {/* Left: Salva Dati */}
           <div className="flex items-center gap-3">
             <Button
-              onClick={handleExportJSON}
+              onClick={handleSaveData}
+              disabled={!isDirty || isSaving || !jobCollectionId}
               variant="outline"
-              className="rounded-none border-2 border-purple-400 text-purple-600 hover:bg-purple-50"
+              className={`rounded-none border-2 ${
+                saveSuccess
+                  ? "border-green-400 text-green-600 bg-green-50"
+                  : isDirty && jobCollectionId
+                  ? "border-purple-400 text-purple-600 hover:bg-purple-50"
+                  : "border-bigster-border text-bigster-text-muted"
+              }`}
             >
-              <Download className="h-4 w-4 mr-2" />
-              Esporta Raccolta
+              {isSaving ? (
+                <>
+                  <Spinner className="h-4 w-4 mr-2" />
+                  Salvataggio...
+                </>
+              ) : saveSuccess ? (
+                <>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Salvato
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Salva Dati
+                </>
+              )}
             </Button>
+
+            {/* Helper text */}
             <span className="text-xs text-bigster-text-muted">
-              Salva i tuoi progressi esportando il file JSON
+              {!jobCollectionId ? (
+                <span className="flex items-center gap-1 text-yellow-600">
+                  <AlertCircle className="h-3 w-3" />
+                  Genera prima il PDF dall'anteprima
+                </span>
+              ) : !isDirty ? (
+                "Nessuna modifica da salvare"
+              ) : (
+                <span className="text-purple-600">
+                  Hai modifiche non salvate
+                </span>
+              )}
             </span>
           </div>
 
@@ -506,6 +501,7 @@ export function JobDescriptionWizard({
           companyName={companyName}
           onClose={() => setShowPreview(false)}
           selectionId={selectionId}
+          onUploadSuccess={handleUploadSuccess}
         />
       )}
     </div>
