@@ -1,5 +1,5 @@
 // ========================================================================
-// components/job-description/JobDescriptionPreview.tsx
+// app/(protected)/selezioni/[id]/_components/job-description/JobDescriptionPreview.tsx
 // Anteprima e generazione PDF della Job Description
 // ========================================================================
 
@@ -10,15 +10,6 @@ import {
   X,
   Download,
   Printer,
-  Building2,
-  User,
-  Briefcase,
-  GraduationCap,
-  Gift,
-  CheckSquare,
-  Check,
-  Star,
-  Globe,
   Upload,
   CheckCircle2,
   AlertCircle,
@@ -26,23 +17,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useJobCollectionUpload } from "@/hooks/useJobCollectionUpload";
-import {
-  JobDescriptionForm,
-  JobDescriptionType,
-  SERVIZI_ODONTOIATRICI_LABELS,
-  ServizioOdontoiatrico,
-  ATTIVITA_DO_LABELS,
-  ATTIVITA_ASO_LABELS,
-  COMPETENZE_HARD_DO_LABELS,
-  COMPETENZE_HARD_ASO_LABELS,
-  CONOSCENZE_TECNICHE_DO_LABELS,
-  CONOSCENZE_TECNICHE_ASO_LABELS,
-  CARATTERISTICHE_DO_LABELS,
-  CARATTERISTICHE_ASO_LABELS,
-  CONTRACT_TYPE_LABELS,
-  REQUIREMENT_LEVEL_LABELS,
-  WorkSchedule,
-} from "@/types/jobDescription";
+import { JobDescriptionForm, JobDescriptionType } from "@/types/jobDescription";
+import { JobDescriptionPdfContent } from "./JobDescriptionPdfContent";
 
 interface JobDescriptionPreviewProps {
   formData: JobDescriptionForm;
@@ -65,29 +41,11 @@ export function JobDescriptionPreview({
   const [isGenerating, setIsGenerating] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
 
-  // Hook per upload S3 (ora usa uploadNewPdfAndJson)
+  // Hook per upload S3
   const { uploadProgress, uploadNewPdfAndJson, resetProgress } =
     useJobCollectionUpload();
 
   const analisi = formData.analisi_organizzativa;
-  const profilo = formData.analisi_profilo;
-  const offerta = formData.offerta;
-  const chiusura = formData.chiusura;
-
-  // Helper per ottenere il nome di un servizio
-  const getServizioNome = (servizioId: string): string => {
-    if (
-      Object.values(ServizioOdontoiatrico).includes(
-        servizioId as ServizioOdontoiatrico
-      )
-    ) {
-      return SERVIZI_ODONTOIATRICI_LABELS[servizioId as ServizioOdontoiatrico];
-    }
-    const personalizzato = analisi.servizi_personalizzati?.find(
-      (s) => s.id === servizioId
-    );
-    return personalizzato?.nome || servizioId;
-  };
 
   // Genera PDF come Blob
   const generatePdfBlob = async (): Promise<Blob | null> => {
@@ -97,7 +55,7 @@ export function JobDescriptionPreview({
       if (!element) return null;
 
       const opt = {
-        margin: [10, 10, 10, 10] as [number, number, number, number],
+        margin: [8, 8, 8, 8] as [number, number, number, number],
         image: { type: "jpeg" as const, quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, logging: false },
         jsPDF: {
@@ -108,7 +66,10 @@ export function JobDescriptionPreview({
         pagebreak: { mode: "css", avoid: ["tr", "td", ".break-inside-avoid"] },
       };
 
-      const blob = await html2pdf().set(opt as any).from(element).outputPdf("blob");
+      const blob = await html2pdf()
+        .set(opt as any)
+        .from(element)
+        .outputPdf("blob");
       return blob;
     } catch (error) {
       console.error("Errore generazione PDF:", error);
@@ -125,7 +86,7 @@ export function JobDescriptionPreview({
       if (!element) return;
 
       const opt = {
-        margin: [10, 10, 10, 10] as [number, number, number, number],
+        margin: [8, 8, 8, 8] as [number, number, number, number],
         filename: `Job_Description_${tipo}_${
           analisi.dati_anagrafici.ragione_sociale || "Documento"
         }.pdf`,
@@ -139,7 +100,10 @@ export function JobDescriptionPreview({
         pagebreak: { mode: "css", avoid: ["tr", "td", ".break-inside-avoid"] },
       };
 
-      await html2pdf().set(opt as any).from(element).save();
+      await html2pdf()
+        .set(opt as any)
+        .from(element)
+        .save();
     } catch (error) {
       console.error("Errore generazione PDF:", error);
       window.print();
@@ -148,7 +112,7 @@ export function JobDescriptionPreview({
     }
   };
 
-  // NUOVO: Carica PDF + JSON su S3
+  // Carica PDF + JSON su S3
   const handleUploadToS3 = async () => {
     try {
       // 1. Genera il PDF come Blob
@@ -190,97 +154,6 @@ export function JobDescriptionPreview({
   const handlePrint = () => {
     window.print();
   };
-
-  // Helper per mostrare checkbox
-  const CheckItem = ({
-    checked,
-    label,
-    note,
-  }: {
-    checked: boolean;
-    label: string;
-    note?: string;
-  }) => (
-    <div className="flex items-start gap-2 py-1">
-      <span
-        className={`flex-shrink-0 w-5 h-5 flex items-center justify-center border ${
-          checked
-            ? "bg-bigster-primary border-yellow-400 text-bigster-primary-text"
-            : "bg-white border-gray-300"
-        }`}
-      >
-        {checked && <Check className="w-3 h-3" />}
-      </span>
-      <div className="flex-1">
-        <span
-          className={`text-sm ${checked ? "font-medium" : "text-gray-500"}`}
-        >
-          {label}
-        </span>
-        {note && checked && (
-          <p className="text-xs text-gray-600 mt-0.5 italic">{note}</p>
-        )}
-      </div>
-    </div>
-  );
-
-  // Helper per sezione
-  const Section = ({
-    title,
-    icon: Icon,
-    children,
-  }: {
-    title: string;
-    icon: any;
-    children: React.ReactNode;
-  }) => (
-    <div className="mb-6 break-inside-avoid">
-      <div className="flex items-center gap-2 mb-3 pb-2 border-b-2 border-bigster-primary">
-        <Icon className="w-5 h-5 text-bigster-text" />
-        <h3 className="text-base font-bold text-bigster-text uppercase tracking-wide">
-          {title}
-        </h3>
-      </div>
-      <div className="pl-1">{children}</div>
-    </div>
-  );
-
-  // Helper per campo
-  const Field = ({
-    label,
-    value,
-    fullWidth = false,
-  }: {
-    label: string;
-    value: string | number | undefined;
-    fullWidth?: boolean;
-  }) => {
-    if (!value) return null;
-    return (
-      <div className={`mb-2 ${fullWidth ? "col-span-2" : ""}`}>
-        <span className="text-xs font-semibold text-gray-500 uppercase">
-          {label}
-        </span>
-        <p className="text-sm text-bigster-text">{value}</p>
-      </div>
-    );
-  };
-
-  // Labels
-  const attivitaLabels =
-    tipo === JobDescriptionType.DO ? ATTIVITA_DO_LABELS : ATTIVITA_ASO_LABELS;
-  const competenzeLabels =
-    tipo === JobDescriptionType.DO
-      ? COMPETENZE_HARD_DO_LABELS
-      : COMPETENZE_HARD_ASO_LABELS;
-  const conoscenzeLabels =
-    tipo === JobDescriptionType.DO
-      ? CONOSCENZE_TECNICHE_DO_LABELS
-      : CONOSCENZE_TECNICHE_ASO_LABELS;
-  const caratteristicheLabels =
-    tipo === JobDescriptionType.DO
-      ? CARATTERISTICHE_DO_LABELS
-      : CARATTERISTICHE_ASO_LABELS;
 
   // Stato upload in corso
   const isUploading = [
@@ -334,42 +207,12 @@ export function JobDescriptionPreview({
 
         {/* Content - Scrollable */}
         <div className="flex-1 overflow-y-auto p-6 bg-gray-100">
-          <div
+          <JobDescriptionPdfContent
             ref={printRef}
-            className="bg-white p-8 shadow-lg mx-auto max-w-[210mm]"
-          >
-            {/* Intestazione Documento */}
-            <div className="text-center mb-8 pb-6 border-b-2 border-bigster-primary">
-              <h1 className="text-2xl font-bold text-bigster-text mb-2">
-                SCHEDA RACCOLTA JOB
-              </h1>
-              <p className="text-lg font-semibold text-bigster-primary">
-                {tipo === JobDescriptionType.DO
-                  ? "DENTIST ORGANIZER (DO)"
-                  : "ASSISTENTE DI STUDIO ODONTOIATRICO (ASO)"}
-              </p>
-              {companyName && (
-                <p className="text-sm text-gray-600 mt-2">{companyName}</p>
-              )}
-            </div>
-
-            {/* Il resto del contenuto PDF rimane invariato... */}
-            {/* (Tutte le sezioni: Dati Anagrafici, Studio, Struttura, etc.) */}
-
-            {/* Footer */}
-            <div className="text-center pt-4 border-t border-gray-200 text-xs text-gray-500">
-              <p>
-                Documento generato il{" "}
-                {new Date().toLocaleDateString("it-IT", {
-                  day: "2-digit",
-                  month: "long",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-            </div>
-          </div>
+            formData={formData}
+            tipo={tipo}
+            companyName={companyName}
+          />
         </div>
 
         {/* Footer con CTA Upload S3 */}

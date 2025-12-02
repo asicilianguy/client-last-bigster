@@ -1,4 +1,7 @@
+// ========================================================================
 // app/(protected)/selezioni/[id]/_components/job-description/JobDescriptionWizard.tsx
+// Wizard per compilazione Job Description con salvataggio PDF+JSON
+// ========================================================================
 
 "use client";
 
@@ -25,7 +28,6 @@ import {
   createDefaultJobDescriptionASO,
 } from "@/types/jobDescription";
 
-// ✅ USA DIRETTAMENTE useJobCollectionUpload, non useJobCollectionData
 import { useJobCollectionUpload } from "@/hooks/useJobCollectionUpload";
 
 // Import delle sezioni del wizard
@@ -43,8 +45,9 @@ import { FormazioneSection } from "./sections/FormazioneSection";
 import { OffertaSection } from "./sections/OffertaSection";
 import { ChiusuraSection } from "./sections/ChiusuraSection";
 
-// Import del componente Anteprima
+// Import del componente Anteprima e PdfContent
 import { JobDescriptionPreview } from "./JobDescriptionPreview";
+import { JobDescriptionPdfContent } from "./JobDescriptionPdfContent";
 import { useNotify } from "@/hooks/use-notify";
 
 // Styles
@@ -56,7 +59,7 @@ interface JobDescriptionWizardProps {
   companyName?: string;
   figuraProfessionale?: string;
   initialData?: Partial<JobDescriptionForm>;
-  jobCollectionId?: number; // Passato da JobDescriptionSection
+  jobCollectionId?: number;
   hasExistingJson?: boolean;
   onClose?: () => void;
 }
@@ -71,6 +74,9 @@ export function JobDescriptionWizard({
   onClose,
 }: JobDescriptionWizardProps) {
   const notify = useNotify();
+
+  // Ref per generare PDF nascosto
+  const hiddenPdfRef = useRef<HTMLDivElement>(null);
 
   // Determina tipo iniziale
   const initialTipo = useMemo(() => {
@@ -105,15 +111,17 @@ export function JobDescriptionWizard({
   // Ref per tracking modifiche
   const initialFormDataRef = useRef<string>(JSON.stringify(formData));
 
-  // ✅ Hook per upload - usa direttamente questo
-  const { uploadProgress, uploadJson, resetProgress } =
+  // Hook per upload
+  const { uploadProgress, replacePdfAndJson, resetProgress } =
     useJobCollectionUpload();
 
   // Stato derivato per isSaving
-  const isSaving =
-    uploadProgress.status === "uploading-json" ||
-    uploadProgress.status === "confirming" ||
-    uploadProgress.status === "getting-url";
+  const isSaving = [
+    "getting-url",
+    "uploading-pdf",
+    "uploading-json",
+    "confirming",
+  ].includes(uploadProgress.status);
 
   // Aggiorna isDirty quando cambiano i dati
   useEffect(() => {
@@ -183,7 +191,37 @@ export function JobDescriptionWizard({
     }
   }, [currentIndex, currentSection]);
 
-  // ✅ Salva dati su S3 - usa direttamente uploadJson con jobCollectionId prop
+  // Genera PDF blob dal contenuto nascosto
+  const generatePdfBlob = async (): Promise<Blob | null> => {
+    try {
+      const html2pdf = (await import("html2pdf.js")).default;
+      const element = hiddenPdfRef.current;
+      if (!element) return null;
+
+      const opt = {
+        margin: [8, 8, 8, 8] as [number, number, number, number],
+        image: { type: "jpeg" as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: {
+          unit: "mm",
+          format: "a4",
+          orientation: "portrait" as const,
+        },
+        pagebreak: { mode: "css", avoid: ["tr", "td", ".break-inside-avoid"] },
+      };
+
+      const blob = await html2pdf()
+        .set(opt as any)
+        .from(element)
+        .outputPdf("blob");
+      return blob;
+    } catch (error) {
+      console.error("Errore generazione PDF:", error);
+      return null;
+    }
+  };
+
+  // Salva dati: rigenera PDF + JSON
   const handleSaveData = useCallback(async () => {
     if (!jobCollectionId) {
       notify.warning(
@@ -193,8 +231,23 @@ export function JobDescriptionWizard({
     }
 
     try {
-      // Prepara i dati JSON
-      const exportData = {
+      // 1. Genera il PDF come Blob
+      const pdfBlob = await generatePdfBlob();
+      if (!pdfBlob) {
+        throw new Error("Impossibile generare il PDF");
+      }
+
+      // 2. Converti Blob in File
+      const fileName = `Job_Description_${tipo}_${
+        formData.analisi_organizzativa.dati_anagrafici.ragione_sociale ||
+        "Documento"
+      }.pdf`;
+      const pdfFile = new File([pdfBlob], fileName, {
+        type: "application/pdf",
+      });
+
+      // 3. Prepara i dati JSON
+      const jsonData = {
         version: "1.0",
         exportDate: new Date().toISOString(),
         selectionId,
@@ -203,18 +256,26 @@ export function JobDescriptionWizard({
         data: formData,
       };
 
-      // Upload JSON usando jobCollectionId passato come prop
-      await uploadJson(jobCollectionId, exportData);
+      // 4. Upload PDF + JSON usando replacePdfAndJson
+      await replacePdfAndJson(jobCollectionId, pdfFile, jsonData);
 
       setSaveSuccess(true);
       setIsDirty(false);
       initialFormDataRef.current = JSON.stringify(formData);
-      notify.success("Dati salvati con successo!");
+      notify.success("Dati e PDF salvati con successo!");
     } catch (error: any) {
       console.error("Errore salvataggio:", error);
-      notify.error(error?.message || "Errore durante il salvataggio dei dati");
+      notify.error(error?.message || "Errore durante il salvataggio");
     }
-  }, [formData, jobCollectionId, selectionId, companyName, uploadJson, notify]);
+  }, [
+    formData,
+    jobCollectionId,
+    selectionId,
+    companyName,
+    tipo,
+    replacePdfAndJson,
+    notify,
+  ]);
 
   // Cambia tipo (DO/ASO)
   const handleTypeChange = useCallback(
@@ -246,7 +307,6 @@ export function JobDescriptionWizard({
 
   // Callback dopo upload PDF riuscito (dalla preview)
   const handleUploadSuccess = useCallback(() => {
-    // Aggiorna ref per evitare che isDirty sia true subito dopo
     initialFormDataRef.current = JSON.stringify(formData);
     setIsDirty(false);
     setSaveSuccess(true);
@@ -491,6 +551,16 @@ export function JobDescriptionWizard({
             )}
           </div>
         </div>
+      </div>
+
+      {/* Contenuto PDF nascosto per generazione */}
+      <div className="hidden">
+        <JobDescriptionPdfContent
+          ref={hiddenPdfRef}
+          formData={formData}
+          tipo={tipo}
+          companyName={companyName}
+        />
       </div>
 
       {/* Modal Anteprima PDF */}

@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { motion } from "framer-motion";
 import {
@@ -19,9 +19,12 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { SelectionDetail, SelectionStatus } from "@/types/selection";
 import JobDescriptionWizard from "./JobDescriptionWizard";
+import { JobDescriptionPdfContent } from "./JobDescriptionPdfContent";
 import { JobDescriptionType, JobDescriptionForm } from "@/types/jobDescription";
 import { useJobCollectionData } from "@/hooks/useJobCollectionData";
+import { useJobCollectionUpload } from "@/hooks/useJobCollectionUpload";
 import { jobCollectionsApiSlice } from "@/lib/redux/features/job-collections/jobCollectionsApiSlice";
+import { useNotify } from "@/hooks/use-notify";
 import type { AppDispatch } from "@/lib/redux/store";
 
 interface JobDescriptionSectionProps {
@@ -54,8 +57,17 @@ export function JobDescriptionSection({
   selection,
 }: JobDescriptionSectionProps) {
   const dispatch = useDispatch<AppDispatch>();
+  const notify = useNotify();
+
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isLoadingPdfUrl, setIsLoadingPdfUrl] = useState(false);
+  const [isSendingToClient, setIsSendingToClient] = useState(false);
+
+  // Ref per generare PDF nascosto
+  const hiddenPdfRef = useRef<HTMLDivElement>(null);
+
+  // Hook per upload
+  const { replacePdfAndJson } = useJobCollectionUpload();
 
   // Verifica se la sezione deve essere visibile
   const isVisible = VISIBLE_STATES.includes(selection.stato as SelectionStatus);
@@ -90,6 +102,39 @@ export function JobDescriptionSection({
     enabled: isVisible,
   });
 
+  // Genera PDF blob dal contenuto nascosto
+  const generatePdfBlob = useCallback(async (): Promise<Blob | null> => {
+    try {
+      const html2pdf = (await import("html2pdf.js")).default;
+      const element = hiddenPdfRef.current;
+      if (!element) {
+        console.error("Ref PDF non trovato");
+        return null;
+      }
+
+      const opt = {
+        margin: [8, 8, 8, 8] as [number, number, number, number],
+        image: { type: "jpeg" as const, quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: {
+          unit: "mm",
+          format: "a4",
+          orientation: "portrait" as const,
+        },
+        pagebreak: { mode: "css", avoid: ["tr", "td", ".break-inside-avoid"] },
+      };
+
+      const blob = await html2pdf()
+        .set(opt as any)
+        .from(element)
+        .outputPdf("blob");
+      return blob;
+    } catch (error) {
+      console.error("Errore generazione PDF:", error);
+      return null;
+    }
+  }, []);
+
   // Handler per visualizzare il PDF
   const handleViewPdf = async () => {
     if (!jobCollectionId) return;
@@ -105,10 +150,74 @@ export function JobDescriptionSection({
       window.open(result.download_url, "_blank");
     } catch (err) {
       console.error("Errore apertura PDF:", err);
+      notify.error("Errore nell'apertura del PDF");
     } finally {
       setIsLoadingPdfUrl(false);
     }
   };
+
+  // Handler per inviare al cliente
+  const handleSendToClient = useCallback(async () => {
+    if (!jobCollectionId || !initialFormData) {
+      notify.warning(
+        "Devi prima compilare e salvare i dati della Job Collection"
+      );
+      return;
+    }
+
+    setIsSendingToClient(true);
+    try {
+      // 1. Rigenera il PDF dai dati correnti
+      const pdfBlob = await generatePdfBlob();
+      if (!pdfBlob) {
+        throw new Error("Impossibile generare il PDF");
+      }
+
+      // 2. Prepara il file PDF
+      const fileName = `Job_Description_${tipo}_${
+        initialFormData.analisi_organizzativa.dati_anagrafici.ragione_sociale ||
+        "Documento"
+      }.pdf`;
+      const pdfFile = new File([pdfBlob], fileName, {
+        type: "application/pdf",
+      });
+
+      // 3. Prepara i dati JSON
+      const jsonData = {
+        version: "1.0",
+        exportDate: new Date().toISOString(),
+        selectionId: selection.id,
+        companyName: selection.company?.nome || "N/A",
+        tipo: initialFormData.tipo,
+        data: initialFormData,
+      };
+
+      // 4. Carica PDF + JSON aggiornati
+      await replacePdfAndJson(jobCollectionId, pdfFile, jsonData);
+
+      // 5. Marca come inviata al cliente (chiamata API)
+      await dispatch(
+        jobCollectionsApiSlice.endpoints.sendToClient.initiate(jobCollectionId)
+      ).unwrap();
+
+      notify.success("Job Collection inviata al cliente con successo!");
+    } catch (error: any) {
+      console.error("Errore invio al cliente:", error);
+      notify.error(error?.message || "Errore durante l'invio al cliente");
+    } finally {
+      setIsSendingToClient(false);
+    }
+  }, [
+    jobCollectionId,
+    initialFormData,
+    generatePdfBlob,
+    replacePdfAndJson,
+    dispatch,
+    selection.id,
+    selection.company?.nome,
+    tipo,
+    notify,
+  ]);
 
   // Chiudi wizard
   const handleWizardClose = () => {
@@ -281,14 +390,37 @@ export function JobDescriptionSection({
 
                   {isEditable && !existingJobCollection?.inviata_al_cliente && (
                     <Button
+                      onClick={handleSendToClient}
+                      disabled={isSendingToClient || !hasJsonData}
                       variant="outline"
-                      className="rounded-none border border-blue-400 text-blue-600 hover:bg-blue-50"
+                      className="rounded-none border border-blue-400 text-blue-600 hover:bg-blue-50 disabled:opacity-50"
                     >
-                      <Send className="h-4 w-4 mr-2" />
-                      Invia al Cliente
+                      {isSendingToClient ? (
+                        <>
+                          <Spinner className="h-4 w-4 mr-2" />
+                          Invio in corso...
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Invia al Cliente
+                        </>
+                      )}
                     </Button>
                   )}
                 </div>
+
+                {/* Avviso se mancano i dati JSON */}
+                {!hasJsonData && isEditable && (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-yellow-600" />
+                      <p className="text-xs text-yellow-800">
+                        Compila i dati del form prima di inviare al cliente
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               // Nessun dato - Mostra solo CTA per creare
@@ -329,6 +461,18 @@ export function JobDescriptionSection({
           </>
         )}
       </div>
+
+      {/* Contenuto PDF nascosto per generazione (quando ci sono dati) */}
+      {initialFormData && (
+        <div className="hidden">
+          <JobDescriptionPdfContent
+            ref={hiddenPdfRef}
+            formData={initialFormData}
+            tipo={tipo}
+            companyName={selection.company?.nome}
+          />
+        </div>
+      )}
     </motion.div>
   );
 }
