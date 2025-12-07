@@ -416,7 +416,7 @@ export const JobDescriptionPdfDocument = ({
               ? "DENTIST ORGANIZER (DO)"
               : "ASSISTENTE DI STUDIO ODONTOIATRICO (ASO)"}
           </Text>
-          {companyName && (
+          {companyName && false && (
             <Text style={styles.headerCompany}>{companyName}</Text>
           )}
         </View>
@@ -1050,6 +1050,15 @@ export const JobDescriptionPdfDocument = ({
                     checked={true}
                     label="Incentivi"
                     note={offerta.benefits.incentivi_specifica}
+                  />
+                </View>
+              )}
+              {offerta.benefits.master_dto && (
+                <View style={styles.checkboxGridItem}>
+                  <CheckItem
+                    checked={true}
+                    label="Master DTO"
+                    note={offerta.benefits.master_dto_specifica}
                   />
                 </View>
               )}

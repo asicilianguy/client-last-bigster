@@ -284,7 +284,7 @@ export const JobDescriptionPdfContent = forwardRef<
             ? "DENTIST ORGANIZER (DO)"
             : "ASSISTENTE DI STUDIO ODONTOIATRICO (ASO)"}
         </p>
-        {companyName && (
+        {companyName && false && (
           <p className="text-xs text-gray-600 mt-1">{companyName}</p>
         )}
       </div>

@@ -366,6 +366,8 @@ export interface Offerta {
     corsi_aggiornamento: boolean;
     incentivi: boolean;
     incentivi_specifica: string;
+    master_dto: boolean; // ✅ NUOVO
+    master_dto_specifica: string; // ✅ NUOVO
     quote_societarie: boolean;
     rimborso_spese: boolean;
     altro: boolean;
@@ -685,6 +687,8 @@ export function createDefaultOfferta(): Offerta {
       corsi_aggiornamento: false,
       incentivi: false,
       incentivi_specifica: "",
+      master_dto: false, // ✅ NUOVO
+      master_dto_specifica: "", // ✅ NUOVO
       quote_societarie: false,
       rimborso_spese: false,
       altro: false,

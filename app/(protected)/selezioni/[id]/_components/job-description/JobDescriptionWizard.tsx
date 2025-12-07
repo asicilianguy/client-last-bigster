@@ -384,7 +384,7 @@ export function JobDescriptionWizard({
               Job Description Wizard
             </h2>
             <p className="text-xs text-bigster-text-muted">
-              {companyName && `${companyName} • `}
+              {companyName && false && `${companyName} • `}
               Compilazione guidata della raccolta job
             </p>
           </div>

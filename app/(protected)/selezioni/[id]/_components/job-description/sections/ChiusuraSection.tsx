@@ -124,7 +124,7 @@ export function ChiusuraSection({
           />
         </div>
 
-        {companyName && (
+        {companyName && false && (
           <p className="text-xs text-bigster-text-muted">
             Per conto di: <span className="font-semibold">{companyName}</span>
           </p>

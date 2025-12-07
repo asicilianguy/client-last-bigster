@@ -193,7 +193,7 @@ export function JobDescriptionPreview({
                 {tipo === JobDescriptionType.DO
                   ? "Dentist Organizer (DO)"
                   : "Assistente di Studio Odontoiatrico (ASO)"}
-                {companyName && ` • ${companyName}`}
+                {companyName && false && ` • ${companyName}`}
               </p>
             </div>
           </div>
