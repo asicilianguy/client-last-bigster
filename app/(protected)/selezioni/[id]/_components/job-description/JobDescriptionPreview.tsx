@@ -1,24 +1,44 @@
 // ========================================================================
 // app/(protected)/selezioni/[id]/_components/job-description/JobDescriptionPreview.tsx
-// Anteprima e generazione PDF della Job Description
+// Anteprima e generazione PDF con @react-pdf/renderer
 // ========================================================================
 
 "use client";
 
-import { useRef, useState } from "react";
+import { useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import {
   X,
   Download,
-  Printer,
   Upload,
   CheckCircle2,
   AlertCircle,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useJobCollectionUpload } from "@/hooks/useJobCollectionUpload";
 import { JobDescriptionForm, JobDescriptionType } from "@/types/jobDescription";
-import { JobDescriptionPdfContent } from "./JobDescriptionPdfContent";
+import { pdf } from "@react-pdf/renderer";
+import { JobDescriptionPdfDocument } from "./JobDescriptionPdfDocument";
+
+// Importa PDFViewer dinamicamente per evitare errori SSR
+const PDFViewer = dynamic(
+  () => import("@react-pdf/renderer").then((mod) => mod.PDFViewer),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center h-full bg-gray-100">
+        <div className="text-center">
+          <Spinner className="h-8 w-8 mx-auto mb-4 text-bigster-primary" />
+          <p className="text-sm text-bigster-text-muted">
+            Generazione anteprima PDF...
+          </p>
+        </div>
+      </div>
+    ),
+  }
+);
 
 interface JobDescriptionPreviewProps {
   formData: JobDescriptionForm;
@@ -26,7 +46,9 @@ interface JobDescriptionPreviewProps {
   companyName?: string;
   selectionId: number;
   onClose: () => void;
-  onUploadSuccess?: () => void;
+  onUploadSuccess?: (jobCollectionId?: number) => void;
+  jobCollectionId?: number;
+  mode?: "preview" | "upload"; // Modalità: solo anteprima o con upload
 }
 
 export function JobDescriptionPreview({
@@ -36,83 +58,67 @@ export function JobDescriptionPreview({
   selectionId,
   onClose,
   onUploadSuccess,
+  jobCollectionId,
+  mode = "upload",
 }: JobDescriptionPreviewProps) {
-  const printRef = useRef<HTMLDivElement>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
 
   // Hook per upload S3
-  const { uploadProgress, uploadNewPdfAndJson, resetProgress } =
-    useJobCollectionUpload();
+  const {
+    uploadProgress,
+    uploadNewPdfAndJson,
+    replacePdfAndJson,
+    resetProgress,
+  } = useJobCollectionUpload();
 
   const analisi = formData.analisi_organizzativa;
 
-  // Genera PDF come Blob
-  const generatePdfBlob = async (): Promise<Blob | null> => {
+  // Genera il PDF come Blob usando @react-pdf/renderer
+  const generatePdfBlob = useCallback(async (): Promise<Blob | null> => {
     try {
-      const html2pdf = (await import("html2pdf.js")).default;
-      const element = printRef.current;
-      if (!element) return null;
-
-      const opt = {
-        margin: [8, 8, 8, 8] as [number, number, number, number],
-        image: { type: "jpeg" as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: {
-          unit: "mm",
-          format: "a4",
-          orientation: "portrait" as const,
-        },
-        pagebreak: { mode: "css", avoid: ["tr", "td", ".break-inside-avoid"] },
-      };
-
-      const blob = await html2pdf()
-        .set(opt as any)
-        .from(element)
-        .outputPdf("blob");
+      const blob = await pdf(
+        <JobDescriptionPdfDocument
+          formData={formData}
+          tipo={tipo}
+          companyName={companyName}
+        />
+      ).toBlob();
       return blob;
     } catch (error) {
       console.error("Errore generazione PDF:", error);
       return null;
     }
-  };
+  }, [formData, tipo, companyName]);
 
-  // Genera e scarica PDF (download locale)
+  // Download PDF
   const handleDownloadPDF = async () => {
-    setIsGenerating(true);
+    setIsDownloading(true);
     try {
-      const html2pdf = (await import("html2pdf.js")).default;
-      const element = printRef.current;
-      if (!element) return;
+      const blob = await generatePdfBlob();
+      if (!blob) {
+        throw new Error("Impossibile generare il PDF");
+      }
 
-      const opt = {
-        margin: [8, 8, 8, 8] as [number, number, number, number],
-        filename: `Job_Description_${tipo}_${
-          analisi.dati_anagrafici.ragione_sociale || "Documento"
-        }.pdf`,
-        image: { type: "jpeg" as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: {
-          unit: "mm",
-          format: "a4",
-          orientation: "portrait" as const,
-        },
-        pagebreak: { mode: "css", avoid: ["tr", "td", ".break-inside-avoid"] },
-      };
-
-      await html2pdf()
-        .set(opt as any)
-        .from(element)
-        .save();
+      // Crea URL e scarica
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Job_Description_${tipo}_${
+        analisi.dati_anagrafici.ragione_sociale || "Documento"
+      }.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Errore generazione PDF:", error);
-      window.print();
+      console.error("Errore download PDF:", error);
     } finally {
-      setIsGenerating(false);
+      setIsDownloading(false);
     }
   };
 
-  // Carica PDF + JSON su S3
+  // Upload su S3 (crea nuovo o sostituisce esistente)
   const handleUploadToS3 = async () => {
     try {
       // 1. Genera il PDF come Blob
@@ -139,20 +145,29 @@ export function JobDescriptionPreview({
         data: formData,
       };
 
-      // 4. Upload PDF + JSON su S3 usando l'hook
-      await uploadNewPdfAndJson(selectionId, pdfFile, jsonData);
+      // 4. Upload - CREA o AGGIORNA in base a se esiste jobCollectionId
+      let resultId: number | undefined;
+
+      if (jobCollectionId) {
+        // JobCollection esiste: aggiorna PDF + JSON
+        await replacePdfAndJson(jobCollectionId, pdfFile, jsonData);
+        resultId = jobCollectionId;
+      } else {
+        // JobCollection NON esiste: crea nuova con PDF + JSON
+        const newJobCollection = await uploadNewPdfAndJson(
+          selectionId,
+          pdfFile,
+          jsonData
+        );
+        resultId = newJobCollection.id;
+      }
 
       // 5. Successo
       setUploadSuccess(true);
-      onUploadSuccess?.();
+      onUploadSuccess?.(resultId);
     } catch (error) {
       console.error("Errore upload S3:", error);
     }
-  };
-
-  // Stampa
-  const handlePrint = () => {
-    window.print();
   };
 
   // Stato upload in corso
@@ -165,29 +180,32 @@ export function JobDescriptionPreview({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-4xl max-h-[90vh] flex flex-col rounded-none border border-bigster-border shadow-xl">
+      <div className="bg-white w-full max-w-5xl h-[90vh] flex flex-col rounded-none border border-bigster-border shadow-xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-bigster-border bg-bigster-card-bg">
-          <h2 className="text-lg font-bold text-bigster-text">
-            Anteprima Job Description
-          </h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-bigster-border bg-bigster-card-bg flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <FileText className="h-5 w-5 text-bigster-primary" />
+            <div>
+              <h2 className="text-lg font-bold text-bigster-text">
+                Anteprima Job Description
+              </h2>
+              <p className="text-xs text-bigster-text-muted">
+                {tipo === JobDescriptionType.DO
+                  ? "Dentist Organizer (DO)"
+                  : "Assistente di Studio Odontoiatrico (ASO)"}
+                {companyName && ` • ${companyName}`}
+              </p>
+            </div>
+          </div>
+
           <div className="flex items-center gap-2">
             <Button
-              onClick={handlePrint}
-              variant="outline"
-              className="rounded-none border border-bigster-border"
-              disabled={isUploading}
-            >
-              <Printer className="h-4 w-4 mr-2" />
-              Stampa
-            </Button>
-            <Button
               onClick={handleDownloadPDF}
-              disabled={isGenerating || isUploading}
+              disabled={isDownloading || isUploading}
               variant="outline"
               className="rounded-none border border-bigster-border"
             >
-              {isGenerating ? (
+              {isDownloading ? (
                 <Spinner className="h-4 w-4 mr-2" />
               ) : (
                 <Download className="h-4 w-4 mr-2" />
@@ -205,115 +223,121 @@ export function JobDescriptionPreview({
           </div>
         </div>
 
-        {/* Content - Scrollable */}
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-100">
-          <JobDescriptionPdfContent
-            ref={printRef}
-            formData={formData}
-            tipo={tipo}
-            companyName={companyName}
-          />
+        {/* PDF Viewer - LIVE PREVIEW */}
+        <div className="flex-1 overflow-hidden bg-gray-200">
+          <PDFViewer
+            style={{ width: "100%", height: "100%", border: "none" }}
+            showToolbar={false}
+          >
+            <JobDescriptionPdfDocument
+              formData={formData}
+              tipo={tipo}
+              companyName={companyName}
+            />
+          </PDFViewer>
         </div>
 
-        {/* Footer con CTA Upload S3 */}
-        <div className="px-6 py-4 border-t border-bigster-border bg-bigster-card-bg">
-          {/* Stato Success */}
-          {uploadSuccess && (
-            <div className="mb-4 p-4 bg-green-50 border-2 border-green-200 flex items-start gap-3">
-              <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-bold text-green-800">
-                  Job Collection caricata con successo!
-                </p>
-                <p className="text-xs text-green-700">
-                  Il documento PDF e i dati del form sono stati salvati.
-                </p>
+        {/* Footer con azioni */}
+        {mode === "upload" && (
+          <div className="px-6 py-4 border-t border-bigster-border bg-bigster-card-bg flex-shrink-0">
+            {/* Stato Success */}
+            {uploadSuccess && (
+              <div className="mb-4 p-4 bg-green-50 border-2 border-green-200 flex items-start gap-3">
+                <CheckCircle2 className="h-6 w-6 text-green-600 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-bold text-green-800">
+                    {jobCollectionId
+                      ? "Job Collection aggiornata con successo!"
+                      : "Job Collection creata con successo!"}
+                  </p>
+                  <p className="text-xs text-green-700">
+                    Il documento PDF e i dati del form sono stati salvati su S3.
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Stato Errore */}
-          {uploadProgress.status === "error" && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-              <div>
-                <p className="text-xs font-semibold text-red-800">
-                  Errore durante il caricamento
-                </p>
-                <p className="text-xs text-red-700">
-                  {uploadProgress.error ||
-                    "Si è verificato un errore imprevisto"}
-                </p>
+            {/* Errore */}
+            {uploadProgress.status === "error" && (
+              <div className="mb-4 p-4 bg-red-50 border border-red-200 flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-bold text-red-800">
+                    Errore durante il caricamento
+                  </p>
+                  <p className="text-xs text-red-700">
+                    {uploadProgress.error || "Si è verificato un errore"}
+                  </p>
+                </div>
               </div>
-              <Button
-                onClick={resetProgress}
-                variant="outline"
-                size="sm"
-                className="ml-auto rounded-none border-red-300 text-red-700 hover:bg-red-100"
-              >
-                Riprova
-              </Button>
-            </div>
-          )}
+            )}
 
-          {/* Progress Bar durante upload */}
-          {isUploading && (
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold text-bigster-text">
-                  {uploadProgress.status === "getting-url" &&
-                    "Preparazione upload..."}
-                  {uploadProgress.status === "uploading-pdf" &&
-                    "Caricamento PDF..."}
-                  {uploadProgress.status === "uploading-json" &&
-                    "Caricamento dati form..."}
-                  {uploadProgress.status === "confirming" &&
-                    "Finalizzazione..."}
-                </span>
-                <span className="text-xs font-semibold text-bigster-text">
-                  {uploadProgress.progress}%
-                </span>
+            {/* Progress */}
+            {isUploading && (
+              <div className="mb-4">
+                <div className="flex items-center gap-3 mb-2">
+                  <Spinner className="h-4 w-4 text-bigster-primary" />
+                  <span className="text-sm text-bigster-text">
+                    {uploadProgress.status === "getting-url" &&
+                      "Preparazione upload..."}
+                    {uploadProgress.status === "uploading-pdf" &&
+                      "Caricamento PDF..."}
+                    {uploadProgress.status === "uploading-json" &&
+                      "Caricamento dati..."}
+                    {uploadProgress.status === "confirming" &&
+                      "Finalizzazione..."}
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-bigster-border">
+                  <div
+                    className="h-full bg-bigster-primary transition-all"
+                    style={{ width: `${uploadProgress.progress}%` }}
+                  />
+                </div>
               </div>
-              <div className="w-full h-2 bg-bigster-border">
-                <div
-                  className="h-full bg-bigster-primary transition-all duration-300"
-                  style={{ width: `${uploadProgress.progress}%` }}
-                />
-              </div>
-            </div>
-          )}
+            )}
 
-          {/* CTA Principale */}
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-bigster-text-muted">
-              Carica il documento e i dati come Job Collection per questa
-              selezione
-            </p>
-            <Button
-              onClick={handleUploadToS3}
-              disabled={isUploading || uploadSuccess}
-              className="rounded-none bg-bigster-primary text-bigster-primary-text border border-yellow-300 font-semibold px-6"
-            >
-              {isUploading ? (
-                <>
-                  <Spinner className="h-4 w-4 mr-2" />
-                  Caricamento...
-                </>
-              ) : uploadSuccess ? (
-                <>
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Caricato
-                </>
+            {/* Azioni */}
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-bigster-text-muted">
+                {jobCollectionId
+                  ? "Clicca per aggiornare il PDF e i dati salvati"
+                  : "Clicca per salvare il PDF e i dati del form su S3"}
+              </p>
+
+              {!uploadSuccess ? (
+                <Button
+                  onClick={handleUploadToS3}
+                  disabled={isUploading}
+                  className="rounded-none bg-bigster-primary text-bigster-primary-text border border-yellow-200 hover:opacity-90"
+                >
+                  {isUploading ? (
+                    <>
+                      <Spinner className="h-4 w-4 mr-2" />
+                      Caricamento...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-4 w-4 mr-2" />
+                      {jobCollectionId ? "Aggiorna su S3" : "Carica su S3"}
+                    </>
+                  )}
+                </Button>
               ) : (
-                <>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Carica su S3
-                </>
+                <Button
+                  onClick={onClose}
+                  className="rounded-none bg-green-600 text-white border border-green-500 hover:bg-green-700"
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Chiudi
+                </Button>
               )}
-            </Button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
 }
+
+export default JobDescriptionPreview;

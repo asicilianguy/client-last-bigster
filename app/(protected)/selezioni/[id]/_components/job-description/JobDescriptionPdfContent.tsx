@@ -51,7 +51,13 @@ const CheckItem = ({
   label: string;
   note?: string;
 }) => (
-  <div className="flex items-start gap-2 py-0.5">
+  <div
+    className="flex items-start gap-2 py-0.5 pdf-row"
+    style={{
+      pageBreakInside: "avoid",
+      breakInside: "avoid",
+    }}
+  >
     <span
       className={`flex-shrink-0 w-4 h-4 flex items-center justify-center border ${
         checked
@@ -72,7 +78,7 @@ const CheckItem = ({
   </div>
 );
 
-// Helper per sezione
+// Helper per sezione - CON CLASSI SPECIFICHE PER PDF
 const Section = ({
   title,
   icon: Icon,
@@ -82,14 +88,34 @@ const Section = ({
   icon: any;
   children: React.ReactNode;
 }) => (
-  <div className="mb-4 break-inside-avoid">
-    <div className="flex items-center gap-2 mb-2 pb-1 border-b-2 border-bigster-primary">
+  <div
+    className="mb-4 pdf-section"
+    style={{
+      pageBreakInside: "avoid",
+      breakInside: "avoid",
+    }}
+  >
+    <div
+      className="flex items-center gap-2 mb-2 pb-1 border-b-2 border-bigster-primary pdf-section-header"
+      style={{
+        pageBreakAfter: "avoid",
+        breakAfter: "avoid",
+      }}
+    >
       <Icon className="w-4 h-4 text-bigster-text" />
       <h3 className="text-sm font-bold text-bigster-text uppercase tracking-wide">
         {title}
       </h3>
     </div>
-    <div className="pl-1">{children}</div>
+    <div
+      className="pl-1 pdf-keep-together"
+      style={{
+        pageBreakInside: "avoid",
+        breakInside: "avoid",
+      }}
+    >
+      {children}
+    </div>
   </div>
 );
 
@@ -105,7 +131,13 @@ const Field = ({
 }) => {
   if (!value) return null;
   return (
-    <div className={`mb-1 ${fullWidth ? "col-span-2" : ""}`}>
+    <div
+      className={`mb-1 pdf-row ${fullWidth ? "col-span-2" : ""}`}
+      style={{
+        pageBreakInside: "avoid",
+        breakInside: "avoid",
+      }}
+    >
       <span className="text-[10px] font-semibold text-gray-500 uppercase">
         {label}
       </span>
@@ -113,6 +145,25 @@ const Field = ({
     </div>
   );
 };
+
+// Helper per box informativo
+const InfoBox = ({
+  children,
+  className = "",
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <div
+    className={`pdf-keep-together ${className}`}
+    style={{
+      pageBreakInside: "avoid",
+      breakInside: "avoid",
+    }}
+  >
+    {children}
+  </div>
+);
 
 export const JobDescriptionPdfContent = forwardRef<
   HTMLDivElement,
@@ -165,8 +216,66 @@ export const JobDescriptionPdfContent = forwardRef<
       ref={ref}
       className="bg-white p-6 shadow-lg mx-auto max-w-[210mm] text-[11px]"
     >
+      {/* STILI CSS PER PREVENIRE PAGE BREAK */}
+      <style>
+        {`
+          @media print {
+            .pdf-section {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+            .pdf-section-header {
+              page-break-after: avoid !important;
+              break-after: avoid !important;
+            }
+            .pdf-keep-together {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+            .pdf-row {
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+            }
+            .pdf-page-break {
+              page-break-before: always !important;
+              break-before: always !important;
+            }
+          }
+          
+          .pdf-section {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            display: block !important;
+          }
+          .pdf-section-header {
+            page-break-after: avoid !important;
+            break-after: avoid !important;
+          }
+          .pdf-keep-together {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .pdf-row {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .pdf-page-break {
+            page-break-before: always !important;
+            break-before: always !important;
+          }
+        `}
+      </style>
+
+      {/* ============================================ */}
       {/* INTESTAZIONE DOCUMENTO - Compatta */}
-      <div className="text-center mb-4 pb-3 border-b-2 border-bigster-primary">
+      {/* ============================================ */}
+      <div
+        className="text-center mb-4 pb-3 border-b-2 border-bigster-primary pdf-keep-together"
+        style={{
+          pageBreakInside: "avoid",
+          breakInside: "avoid",
+        }}
+      >
         <h1 className="text-xl font-bold text-bigster-text mb-1">
           SCHEDA RACCOLTA JOB
         </h1>
@@ -180,9 +289,19 @@ export const JobDescriptionPdfContent = forwardRef<
         )}
       </div>
 
+      {/* ============================================ */}
       {/* SEZIONE 1: ANALISI ORGANIZZATIVA */}
+      {/* ============================================ */}
       <div className="mb-6">
-        <div className="bg-bigster-card-bg px-3 py-1.5 mb-3">
+        <div
+          className="bg-bigster-card-bg px-3 py-1.5 mb-3 pdf-section-header"
+          style={{
+            pageBreakInside: "avoid",
+            breakInside: "avoid",
+            pageBreakAfter: "avoid",
+            breakAfter: "avoid",
+          }}
+        >
           <h2 className="text-sm font-bold text-bigster-text">
             1. ANALISI ORGANIZZATIVA
           </h2>
@@ -190,7 +309,10 @@ export const JobDescriptionPdfContent = forwardRef<
 
         {/* Dati Anagrafici */}
         <Section title="Dati Anagrafici" icon={Building2}>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+          <div
+            className="grid grid-cols-2 gap-x-4 gap-y-1"
+            style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+          >
             <Field
               label="Ragione Sociale"
               value={analisi.dati_anagrafici.ragione_sociale}
@@ -211,7 +333,10 @@ export const JobDescriptionPdfContent = forwardRef<
 
         {/* Info Studio */}
         <Section title="Lo Studio" icon={Building2}>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+          <div
+            className="grid grid-cols-2 gap-x-4 gap-y-1"
+            style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+          >
             <Field
               label="Anni di Attività"
               value={analisi.studio_info.anni_attivita}
@@ -226,28 +351,31 @@ export const JobDescriptionPdfContent = forwardRef<
 
         {/* Struttura */}
         <Section title="Struttura ad Oggi" icon={User}>
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <div className="p-2 bg-bigster-card-bg">
+          <div
+            className="grid grid-cols-2 gap-3 mb-3"
+            style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+          >
+            <InfoBox className="p-2 bg-bigster-card-bg">
               <span className="text-[10px] font-semibold text-gray-500 uppercase">
                 Dipendenti
               </span>
               <p className="text-lg font-bold text-bigster-text">
                 {analisi.struttura_ad_oggi.n_dipendenti}
               </p>
-            </div>
-            <div className="p-2 bg-bigster-card-bg">
+            </InfoBox>
+            <InfoBox className="p-2 bg-bigster-card-bg">
               <span className="text-[10px] font-semibold text-gray-500 uppercase">
                 Collaboratori
               </span>
               <p className="text-lg font-bold text-bigster-text">
                 {analisi.struttura_ad_oggi.n_collaboratori}
               </p>
-            </div>
+            </InfoBox>
           </div>
 
           {/* Lista dipendenti */}
           {analisi.struttura_ad_oggi.dipendenti?.length > 0 && (
-            <div className="mb-2">
+            <InfoBox className="mb-2">
               <p className="text-[10px] font-semibold text-gray-500 mb-1">
                 DIPENDENTI
               </p>
@@ -255,7 +383,11 @@ export const JobDescriptionPdfContent = forwardRef<
                 {analisi.struttura_ad_oggi.dipendenti.map((dip, idx) => (
                   <div
                     key={idx}
-                    className="text-xs p-1.5 bg-bigster-card-bg flex justify-between"
+                    className="text-xs p-1.5 bg-bigster-card-bg flex justify-between pdf-row"
+                    style={{
+                      pageBreakInside: "avoid",
+                      breakInside: "avoid",
+                    }}
                   >
                     <span className="font-medium">
                       {dip.ruolo_mansione || `Dipendente ${idx + 1}`}
@@ -267,12 +399,12 @@ export const JobDescriptionPdfContent = forwardRef<
                   </div>
                 ))}
               </div>
-            </div>
+            </InfoBox>
           )}
 
           {/* Lista collaboratori */}
           {analisi.struttura_ad_oggi.collaboratori?.length > 0 && (
-            <div>
+            <InfoBox>
               <p className="text-[10px] font-semibold text-gray-500 mb-1">
                 COLLABORATORI
               </p>
@@ -280,7 +412,11 @@ export const JobDescriptionPdfContent = forwardRef<
                 {analisi.struttura_ad_oggi.collaboratori.map((coll, idx) => (
                   <div
                     key={idx}
-                    className="text-xs p-1.5 bg-blue-50 border border-blue-100 flex justify-between"
+                    className="text-xs p-1.5 bg-blue-50 border border-blue-100 flex justify-between pdf-row"
+                    style={{
+                      pageBreakInside: "avoid",
+                      breakInside: "avoid",
+                    }}
                   >
                     <span className="font-medium">
                       {coll.ruolo_mansione || `Collaboratore ${idx + 1}`}
@@ -292,7 +428,7 @@ export const JobDescriptionPdfContent = forwardRef<
                   </div>
                 ))}
               </div>
-            </div>
+            </InfoBox>
           )}
         </Section>
 
@@ -305,56 +441,73 @@ export const JobDescriptionPdfContent = forwardRef<
           />
 
           {analisi.distribuzione_servizi?.some((s) => s.attivo) && (
-            <div className="mb-2">
+            <InfoBox className="mb-2">
               <p className="text-[10px] font-semibold text-gray-500 mb-1">
                 DISTRIBUZIONE SERVIZI
               </p>
-              <div className="grid grid-cols-2 gap-1">
+              <div
+                className="grid grid-cols-2 gap-1"
+                style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+              >
                 {analisi.distribuzione_servizi
                   .filter((s) => s.attivo)
                   .map((s) => (
                     <div
                       key={s.servizio}
-                      className="flex justify-between items-center p-1.5 bg-bigster-card-bg text-xs"
+                      className="flex justify-between items-center p-1.5 bg-bigster-card-bg text-xs pdf-row"
+                      style={{
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
+                      }}
                     >
                       <span>{SERVIZI_ODONTOIATRICI_LABELS[s.servizio]}</span>
                       <span className="font-semibold">{s.percentuale}%</span>
                     </div>
                   ))}
               </div>
-            </div>
+            </InfoBox>
           )}
 
           {/* Servizi personalizzati */}
           {(analisi.servizi_personalizzati?.filter((s) => s.attivo && s.nome)
             .length ?? 0) > 0 && (
-            <div className="mb-2">
+            <InfoBox className="mb-2">
               <p className="text-[10px] font-semibold text-gray-500 mb-1">
                 SERVIZI PERSONALIZZATI
               </p>
-              <div className="grid grid-cols-2 gap-1">
+              <div
+                className="grid grid-cols-2 gap-1"
+                style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+              >
                 {analisi.servizi_personalizzati
                   ?.filter((s) => s.attivo && s.nome)
                   .map((s) => (
                     <div
                       key={s.id}
-                      className="flex justify-between items-center p-1.5 bg-blue-50 border border-blue-200 text-xs"
+                      className="flex justify-between items-center p-1.5 bg-blue-50 border border-blue-200 text-xs pdf-row"
+                      style={{
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
+                      }}
                     >
                       <span>{s.nome}</span>
                       <span className="font-semibold">{s.percentuale}%</span>
                     </div>
                   ))}
               </div>
-            </div>
+            </InfoBox>
           )}
 
           {/* Servizi di punta */}
           {(analisi.servizi_di_punta?.length ?? 0) > 0 && (
-            <div className="mb-2">
+            <InfoBox className="mb-2">
               <p className="text-[10px] font-semibold text-gray-500 mb-1">
                 SERVIZI DI PUNTA
               </p>
-              <div className="flex flex-wrap gap-1">
+              <div
+                className="flex flex-wrap gap-1"
+                style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+              >
                 {analisi.servizi_di_punta?.map((servizioId) => (
                   <span
                     key={servizioId}
@@ -366,7 +519,10 @@ export const JobDescriptionPdfContent = forwardRef<
                 ))}
               </div>
               {analisi.servizi_di_punta_note && (
-                <div className="mt-1 p-1.5 bg-yellow-50 border border-yellow-200">
+                <div
+                  className="mt-1 p-1.5 bg-yellow-50 border border-yellow-200 pdf-row"
+                  style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+                >
                   <p className="text-[10px] font-semibold text-yellow-800">
                     NOTE:
                   </p>
@@ -375,10 +531,13 @@ export const JobDescriptionPdfContent = forwardRef<
                   </p>
                 </div>
               )}
-            </div>
+            </InfoBox>
           )}
 
-          <div className="grid grid-cols-2 gap-x-4">
+          <div
+            className="grid grid-cols-2 gap-x-4"
+            style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+          >
             <Field label="Fatturato Annuo" value={analisi.fatturato_annuo} />
             <Field
               label="Forniture e Magazzino"
@@ -389,7 +548,10 @@ export const JobDescriptionPdfContent = forwardRef<
 
         {/* Digitalizzazione */}
         <Section title="Digitalizzazione" icon={Globe}>
-          <div className="grid grid-cols-2 gap-1">
+          <div
+            className="grid grid-cols-2 gap-1"
+            style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+          >
             <CheckItem
               checked={analisi.digitalizzazione.applicativi_contabilita}
               label="Applicativi contabilità"
@@ -447,9 +609,25 @@ export const JobDescriptionPdfContent = forwardRef<
         </Section>
       </div>
 
+      {/* ============================================ */}
       {/* SEZIONE 2: ANALISI DEL PROFILO */}
-      <div className="mb-6">
-        <div className="bg-bigster-card-bg px-3 py-1.5 mb-3">
+      {/* ============================================ */}
+      <div
+        className="mb-6 pdf-page-break"
+        style={{
+          pageBreakBefore: "always",
+          breakBefore: "always",
+        }}
+      >
+        <div
+          className="bg-bigster-card-bg px-3 py-1.5 mb-3 pdf-section-header"
+          style={{
+            pageBreakInside: "avoid",
+            breakInside: "avoid",
+            pageBreakAfter: "avoid",
+            breakAfter: "avoid",
+          }}
+        >
           <h2 className="text-sm font-bold text-bigster-text">
             2. ANALISI DEL PROFILO
           </h2>
@@ -457,7 +635,10 @@ export const JobDescriptionPdfContent = forwardRef<
 
         {/* Attività */}
         <Section title="Attività Previste dal Ruolo" icon={Briefcase}>
-          <div className="grid grid-cols-2 gap-1">
+          <div
+            className="grid grid-cols-2 gap-1"
+            style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+          >
             {Object.entries(attivitaLabels).map(([key, label]) => {
               if (key === "altro_specifica" || key === "note_attivita")
                 return null;
@@ -471,34 +652,37 @@ export const JobDescriptionPdfContent = forwardRef<
             })}
           </div>
           {(attivita as any).altro_specifica && (
-            <div className="mt-1 p-1.5 bg-yellow-50 border border-yellow-200">
+            <InfoBox className="mt-1 p-1.5 bg-yellow-50 border border-yellow-200">
               <p className="text-[10px] font-semibold text-yellow-800">
                 ALTRO:
               </p>
               <p className="text-xs text-yellow-900">
                 {(attivita as any).altro_specifica}
               </p>
-            </div>
+            </InfoBox>
           )}
           {(attivita as any).note_attivita && (
-            <div className="mt-1 p-1.5 bg-blue-50 border border-blue-200">
+            <InfoBox className="mt-1 p-1.5 bg-blue-50 border border-blue-200">
               <p className="text-[10px] font-semibold text-blue-800">NOTE:</p>
               <p className="text-xs text-blue-900">
                 {(attivita as any).note_attivita}
               </p>
-            </div>
+            </InfoBox>
           )}
         </Section>
 
         {/* Competenze Hard */}
         <Section title="Competenze Hard" icon={GraduationCap}>
-          <div className="space-y-1">
+          <div
+            className="space-y-1"
+            style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+          >
             {Object.entries(competenzeLabels).map(([key, label]) => {
               const comp = competenze as any;
               const isChecked =
                 typeof comp[key] === "boolean"
                   ? comp[key]
-                  : comp[key]?.attivo || false;
+                  : comp[key]?.selezionata || false;
               const note = typeof comp[key] === "object" ? comp[key]?.note : "";
               return (
                 <CheckItem
@@ -514,13 +698,16 @@ export const JobDescriptionPdfContent = forwardRef<
 
         {/* Conoscenze Tecniche */}
         <Section title="Conoscenze Tecniche" icon={GraduationCap}>
-          <div className="space-y-1">
+          <div
+            className="space-y-1"
+            style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+          >
             {Object.entries(conoscenzeLabels).map(([key, label]) => {
               const con = conoscenze as any;
               const isChecked =
                 typeof con[key] === "boolean"
                   ? con[key]
-                  : con[key]?.attivo || false;
+                  : con[key]?.selezionata || false;
               const note = typeof con[key] === "object" ? con[key]?.note : "";
               return (
                 <CheckItem
@@ -536,7 +723,10 @@ export const JobDescriptionPdfContent = forwardRef<
 
         {/* Caratteristiche Personali / Soft Skills */}
         <Section title="Caratteristiche Personali" icon={User}>
-          <div className="grid grid-cols-2 gap-1">
+          <div
+            className="grid grid-cols-2 gap-1"
+            style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+          >
             {Object.entries(caratteristicheLabels).map(([key, label]) => {
               if (key === "altro_specifica") return null;
               return (
@@ -549,29 +739,38 @@ export const JobDescriptionPdfContent = forwardRef<
             })}
           </div>
           {(caratteristiche as any).altro_specifica && (
-            <div className="mt-1 p-1.5 bg-yellow-50 border border-yellow-200">
+            <InfoBox className="mt-1 p-1.5 bg-yellow-50 border border-yellow-200">
               <p className="text-[10px] font-semibold text-yellow-800">
                 ALTRO:
               </p>
               <p className="text-xs text-yellow-900">
                 {(caratteristiche as any).altro_specifica}
               </p>
-            </div>
+            </InfoBox>
           )}
         </Section>
 
         {/* Formazione */}
         <Section title="Formazione ed Esperienza" icon={GraduationCap}>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+          <div
+            className="grid grid-cols-2 gap-x-4 gap-y-1"
+            style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+          >
             {/* Percorso formativo */}
-            <div className="col-span-2 mb-2">
+            <InfoBox className="col-span-2 mb-2">
               <p className="text-[10px] font-semibold text-gray-500 mb-1">
                 PERCORSO FORMATIVO
               </p>
               <div className="space-y-1">
                 {/* Diploma - stringa */}
                 {profilo.percorso_formativo.diploma && (
-                  <div className="flex items-start gap-2 py-0.5">
+                  <div
+                    className="flex items-start gap-2 py-0.5 pdf-row"
+                    style={{
+                      pageBreakInside: "avoid",
+                      breakInside: "avoid",
+                    }}
+                  >
                     <span className="flex-shrink-0 w-4 h-4 flex items-center justify-center border bg-bigster-primary border-yellow-400 text-bigster-primary-text">
                       <Check className="w-2.5 h-2.5" />
                     </span>
@@ -586,7 +785,13 @@ export const JobDescriptionPdfContent = forwardRef<
 
                 {/* Laurea Triennale - stringa */}
                 {profilo.percorso_formativo.laurea_triennale && (
-                  <div className="flex items-start gap-2 py-0.5">
+                  <div
+                    className="flex items-start gap-2 py-0.5 pdf-row"
+                    style={{
+                      pageBreakInside: "avoid",
+                      breakInside: "avoid",
+                    }}
+                  >
                     <span className="flex-shrink-0 w-4 h-4 flex items-center justify-center border bg-bigster-primary border-yellow-400 text-bigster-primary-text">
                       <Check className="w-2.5 h-2.5" />
                     </span>
@@ -603,7 +808,13 @@ export const JobDescriptionPdfContent = forwardRef<
 
                 {/* Laurea Magistrale - stringa */}
                 {profilo.percorso_formativo.laurea_magistrale && (
-                  <div className="flex items-start gap-2 py-0.5">
+                  <div
+                    className="flex items-start gap-2 py-0.5 pdf-row"
+                    style={{
+                      pageBreakInside: "avoid",
+                      breakInside: "avoid",
+                    }}
+                  >
                     <span className="flex-shrink-0 w-4 h-4 flex items-center justify-center border bg-bigster-primary border-yellow-400 text-bigster-primary-text">
                       <Check className="w-2.5 h-2.5" />
                     </span>
@@ -636,10 +847,10 @@ export const JobDescriptionPdfContent = forwardRef<
                     </p>
                   )}
               </div>
-            </div>
+            </InfoBox>
 
             {/* Esperienza */}
-            <div>
+            <InfoBox>
               <p className="text-[10px] font-semibold text-gray-500 mb-1">
                 ESPERIENZA RICHIESTA
               </p>
@@ -648,10 +859,10 @@ export const JobDescriptionPdfContent = forwardRef<
                   ? `Sì, ${profilo.esperienza.anni || "non specificato"}`
                   : "Non richiesta"}
               </p>
-            </div>
+            </InfoBox>
 
             {/* Lingue */}
-            <div>
+            <InfoBox>
               <p className="text-[10px] font-semibold text-gray-500 mb-1">
                 LINGUE
               </p>
@@ -672,19 +883,38 @@ export const JobDescriptionPdfContent = forwardRef<
                     </p>
                   )}
               </div>
-            </div>
+            </InfoBox>
           </div>
         </Section>
       </div>
 
+      {/* ============================================ */}
       {/* SEZIONE 3: OFFERTA */}
-      <div className="mb-6">
-        <div className="bg-bigster-card-bg px-3 py-1.5 mb-3">
+      {/* ============================================ */}
+      <div
+        className="mb-6 pdf-page-break"
+        style={{
+          pageBreakBefore: "always",
+          breakBefore: "always",
+        }}
+      >
+        <div
+          className="bg-bigster-card-bg px-3 py-1.5 mb-3 pdf-section-header"
+          style={{
+            pageBreakInside: "avoid",
+            breakInside: "avoid",
+            pageBreakAfter: "avoid",
+            breakAfter: "avoid",
+          }}
+        >
           <h2 className="text-sm font-bold text-bigster-text">3. OFFERTA</h2>
         </div>
 
         <Section title="Dettagli Offerta" icon={Gift}>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 mb-3">
+          <div
+            className="grid grid-cols-2 gap-x-4 gap-y-1 mb-3"
+            style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+          >
             <Field
               label="N. Persone Ricercate"
               value={offerta.numero_persone}
@@ -696,12 +926,18 @@ export const JobDescriptionPdfContent = forwardRef<
           </div>
 
           {/* Requisiti Anagrafici */}
-          <div className="mb-3">
+          <InfoBox className="mb-3">
             <p className="text-[10px] font-semibold text-gray-500 mb-1">
               REQUISITI ANAGRAFICI
             </p>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="p-1.5 bg-bigster-card-bg">
+            <div
+              className="grid grid-cols-3 gap-2"
+              style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+            >
+              <div
+                className="p-1.5 bg-bigster-card-bg pdf-row"
+                style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+              >
                 <span className="text-[10px] text-gray-500">Età</span>
                 <p className="text-xs font-medium">
                   {offerta.eta || "-"}{" "}
@@ -710,46 +946,58 @@ export const JobDescriptionPdfContent = forwardRef<
                   </span>
                 </p>
               </div>
-              <div className="p-1.5 bg-bigster-card-bg">
+              <div
+                className="p-1.5 bg-bigster-card-bg pdf-row"
+                style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+              >
                 <span className="text-[10px] text-gray-500">Patente</span>
                 <p className="text-xs font-medium">
                   {REQUIREMENT_LEVEL_LABELS[offerta.patente]}
                 </p>
               </div>
-              <div className="p-1.5 bg-bigster-card-bg">
+              <div
+                className="p-1.5 bg-bigster-card-bg pdf-row"
+                style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+              >
                 <span className="text-[10px] text-gray-500">Automunita</span>
                 <p className="text-xs font-medium">
                   {REQUIREMENT_LEVEL_LABELS[offerta.automunita]}
                 </p>
               </div>
             </div>
-          </div>
+          </InfoBox>
 
           {/* Contratto */}
           {offerta.tipi_contratto?.length > 0 && (
-            <div className="mb-3">
+            <InfoBox className="mb-3">
               <p className="text-[10px] font-semibold text-gray-500 mb-1">
                 TIPOLOGIA CONTRATTO
               </p>
-              <div className="flex flex-wrap gap-1">
-                {offerta.tipi_contratto.map((tipo) => (
+              <div
+                className="flex flex-wrap gap-1"
+                style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+              >
+                {offerta.tipi_contratto.map((contratto) => (
                   <span
-                    key={tipo}
+                    key={contratto}
                     className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium"
                   >
-                    {CONTRACT_TYPE_LABELS[tipo]}
+                    {CONTRACT_TYPE_LABELS[contratto]}
                   </span>
                 ))}
               </div>
-            </div>
+            </InfoBox>
           )}
 
           {/* Orario */}
-          <div className="mb-3">
+          <InfoBox className="mb-3">
             <p className="text-[10px] font-semibold text-gray-500 mb-1">
               ORARIO DI LAVORO
             </p>
-            <div className="p-2 bg-green-50 border border-green-200">
+            <div
+              className="p-2 bg-green-50 border border-green-200 pdf-row"
+              style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+            >
               <p className="text-xs font-semibold text-green-800">
                 {offerta.orario === WorkSchedule.FULL_TIME
                   ? "Full Time"
@@ -768,9 +1016,12 @@ export const JobDescriptionPdfContent = forwardRef<
                   </p>
                 )}
             </div>
-          </div>
+          </InfoBox>
 
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+          <div
+            className="grid grid-cols-2 gap-x-4 gap-y-1"
+            style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+          >
             <Field
               label="Compenso Mensile Netto"
               value={offerta.compenso_mensile_netto}
@@ -787,11 +1038,14 @@ export const JobDescriptionPdfContent = forwardRef<
           </div>
 
           {/* Benefits */}
-          <div className="mt-2">
+          <InfoBox className="mt-2">
             <p className="text-[10px] font-semibold text-gray-500 mb-1">
               BENEFITS
             </p>
-            <div className="grid grid-cols-2 gap-1">
+            <div
+              className="grid grid-cols-2 gap-1"
+              style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+            >
               <CheckItem
                 checked={offerta.benefits.affiancamenti}
                 label="Affiancamenti"
@@ -834,13 +1088,23 @@ export const JobDescriptionPdfContent = forwardRef<
                 />
               )}
             </div>
-          </div>
+          </InfoBox>
         </Section>
       </div>
 
+      {/* ============================================ */}
       {/* SEZIONE 4: CHIUSURA */}
+      {/* ============================================ */}
       <div className="mb-4">
-        <div className="bg-bigster-card-bg px-3 py-1.5 mb-3">
+        <div
+          className="bg-bigster-card-bg px-3 py-1.5 mb-3 pdf-section-header"
+          style={{
+            pageBreakInside: "avoid",
+            breakInside: "avoid",
+            pageBreakAfter: "avoid",
+            breakAfter: "avoid",
+          }}
+        >
           <h2 className="text-sm font-bold text-bigster-text">4. CHIUSURA</h2>
         </div>
 
@@ -857,8 +1121,11 @@ export const JobDescriptionPdfContent = forwardRef<
           />
 
           {/* Firma */}
-          <div className="mt-4 pt-3 border-t border-gray-300">
-            <div className="grid grid-cols-2 gap-x-4">
+          <InfoBox className="mt-4 pt-3 border-t border-gray-300">
+            <div
+              className="grid grid-cols-2 gap-x-4"
+              style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+            >
               <Field label="Luogo" value={chiusura.luogo} />
               <Field
                 label="Data"
@@ -870,7 +1137,10 @@ export const JobDescriptionPdfContent = forwardRef<
               />
             </div>
             {chiusura.firma_cliente && (
-              <div className="mt-3">
+              <div
+                className="mt-3 pdf-row"
+                style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+              >
                 <p className="text-[10px] font-semibold text-gray-500 uppercase mb-1">
                   Firma Cliente
                 </p>
@@ -881,12 +1151,17 @@ export const JobDescriptionPdfContent = forwardRef<
                 </div>
               </div>
             )}
-          </div>
+          </InfoBox>
         </Section>
       </div>
 
+      {/* ============================================ */}
       {/* FOOTER */}
-      <div className="text-center pt-3 border-t border-gray-200 text-[10px] text-gray-500">
+      {/* ============================================ */}
+      <div
+        className="text-center pt-3 border-t border-gray-200 text-[10px] text-gray-500 pdf-keep-together"
+        style={{ pageBreakInside: "avoid", breakInside: "avoid" }}
+      >
         <p>
           Documento generato il{" "}
           {new Date().toLocaleDateString("it-IT", {

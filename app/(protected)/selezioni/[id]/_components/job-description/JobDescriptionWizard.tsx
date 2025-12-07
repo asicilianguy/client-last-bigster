@@ -1,6 +1,7 @@
 // ========================================================================
 // app/(protected)/selezioni/[id]/_components/job-description/JobDescriptionWizard.tsx
 // Wizard per compilazione Job Description con salvataggio PDF+JSON
+// Usa @react-pdf/renderer per generazione PDF
 // ========================================================================
 
 "use client";
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { pdf } from "@react-pdf/renderer";
 
 import {
   JobDescriptionType,
@@ -45,9 +47,9 @@ import { FormazioneSection } from "./sections/FormazioneSection";
 import { OffertaSection } from "./sections/OffertaSection";
 import { ChiusuraSection } from "./sections/ChiusuraSection";
 
-// Import del componente Anteprima e PdfContent
+// Import del componente Anteprima e PdfDocument
 import { JobDescriptionPreview } from "./JobDescriptionPreview";
-import { JobDescriptionPdfContent } from "./JobDescriptionPdfContent";
+import { JobDescriptionPdfDocument } from "./JobDescriptionPdfDocument";
 import { useNotify } from "@/hooks/use-notify";
 
 // Styles
@@ -62,6 +64,7 @@ interface JobDescriptionWizardProps {
   jobCollectionId?: number;
   hasExistingJson?: boolean;
   onClose?: () => void;
+  onJobCollectionCreated?: (id: number) => void;
 }
 
 export function JobDescriptionWizard({
@@ -69,14 +72,17 @@ export function JobDescriptionWizard({
   companyName,
   figuraProfessionale,
   initialData,
-  jobCollectionId,
+  jobCollectionId: initialJobCollectionId,
   hasExistingJson = false,
   onClose,
+  onJobCollectionCreated,
 }: JobDescriptionWizardProps) {
   const notify = useNotify();
 
-  // Ref per generare PDF nascosto
-  const hiddenPdfRef = useRef<HTMLDivElement>(null);
+  // Stato locale per jobCollectionId (può essere creato durante il salvataggio)
+  const [jobCollectionId, setJobCollectionId] = useState<number | undefined>(
+    initialJobCollectionId
+  );
 
   // Determina tipo iniziale
   const initialTipo = useMemo(() => {
@@ -112,8 +118,12 @@ export function JobDescriptionWizard({
   const initialFormDataRef = useRef<string>(JSON.stringify(formData));
 
   // Hook per upload
-  const { uploadProgress, replacePdfAndJson, resetProgress } =
-    useJobCollectionUpload();
+  const {
+    uploadProgress,
+    replacePdfAndJson,
+    uploadNewPdfAndJson,
+    resetProgress,
+  } = useJobCollectionUpload();
 
   // Stato derivato per isSaving
   const isSaving = [
@@ -191,45 +201,25 @@ export function JobDescriptionWizard({
     }
   }, [currentIndex, currentSection]);
 
-  // Genera PDF blob dal contenuto nascosto
-  const generatePdfBlob = async (): Promise<Blob | null> => {
+  // Genera PDF blob usando @react-pdf/renderer
+  const generatePdfBlob = useCallback(async (): Promise<Blob | null> => {
     try {
-      const html2pdf = (await import("html2pdf.js")).default;
-      const element = hiddenPdfRef.current;
-      if (!element) return null;
-
-      const opt = {
-        margin: [8, 8, 8, 8] as [number, number, number, number],
-        image: { type: "jpeg" as const, quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: {
-          unit: "mm",
-          format: "a4",
-          orientation: "portrait" as const,
-        },
-        pagebreak: { mode: "css", avoid: ["tr", "td", ".break-inside-avoid"] },
-      };
-
-      const blob = await html2pdf()
-        .set(opt as any)
-        .from(element)
-        .outputPdf("blob");
+      const blob = await pdf(
+        <JobDescriptionPdfDocument
+          formData={formData}
+          tipo={tipo}
+          companyName={companyName}
+        />
+      ).toBlob();
       return blob;
     } catch (error) {
       console.error("Errore generazione PDF:", error);
       return null;
     }
-  };
+  }, [formData, tipo, companyName]);
 
-  // Salva dati: rigenera PDF + JSON
+  // Salva dati: gestisce sia creazione che aggiornamento
   const handleSaveData = useCallback(async () => {
-    if (!jobCollectionId) {
-      notify.warning(
-        "Devi prima generare il PDF dall'anteprima per creare la Job Collection."
-      );
-      return;
-    }
-
     try {
       // 1. Genera il PDF come Blob
       const pdfBlob = await generatePdfBlob();
@@ -256,13 +246,31 @@ export function JobDescriptionWizard({
         data: formData,
       };
 
-      // 4. Upload PDF + JSON usando replacePdfAndJson
-      await replacePdfAndJson(jobCollectionId, pdfFile, jsonData);
+      // 4. Upload - CREA o AGGIORNA in base a se esiste jobCollectionId
+      if (jobCollectionId) {
+        // JobCollection esiste: aggiorna PDF + JSON
+        await replacePdfAndJson(jobCollectionId, pdfFile, jsonData);
+        notify.success("Dati e PDF aggiornati con successo!");
+      } else {
+        // JobCollection NON esiste: crea nuova con PDF + JSON
+        const newJobCollection = await uploadNewPdfAndJson(
+          selectionId,
+          pdfFile,
+          jsonData
+        );
+
+        // Aggiorna lo stato locale con il nuovo ID
+        setJobCollectionId(newJobCollection.id);
+
+        // Notifica il parent component
+        onJobCollectionCreated?.(newJobCollection.id);
+
+        notify.success("Job Collection creata con successo!");
+      }
 
       setSaveSuccess(true);
       setIsDirty(false);
       initialFormDataRef.current = JSON.stringify(formData);
-      notify.success("Dati e PDF salvati con successo!");
     } catch (error: any) {
       console.error("Errore salvataggio:", error);
       notify.error(error?.message || "Errore durante il salvataggio");
@@ -273,7 +281,10 @@ export function JobDescriptionWizard({
     selectionId,
     companyName,
     tipo,
+    generatePdfBlob,
     replacePdfAndJson,
+    uploadNewPdfAndJson,
+    onJobCollectionCreated,
     notify,
   ]);
 
@@ -306,11 +317,20 @@ export function JobDescriptionWizard({
   );
 
   // Callback dopo upload PDF riuscito (dalla preview)
-  const handleUploadSuccess = useCallback(() => {
-    initialFormDataRef.current = JSON.stringify(formData);
-    setIsDirty(false);
-    setSaveSuccess(true);
-  }, [formData]);
+  const handleUploadSuccess = useCallback(
+    (newJobCollectionId?: number) => {
+      initialFormDataRef.current = JSON.stringify(formData);
+      setIsDirty(false);
+      setSaveSuccess(true);
+
+      // Se è stata creata una nuova JobCollection, aggiorna lo stato
+      if (newJobCollectionId && !jobCollectionId) {
+        setJobCollectionId(newJobCollectionId);
+        onJobCollectionCreated?.(newJobCollectionId);
+      }
+    },
+    [formData, jobCollectionId, onJobCollectionCreated]
+  );
 
   // Render della sezione corrente
   const renderCurrentSection = () => {
@@ -469,14 +489,15 @@ export function JobDescriptionWizard({
         <div className="flex items-center justify-between">
           {/* Left: Salva Dati */}
           <div className="flex items-center gap-3">
+            {/* BOTTONE SALVA - SEMPRE ABILITATO SE CI SONO MODIFICHE */}
             <Button
               onClick={handleSaveData}
-              disabled={!isDirty || isSaving || !jobCollectionId}
+              disabled={!isDirty || isSaving}
               variant="outline"
               className={`rounded-none border-2 ${
                 saveSuccess
                   ? "border-green-400 text-green-600 bg-green-50"
-                  : isDirty && jobCollectionId
+                  : isDirty
                   ? "border-purple-400 text-purple-600 hover:bg-purple-50"
                   : "border-bigster-border text-bigster-text-muted"
               }`}
@@ -501,16 +522,14 @@ export function JobDescriptionWizard({
 
             {/* Helper text */}
             <span className="text-xs text-bigster-text-muted">
-              {!jobCollectionId ? (
-                <span className="flex items-center gap-1 text-yellow-600">
-                  <AlertCircle className="h-3 w-3" />
-                  Genera prima il PDF dall'anteprima
-                </span>
-              ) : !isDirty ? (
+              {!isDirty ? (
                 "Nessuna modifica da salvare"
               ) : (
-                <span className="text-purple-600">
-                  Hai modifiche non salvate
+                <span className="text-purple-600 flex items-center gap-1">
+                  <AlertCircle className="h-3 w-3" />
+                  {jobCollectionId
+                    ? "Hai modifiche non salvate"
+                    : "Salva per creare la Job Collection"}
                 </span>
               )}
             </span>
@@ -553,16 +572,6 @@ export function JobDescriptionWizard({
         </div>
       </div>
 
-      {/* Contenuto PDF nascosto per generazione */}
-      <div className="hidden">
-        <JobDescriptionPdfContent
-          ref={hiddenPdfRef}
-          formData={formData}
-          tipo={tipo}
-          companyName={companyName}
-        />
-      </div>
-
       {/* Modal Anteprima PDF */}
       {showPreview && (
         <JobDescriptionPreview
@@ -572,6 +581,8 @@ export function JobDescriptionWizard({
           onClose={() => setShowPreview(false)}
           selectionId={selectionId}
           onUploadSuccess={handleUploadSuccess}
+          jobCollectionId={jobCollectionId}
+          mode="upload"
         />
       )}
     </div>

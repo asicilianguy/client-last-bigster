@@ -1,9 +1,11 @@
+// ========================================================================
 // app/(protected)/selezioni/[id]/_components/job-description/JobDescriptionSection.tsx
+// Sezione Job Description con preview PDF tramite @react-pdf/renderer
+// ========================================================================
 
 "use client";
 
-import { useState } from "react";
-import { useDispatch } from "react-redux";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   FileText,
@@ -19,11 +21,9 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { SelectionDetail, SelectionStatus } from "@/types/selection";
 import JobDescriptionWizard from "./JobDescriptionWizard";
-import { JobDescriptionPreview } from "./JobDescriptionPreview"; // ✅ IMPORT AGGIUNTO
-import { JobDescriptionType, JobDescriptionForm } from "@/types/jobDescription";
+import { JobDescriptionPreview } from "./JobDescriptionPreview";
+import { JobDescriptionType } from "@/types/jobDescription";
 import { useJobCollectionData } from "@/hooks/useJobCollectionData";
-import { jobCollectionsApiSlice } from "@/lib/redux/features/job-collections/jobCollectionsApiSlice";
-import type { AppDispatch } from "@/lib/redux/store";
 
 interface JobDescriptionSectionProps {
   selection: SelectionDetail;
@@ -54,9 +54,8 @@ const EDITABLE_STATES = [
 export function JobDescriptionSection({
   selection,
 }: JobDescriptionSectionProps) {
-  const dispatch = useDispatch<AppDispatch>();
   const [isWizardOpen, setIsWizardOpen] = useState(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false); // ✅ NUOVO
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   // Verifica se la sezione deve essere visibile
   const isVisible = VISIBLE_STATES.includes(selection.stato as SelectionStatus);
@@ -91,7 +90,7 @@ export function JobDescriptionSection({
     enabled: isVisible,
   });
 
-  // ✅ Handler per visualizzare il PDF - APRE LA MODALE PREVIEW
+  // Handler per visualizzare il PDF - APRE LA MODALE PREVIEW
   const handleViewPdf = () => {
     if (!initialFormData) return;
     setIsPreviewOpen(true);
@@ -100,12 +99,20 @@ export function JobDescriptionSection({
   // Chiudi wizard
   const handleWizardClose = () => {
     setIsWizardOpen(false);
+    // Ricarica la pagina per aggiornare i dati
+    window.location.reload();
   };
 
-  // ✅ Chiudi preview
+  // Chiudi preview
   const handlePreviewClose = () => {
     setIsPreviewOpen(false);
   };
+
+  // Callback quando viene creata una nuova JobCollection
+  const handleJobCollectionCreated = useCallback((newId: number) => {
+    // Ricarica la pagina per aggiornare i dati
+    window.location.reload();
+  }, []);
 
   if (!isVisible) return null;
 
@@ -195,6 +202,7 @@ export function JobDescriptionSection({
             jobCollectionId={jobCollectionId || undefined}
             hasExistingJson={hasJsonData}
             onClose={handleWizardClose}
+            onJobCollectionCreated={handleJobCollectionCreated}
           />
         )}
 
@@ -243,6 +251,40 @@ export function JobDescriptionSection({
                       </p>
                     </div>
                   </div>
+
+                  {/* Info invio cliente */}
+                  {existingJobCollection?.inviata_al_cliente && (
+                    <div className="pt-4 border-t border-bigster-border">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs font-semibold text-bigster-text-muted uppercase">
+                            Inviata al cliente
+                          </p>
+                          <p className="text-sm font-medium text-bigster-text">
+                            {existingJobCollection.data_invio_cliente
+                              ? new Date(
+                                  existingJobCollection.data_invio_cliente
+                                ).toLocaleDateString("it-IT")
+                              : "Sì"}
+                          </p>
+                        </div>
+                        {existingJobCollection.approvata_dal_cliente && (
+                          <div>
+                            <p className="text-xs font-semibold text-bigster-text-muted uppercase">
+                              Approvata il
+                            </p>
+                            <p className="text-sm font-medium text-green-600">
+                              {existingJobCollection.data_approvazione_cliente
+                                ? new Date(
+                                    existingJobCollection.data_approvazione_cliente
+                                  ).toLocaleDateString("it-IT")
+                                : "Sì"}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Azioni */}
@@ -257,7 +299,7 @@ export function JobDescriptionSection({
                     </Button>
                   )}
 
-                  {/* ✅ BOTTONE VISUALIZZA PDF - ORA APRE LA MODALE */}
+                  {/* BOTTONE VISUALIZZA PDF - APRE LA MODALE */}
                   <Button
                     onClick={handleViewPdf}
                     disabled={!hasJsonData || !initialFormData}
@@ -268,15 +310,20 @@ export function JobDescriptionSection({
                     Visualizza PDF
                   </Button>
 
-                  {isEditable && !existingJobCollection?.inviata_al_cliente && (
-                    <Button
-                      variant="outline"
-                      className="rounded-none border border-blue-400 text-blue-600 hover:bg-blue-50"
-                    >
-                      <Send className="h-4 w-4 mr-2" />
-                      Invia al Cliente
-                    </Button>
-                  )}
+                  {/* BOTTONE INVIA AL CLIENTE - Solo visuale per ora */}
+                  {isEditable &&
+                    hasJsonData &&
+                    !existingJobCollection?.inviata_al_cliente && (
+                      <Button
+                        variant="outline"
+                        className="rounded-none border border-blue-400 text-blue-600 hover:bg-blue-50"
+                        disabled
+                        title="Funzionalità in sviluppo"
+                      >
+                        <Send className="h-4 w-4 mr-2" />
+                        Invia al Cliente
+                      </Button>
+                    )}
                 </div>
 
                 {/* Avviso se mancano i dati JSON */}
@@ -332,7 +379,7 @@ export function JobDescriptionSection({
         )}
       </div>
 
-      {/* ✅ MODALE PREVIEW - USA LO STESSO COMPONENTE DEL WIZARD */}
+      {/* MODALE PREVIEW - USA @react-pdf/renderer */}
       {isPreviewOpen && initialFormData && (
         <JobDescriptionPreview
           formData={initialFormData}
@@ -341,10 +388,10 @@ export function JobDescriptionSection({
           selectionId={selection.id}
           onClose={handlePreviewClose}
           onUploadSuccess={handlePreviewClose}
+          jobCollectionId={jobCollectionId || undefined}
+          mode="preview"
         />
       )}
     </motion.div>
   );
 }
-
-export default JobDescriptionSection;
