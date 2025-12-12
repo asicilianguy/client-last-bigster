@@ -4,10 +4,10 @@
 
 export enum UserRole {
   CEO = "CEO",
-  RESPONSABILE_REPARTO = "RESPONSABILE_REPARTO",
+  RESPONSABILE_RISORSE_UMANE = "RESPONSABILE_RISORSE_UMANE",
   RISORSA_UMANA = "RISORSA_UMANA",
   CONSULENTE = "CONSULENTE",
-  DIPENDENTE = "DIPENDENTE",
+  AMMINISTRAZIONE = "AMMINISTRAZIONE",
   DEVELOPER = "DEVELOPER",
 }
 
@@ -61,24 +61,16 @@ export interface UserBasic {
   email: string;
 }
 
+// ✅ ALLINEATO CON SCHEMA PRISMA - Company semplificata
 export interface CompanyBasic {
   id: number;
   nome: string;
-  partita_iva?: string | null;
-  codice_fiscale?: string | null;
-  citta?: string | null;
-  provincia?: string | null;
-  regione?: string | null;
-  cap?: string | null;
-  indirizzo?: string | null;
-  telefono?: string | null;
-  email_referente?: string | null;
-  nome_referente?: string | null;
-  cognome_referente?: string | null;
-  numero_dipendenti?: number | null;
-  fatturato?: string | null;
-  settore_attivita?: string | null;
-  note?: string | null;
+  partita_iva: string;
+  indirizzo: string;
+  citta: string;
+  cap: string;
+  telefono: string;
+  email: string;
   data_creazione: string;
   data_modifica: string;
 }
@@ -206,7 +198,7 @@ export interface SelectionDetail extends SelectionBase {
   figura_professionale?: ProfessionalFigureBasic | null;
   fatture: InvoiceBasic[];
   annunci: AnnouncementBasic[];
-  raccolta_job?: JobCollectionBasic | null; // Relazione 1:1 (singolo, non array)
+  raccolta_job?: JobCollectionBasic | null;
   approvazioni_annuncio: AnnouncementApprovalBasic[];
   storico_stati: SelectionStatusHistoryBasic[];
 }
@@ -322,10 +314,6 @@ export const isSelectionListItem = (obj: any): obj is SelectionListItem => {
 // DEADLINE MONITORING
 // ============================================
 
-/**
- * Dati minimi per il monitoraggio scadenze
- * Usato da SelectionsDeadlinesMonitor (endpoint ottimizzato)
- */
 export interface SelectionDeadlineMonitoring {
   id: number;
   titolo: string;

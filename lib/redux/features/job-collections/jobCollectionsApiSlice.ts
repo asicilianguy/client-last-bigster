@@ -11,6 +11,11 @@ import type {
   ReplaceJobCollectionPdfPayload,
   UpdateJobCollectionJsonPayload,
   DeleteJobCollectionResponse,
+  SendToClientPayload,
+  SendToClientResponse,
+  ClientViewResponse,
+  ClientApprovalPayload,
+  ClientApprovalResponse,
 } from "@/types/jobCollection";
 
 export const jobCollectionsApiSlice = apiSlice.injectEndpoints({
@@ -19,10 +24,6 @@ export const jobCollectionsApiSlice = apiSlice.injectEndpoints({
     // UPLOAD URL ENDPOINTS - PDF
     // ============================================
 
-    /**
-     * Genera presigned URL per upload nuovo PDF
-     * POST /job-collections/upload-url/:selectionId
-     */
     getUploadUrl: builder.mutation<UploadUrlResponse, number>({
       query: (selectionId) => ({
         url: `/job-collections/upload-url/${selectionId}`,
@@ -30,10 +31,6 @@ export const jobCollectionsApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    /**
-     * Genera presigned URL per sostituzione PDF
-     * POST /job-collections/:id/replacement-upload-url
-     */
     getReplacementUploadUrl: builder.mutation<UploadUrlResponse, number>({
       query: (id) => ({
         url: `/job-collections/${id}/replacement-upload-url`,
@@ -45,10 +42,6 @@ export const jobCollectionsApiSlice = apiSlice.injectEndpoints({
     // UPLOAD URL ENDPOINTS - JSON
     // ============================================
 
-    /**
-     * Genera presigned URL per upload nuovo JSON (dati form)
-     * POST /job-collections/upload-json-url/:selectionId
-     */
     getUploadJsonUrl: builder.mutation<UploadUrlResponse, number>({
       query: (selectionId) => ({
         url: `/job-collections/upload-json-url/${selectionId}`,
@@ -56,10 +49,6 @@ export const jobCollectionsApiSlice = apiSlice.injectEndpoints({
       }),
     }),
 
-    /**
-     * Genera presigned URL per sostituzione JSON
-     * POST /job-collections/:id/replacement-upload-json-url
-     */
     getReplacementUploadJsonUrl: builder.mutation<UploadUrlResponse, number>({
       query: (id) => ({
         url: `/job-collections/${id}/replacement-upload-json-url`,
@@ -71,10 +60,6 @@ export const jobCollectionsApiSlice = apiSlice.injectEndpoints({
     // CRUD ENDPOINTS
     // ============================================
 
-    /**
-     * Crea JobCollection dopo upload completato su S3
-     * POST /job-collections
-     */
     createJobCollection: builder.mutation<
       JobCollectionResponse,
       CreateJobCollectionPayload
@@ -91,10 +76,6 @@ export const jobCollectionsApiSlice = apiSlice.injectEndpoints({
       ],
     }),
 
-    /**
-     * Ottieni JobCollection per ID
-     * GET /job-collections/:id
-     */
     getJobCollectionById: builder.query<JobCollectionDetail, number>({
       query: (id) => `/job-collections/${id}`,
       providesTags: (result, error, id) => [
@@ -105,10 +86,6 @@ export const jobCollectionsApiSlice = apiSlice.injectEndpoints({
       ],
     }),
 
-    /**
-     * Ottieni JobCollection per selezione
-     * GET /job-collections/selection/:selectionId
-     */
     getJobCollectionBySelectionId: builder.query<JobCollectionResponse, number>(
       {
         query: (selectionId) => `/job-collections/selection/${selectionId}`,
@@ -121,10 +98,6 @@ export const jobCollectionsApiSlice = apiSlice.injectEndpoints({
       }
     ),
 
-    /**
-     * Aggiorna workflow JobCollection (invio/approvazione cliente)
-     * PUT /job-collections/:id
-     */
     updateJobCollection: builder.mutation<
       JobCollectionResponse,
       { id: number } & UpdateJobCollectionPayload
@@ -148,10 +121,6 @@ export const jobCollectionsApiSlice = apiSlice.injectEndpoints({
       ],
     }),
 
-    /**
-     * Sostituisce il PDF (dopo upload completato)
-     * PUT /job-collections/:id/replace-pdf
-     */
     replaceJobCollectionPdf: builder.mutation<
       JobCollectionResponse,
       { id: number } & ReplaceJobCollectionPdfPayload
@@ -175,10 +144,6 @@ export const jobCollectionsApiSlice = apiSlice.injectEndpoints({
       ],
     }),
 
-    /**
-     * Aggiorna/Sostituisce il JSON (dopo upload completato)
-     * PUT /job-collections/:id/update-json
-     */
     updateJobCollectionJson: builder.mutation<
       JobCollectionResponse,
       { id: number } & UpdateJobCollectionJsonPayload
@@ -202,10 +167,6 @@ export const jobCollectionsApiSlice = apiSlice.injectEndpoints({
       ],
     }),
 
-    /**
-     * Elimina JobCollection (e file S3)
-     * DELETE /job-collections/:id
-     */
     deleteJobCollection: builder.mutation<DeleteJobCollectionResponse, number>({
       query: (id) => ({
         url: `/job-collections/${id}`,
@@ -215,69 +176,117 @@ export const jobCollectionsApiSlice = apiSlice.injectEndpoints({
     }),
 
     // ============================================
-    // DOWNLOAD URL ENDPOINTS - PDF
+    // DOWNLOAD URL ENDPOINTS
     // ============================================
 
-    /**
-     * Genera presigned URL per download PDF
-     * GET /job-collections/:id/download-url
-     */
     getDownloadUrl: builder.query<DownloadUrlResponse, number>({
       query: (id) => `/job-collections/${id}/download-url`,
     }),
 
-    /**
-     * Lazy query per download URL PDF (per richieste on-demand)
-     */
     lazyGetDownloadUrl: builder.query<DownloadUrlResponse, number>({
       query: (id) => `/job-collections/${id}/download-url`,
     }),
 
-    // ============================================
-    // DOWNLOAD URL ENDPOINTS - JSON
-    // ============================================
-
-    /**
-     * Genera presigned URL per download JSON
-     * GET /job-collections/:id/download-json-url
-     */
     getDownloadJsonUrl: builder.query<DownloadUrlResponse, number>({
       query: (id) => `/job-collections/${id}/download-json-url`,
     }),
 
-    /**
-     * Lazy query per download URL JSON (per richieste on-demand)
-     */
     lazyGetDownloadJsonUrl: builder.query<DownloadUrlResponse, number>({
       query: (id) => `/job-collections/${id}/download-json-url`,
+    }),
+
+    // ============================================
+    // SEND TO CLIENT ENDPOINT (AUTHENTICATED)
+    // ============================================
+
+    sendToClient: builder.mutation<SendToClientResponse, SendToClientPayload>({
+      query: ({ id, email }) => ({
+        url: `/job-collections/${id}/send-to-client`,
+        method: "POST",
+        body: { email },
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "JobCollection", id },
+        ...(result
+          ? [
+              {
+                type: "JobCollection" as const,
+                id: `SELECTION_${result.selezione_id}`,
+              },
+              { type: "Selection" as const, id: result.selezione_id },
+            ]
+          : []),
+      ],
+    }),
+
+    // ============================================
+    // CLIENT PUBLIC ENDPOINTS (NO AUTH)
+    // ============================================
+
+    /**
+     * GET /job-collections/:id/client-view
+     * Recupera i dettagli della Job Collection per la pagina di approvazione.
+     * Pubblico - Non richiede autenticazione.
+     */
+    getClientView: builder.query<ClientViewResponse, number>({
+      query: (id) => `/job-collections/${id}/client-view`,
+      providesTags: (result, error, id) => [
+        { type: "JobCollection", id: `CLIENT_${id}` },
+      ],
+    }),
+
+    /**
+     * POST /job-collections/:id/client-approval
+     * Approva la Job Collection da parte del cliente.
+     * Pubblico - Non richiede autenticazione.
+     */
+    clientApproval: builder.mutation<
+      ClientApprovalResponse,
+      ClientApprovalPayload
+    >({
+      query: ({ id, note_cliente }) => ({
+        url: `/job-collections/${id}/client-approval`,
+        method: "POST",
+        body: { note_cliente },
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "JobCollection", id },
+        { type: "JobCollection", id: `CLIENT_${id}` },
+      ],
     }),
   }),
 });
 
-// Export hooks
 export const {
-  // Mutations per upload PDF
+  // Upload PDF
   useGetUploadUrlMutation,
   useGetReplacementUploadUrlMutation,
 
-  // Mutations per upload JSON
+  // Upload JSON
   useGetUploadJsonUrlMutation,
   useGetReplacementUploadJsonUrlMutation,
 
-  // CRUD mutations
+  // CRUD
   useCreateJobCollectionMutation,
   useUpdateJobCollectionMutation,
   useReplaceJobCollectionPdfMutation,
   useUpdateJobCollectionJsonMutation,
   useDeleteJobCollectionMutation,
 
-  // Queries PDF
+  // Download PDF
   useGetJobCollectionByIdQuery,
   useGetJobCollectionBySelectionIdQuery,
   useGetDownloadUrlQuery,
   useLazyGetDownloadUrlQuery,
 
-  // Queries JSON
+  // Download JSON
   useGetDownloadJsonUrlQuery,
   useLazyGetDownloadJsonUrlQuery,
+
+  // Send to Client
+  useSendToClientMutation,
+
+  // Client Public Endpoints
+  useGetClientViewQuery,
+  useClientApprovalMutation,
 } = jobCollectionsApiSlice;

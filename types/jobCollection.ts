@@ -18,7 +18,7 @@ export interface JobCollectionBase {
   id: number;
   selezione_id: number;
   s3_key: string;
-  s3_key_json?: string | null; // Nuovo campo per JSON
+  s3_key_json?: string | null;
   inviata_al_cliente: boolean;
   data_invio_cliente?: string | null;
   approvata_dal_cliente: boolean;
@@ -30,27 +30,23 @@ export interface JobCollectionBase {
 
 // ========== Response Types ==========
 
-// Response base con download URLs
 export interface JobCollectionResponse extends JobCollectionBase {
   download_url?: string;
-  download_url_json?: string; // Presigned URL per download JSON
+  download_url_json?: string;
 }
 
-// Response per getById con selezione inclusa
 export interface JobCollectionDetail extends JobCollectionBase {
   download_url?: string;
   download_url_json?: string;
   selezione: SelectionBasic;
 }
 
-// Response per upload URL (PDF o JSON)
 export interface UploadUrlResponse {
   upload_url: string;
   s3_key: string;
   expires_in: number;
 }
 
-// Response per download URL (PDF o JSON)
 export interface DownloadUrlResponse {
   download_url: string;
   expires_in: number;
@@ -61,7 +57,7 @@ export interface DownloadUrlResponse {
 export interface CreateJobCollectionPayload {
   selezione_id: number;
   s3_key: string;
-  s3_key_json?: string; // Opzionale alla creazione
+  s3_key_json?: string;
 }
 
 export interface UpdateJobCollectionPayload {
@@ -76,6 +72,19 @@ export interface ReplaceJobCollectionPdfPayload {
 
 export interface UpdateJobCollectionJsonPayload {
   s3_key_json: string;
+}
+
+// ========== Send to Client Types ==========
+
+export interface SendToClientPayload {
+  id: number;
+  email: string;
+}
+
+export interface SendToClientResponse extends JobCollectionBase {
+  message: string;
+  email_sent_to: string;
+  warning?: string;
 }
 
 // ========== API Response Wrappers ==========
@@ -112,3 +121,61 @@ export const isJobCollectionDetail = (obj: any): obj is JobCollectionDetail => {
 export const hasJsonData = (obj: JobCollectionBase): boolean => {
   return !!obj.s3_key_json;
 };
+
+// ============================================
+// CLIENT PUBLIC ENDPOINTS (NO AUTH)
+// ============================================
+
+export interface ClientViewResponse {
+  id: number;
+  inviata_al_cliente: boolean;
+  data_invio_cliente: string | null;
+  approvata_dal_cliente: boolean;
+  data_approvazione_cliente: string | null;
+  note_cliente: string | null;
+  download_url: string | null;
+  selezione: {
+    id: number;
+    titolo: string;
+    company: {
+      id: number;
+      nome: string;
+    };
+    figura_professionale: {
+      id: number;
+      nome: string;
+      seniority: string;
+    } | null;
+  };
+}
+
+export interface ClientApprovalPayload {
+  id: number;
+  note_cliente?: string;
+}
+
+export interface ClientApprovalResponse {
+  success: boolean;
+  message: string;
+  already_approved?: boolean;
+  data_approvazione?: string;
+  job_collection: {
+    id: number;
+    approvata_dal_cliente: boolean;
+    data_approvazione_cliente: string | null;
+    note_cliente: string | null;
+  };
+  selezione: {
+    id: number;
+    titolo: string;
+    company: {
+      id: number;
+      nome: string;
+    };
+    figura_professionale: {
+      id: number;
+      nome: string;
+    } | null;
+  };
+  stato_aggiornato?: boolean;
+}

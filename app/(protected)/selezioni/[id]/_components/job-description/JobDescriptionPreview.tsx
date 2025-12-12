@@ -304,34 +304,6 @@ export function JobDescriptionPreview({
                   ? "Clicca per aggiornare il PDF e i dati salvati"
                   : "Clicca per salvare il PDF e i dati del form su S3"}
               </p>
-
-              {!uploadSuccess ? (
-                <Button
-                  onClick={handleUploadToS3}
-                  disabled={isUploading}
-                  className="rounded-none bg-bigster-primary text-bigster-primary-text border border-yellow-200 hover:opacity-90"
-                >
-                  {isUploading ? (
-                    <>
-                      <Spinner className="h-4 w-4 mr-2" />
-                      Caricamento...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="h-4 w-4 mr-2" />
-                      {jobCollectionId ? "Aggiorna su S3" : "Carica su S3"}
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <Button
-                  onClick={onClose}
-                  className="rounded-none bg-green-600 text-white border border-green-500 hover:bg-green-700"
-                >
-                  <CheckCircle2 className="h-4 w-4 mr-2" />
-                  Chiudi
-                </Button>
-              )}
             </div>
           </div>
         )}

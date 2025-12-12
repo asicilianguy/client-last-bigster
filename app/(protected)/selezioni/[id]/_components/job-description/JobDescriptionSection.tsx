@@ -1,7 +1,4 @@
-// ========================================================================
 // app/(protected)/selezioni/[id]/_components/job-description/JobDescriptionSection.tsx
-// Sezione Job Description con preview PDF tramite @react-pdf/renderer
-// ========================================================================
 
 "use client";
 
@@ -16,6 +13,9 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
+  Loader2,
+  Mail,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -24,12 +24,13 @@ import JobDescriptionWizard from "./JobDescriptionWizard";
 import { JobDescriptionPreview } from "./JobDescriptionPreview";
 import { JobDescriptionType } from "@/types/jobDescription";
 import { useJobCollectionData } from "@/hooks/useJobCollectionData";
+import { useSendToClientMutation } from "@/lib/redux/features/job-collections/jobCollectionsApiSlice";
+import toast from "react-hot-toast";
 
 interface JobDescriptionSectionProps {
   selection: SelectionDetail;
 }
 
-// Stati in cui mostrare questa sezione
 const VISIBLE_STATES = [
   SelectionStatus.HR_ASSEGNATA,
   SelectionStatus.PRIMA_CALL_COMPLETATA,
@@ -45,25 +46,32 @@ const VISIBLE_STATES = [
   SelectionStatus.CHIUSA,
 ];
 
-// Stati in cui è possibile modificare/creare
 const EDITABLE_STATES = [
   SelectionStatus.HR_ASSEGNATA,
   SelectionStatus.PRIMA_CALL_COMPLETATA,
 ];
+
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
 
 export function JobDescriptionSection({
   selection,
 }: JobDescriptionSectionProps) {
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+  const [recipientEmail, setRecipientEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
 
-  // Verifica se la sezione deve essere visibile
+  const [sendToClient, { isLoading: isSending }] = useSendToClientMutation();
+
   const isVisible = VISIBLE_STATES.includes(selection.stato as SelectionStatus);
   const isEditable = EDITABLE_STATES.includes(
     selection.stato as SelectionStatus
   );
 
-  // Determina il tipo basandosi sulla figura professionale
   const determineType = (): JobDescriptionType => {
     const figuraNome =
       selection.figura_professionale?.nome?.toLowerCase() || "";
@@ -75,7 +83,6 @@ export function JobDescriptionSection({
 
   const tipo = determineType();
 
-  // Hook per caricare i dati JSON da S3
   const {
     isLoading,
     isLoadingJson,
@@ -90,34 +97,79 @@ export function JobDescriptionSection({
     enabled: isVisible,
   });
 
-  // Handler per visualizzare il PDF - APRE LA MODALE PREVIEW
+  const existingJobCollection = selection.raccolta_job;
+  const hasPdf = !!existingJobCollection?.s3_key;
+
   const handleViewPdf = () => {
     if (!initialFormData) return;
     setIsPreviewOpen(true);
   };
 
-  // Chiudi wizard
+  const handleOpenSendModal = () => {
+    setRecipientEmail(selection.company?.email || "");
+    setEmailError("");
+    setIsSendModalOpen(true);
+  };
+
+  const handleCloseSendModal = () => {
+    setIsSendModalOpen(false);
+    setRecipientEmail("");
+    setEmailError("");
+  };
+
+  const handleConfirmSend = async () => {
+    if (!recipientEmail.trim()) {
+      setEmailError("Inserisci un indirizzo email");
+      return;
+    }
+
+    if (!isValidEmail(recipientEmail.trim())) {
+      setEmailError("Inserisci un indirizzo email valido");
+      return;
+    }
+
+    if (!jobCollectionId) {
+      toast.error("Job Collection non trovata");
+      return;
+    }
+
+    try {
+      const result = await sendToClient({
+        id: jobCollectionId,
+        email: recipientEmail.trim(),
+      }).unwrap();
+
+      toast.success(
+        `Job Collection inviata con successo a ${result.email_sent_to}`,
+        { duration: 5000 }
+      );
+
+      if (result.warning) {
+        toast.error(result.warning, { duration: 8000 });
+      }
+
+      handleCloseSendModal();
+      window.location.reload();
+    } catch (error: any) {
+      console.error("Errore invio al cliente:", error);
+      toast.error(error?.data?.error || "Errore durante l'invio al cliente");
+    }
+  };
+
   const handleWizardClose = () => {
     setIsWizardOpen(false);
-    // Ricarica la pagina per aggiornare i dati
     window.location.reload();
   };
 
-  // Chiudi preview
   const handlePreviewClose = () => {
     setIsPreviewOpen(false);
   };
 
-  // Callback quando viene creata una nuova JobCollection
   const handleJobCollectionCreated = useCallback((newId: number) => {
-    // Ricarica la pagina per aggiornare i dati
     window.location.reload();
   }, []);
 
   if (!isVisible) return null;
-
-  // Dati esistenti dalla relazione (per le date)
-  const existingJobCollection = selection.raccolta_job;
 
   return (
     <motion.div
@@ -139,7 +191,6 @@ export function JobDescriptionSection({
             </p>
           </div>
 
-          {/* Badge stato */}
           {hasExistingData && (
             <div className="flex items-center gap-2">
               {existingJobCollection?.approvata_dal_cliente ? (
@@ -165,7 +216,6 @@ export function JobDescriptionSection({
 
       {/* Content */}
       <div className="p-6">
-        {/* Loading state */}
         {(isLoading || isLoadingJson) && (
           <div className="text-center py-12">
             <Spinner className="h-8 w-8 mx-auto mb-4 text-bigster-primary" />
@@ -177,7 +227,6 @@ export function JobDescriptionSection({
           </div>
         )}
 
-        {/* Error state */}
         {error && !isLoading && !isLoadingJson && (
           <div className="p-4 bg-red-50 border border-red-200 mb-4">
             <div className="flex items-start gap-3">
@@ -192,7 +241,6 @@ export function JobDescriptionSection({
           </div>
         )}
 
-        {/* Wizard aperto */}
         {!isLoading && !isLoadingJson && isWizardOpen && (
           <JobDescriptionWizard
             selectionId={selection.id}
@@ -206,11 +254,9 @@ export function JobDescriptionSection({
           />
         )}
 
-        {/* Contenuto quando wizard chiuso */}
         {!isLoading && !isLoadingJson && !isWizardOpen && (
           <>
             {hasExistingData ? (
-              // Mostra card con dati esistenti
               <div className="space-y-4">
                 <div className="p-5 bg-bigster-card-bg border border-bigster-border">
                   <div className="grid grid-cols-3 gap-4 mb-4">
@@ -240,19 +286,18 @@ export function JobDescriptionSection({
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-bigster-text-muted uppercase">
-                        Dati Form
+                        PDF Generato
                       </p>
                       <p className="text-sm font-medium text-bigster-text">
-                        {hasJsonData ? (
-                          <span className="text-green-600">Salvati</span>
+                        {hasPdf ? (
+                          <span className="text-green-600">Sì</span>
                         ) : (
-                          <span className="text-yellow-600">Non salvati</span>
+                          <span className="text-yellow-600">No</span>
                         )}
                       </p>
                     </div>
                   </div>
 
-                  {/* Info invio cliente */}
                   {existingJobCollection?.inviata_al_cliente && (
                     <div className="pt-4 border-t border-bigster-border">
                       <div className="grid grid-cols-2 gap-4">
@@ -264,7 +309,13 @@ export function JobDescriptionSection({
                             {existingJobCollection.data_invio_cliente
                               ? new Date(
                                   existingJobCollection.data_invio_cliente
-                                ).toLocaleDateString("it-IT")
+                                ).toLocaleDateString("it-IT", {
+                                  day: "2-digit",
+                                  month: "long",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
                               : "Sì"}
                           </p>
                         </div>
@@ -299,7 +350,6 @@ export function JobDescriptionSection({
                     </Button>
                   )}
 
-                  {/* BOTTONE VISUALIZZA PDF - APRE LA MODALE */}
                   <Button
                     onClick={handleViewPdf}
                     disabled={!hasJsonData || !initialFormData}
@@ -310,37 +360,46 @@ export function JobDescriptionSection({
                     Visualizza PDF
                   </Button>
 
-                  {/* BOTTONE INVIA AL CLIENTE - Solo visuale per ora */}
+                  {isEditable && !existingJobCollection?.inviata_al_cliente && (
+                    <Button
+                      onClick={handleOpenSendModal}
+                      disabled={!hasPdf || isSending}
+                      variant="outline"
+                      className="rounded-none border border-blue-400 text-blue-600 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Send className="h-4 w-4 mr-2" />
+                      Invia al Cliente
+                    </Button>
+                  )}
+
                   {isEditable &&
-                    hasJsonData &&
-                    !existingJobCollection?.inviata_al_cliente && (
+                    existingJobCollection?.inviata_al_cliente &&
+                    !existingJobCollection?.approvata_dal_cliente && (
                       <Button
+                        onClick={handleOpenSendModal}
+                        disabled={!hasPdf || isSending}
                         variant="outline"
-                        className="rounded-none border border-blue-400 text-blue-600 hover:bg-blue-50"
-                        disabled
-                        title="Funzionalità in sviluppo"
+                        className="rounded-none border border-orange-400 text-orange-600 hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Send className="h-4 w-4 mr-2" />
-                        Invia al Cliente
+                        Invia Nuovamente
                       </Button>
                     )}
                 </div>
 
-                {/* Avviso se mancano i dati JSON */}
-                {!hasJsonData && isEditable && (
+                {!hasPdf && isEditable && (
                   <div className="p-3 bg-yellow-50 border border-yellow-200">
                     <div className="flex items-center gap-2">
                       <AlertCircle className="h-4 w-4 text-yellow-600" />
                       <p className="text-xs text-yellow-800">
-                        Compila i dati del form per visualizzare e generare il
-                        PDF
+                        Genera il PDF dall'anteprima prima di poterlo inviare al
+                        cliente
                       </p>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
-              // Nessun dato - Mostra solo CTA per creare
               <div className="text-center py-8">
                 <FileText className="h-12 w-12 text-bigster-text-muted mx-auto mb-4" />
                 <h3 className="text-base font-semibold text-bigster-text mb-2">
@@ -379,7 +438,7 @@ export function JobDescriptionSection({
         )}
       </div>
 
-      {/* MODALE PREVIEW - USA @react-pdf/renderer */}
+      {/* MODALE PREVIEW */}
       {isPreviewOpen && initialFormData && (
         <JobDescriptionPreview
           formData={initialFormData}
@@ -391,6 +450,99 @@ export function JobDescriptionSection({
           jobCollectionId={jobCollectionId || undefined}
           mode="preview"
         />
+      )}
+
+      {/* MODALE INVIO EMAIL */}
+      {isSendModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={handleCloseSendModal}
+          />
+
+          <div className="relative bg-bigster-surface border border-bigster-border w-full max-w-md mx-4 shadow-xl">
+            <div className="px-6 py-4 border-b border-bigster-border bg-bigster-card-bg flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Mail className="h-5 w-5 text-bigster-text" />
+                <h3 className="text-lg font-bold text-bigster-text">
+                  Invia al Cliente
+                </h3>
+              </div>
+              <button
+                onClick={handleCloseSendModal}
+                className="p-1 hover:bg-bigster-muted-bg transition-colors"
+                disabled={isSending}
+              >
+                <X className="h-5 w-5 text-bigster-text-muted" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-bigster-text">
+                Inserisci l'indirizzo email a cui inviare la Job Description per{" "}
+                <strong>{selection.company?.nome}</strong>.
+              </p>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-bigster-text">
+                  Email destinatario *
+                </label>
+                <input
+                  type="email"
+                  value={recipientEmail}
+                  onChange={(e) => {
+                    setRecipientEmail(e.target.value);
+                    setEmailError("");
+                  }}
+                  placeholder="esempio@email.com"
+                  disabled={isSending}
+                  className={`w-full rounded-none bg-bigster-surface border text-bigster-text placeholder:text-bigster-text-muted focus:outline-none focus:ring-0 focus:border-bigster-text px-4 py-2 text-sm transition-colors ${
+                    emailError ? "border-red-400" : "border-bigster-border"
+                  }`}
+                />
+                {emailError && (
+                  <p className="text-xs text-red-600">{emailError}</p>
+                )}
+              </div>
+
+              <div className="p-3 bg-bigster-card-bg border border-bigster-border">
+                <p className="text-xs text-bigster-text-muted">
+                  Il documento PDF della Job Description verrà allegato
+                  all'email. Il destinatario riceverà anche le istruzioni per
+                  l'approvazione.
+                </p>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-bigster-border bg-bigster-card-bg flex items-center justify-end gap-3">
+              <Button
+                onClick={handleCloseSendModal}
+                disabled={isSending}
+                variant="outline"
+                className="rounded-none border border-bigster-border bg-bigster-surface text-bigster-text hover:bg-bigster-muted-bg"
+              >
+                Annulla
+              </Button>
+              <Button
+                onClick={handleConfirmSend}
+                disabled={isSending || !recipientEmail.trim()}
+                className="rounded-none bg-blue-600 text-white border border-blue-500 hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isSending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Invio in corso...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    Invia Email
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </motion.div>
   );
