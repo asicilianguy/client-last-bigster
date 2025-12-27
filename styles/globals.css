@@ -11,8 +11,8 @@
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 45 93% 47%; /* Modificato per allinearsi con il colore #fef19a */
-    --primary-foreground: 40 93% 22%; /* Modificato per allinearsi con #6c4e06 */
+    --primary: 45 93% 47%;
+    --primary-foreground: 40 93% 22%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
     --muted: 0 0% 96.1%;
@@ -21,9 +21,9 @@
     --accent-foreground: 0 0% 9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%; /* Allineato a #d8d8d8 */
+    --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
-    --ring: 45 93% 47%; /* Allineato al colore primario */
+    --ring: 45 93% 47%;
     --radius: 0.5rem;
 
     /* BigSter CSS variables */
@@ -92,6 +92,30 @@
       "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 
+  .border-outline {
+    border: 1px solid #d4d4d4;
+    border-radius: 0px;
+  }
+
+  .border-bigster {
+    border: 1px solid #6c4e06;
+  }
+
+  input,
+  button,
+  textarea,
+  select {
+    border-radius: 0px !important;
+  }
+
+  input {
+    border: 1px solid #d8d8d8;
+    padding: 10px;
+    max-height: 40px;
+    outline: none;
+    width: 100%;
+  }
+
   h1,
   h2,
   h3,
@@ -152,9 +176,8 @@
     @apply text-3xl font-bold bg-bigster-logo text-transparent bg-clip-text;
   }
 
-  /* Additional utility classes */
   .bigster-page-container {
-    @apply p-6 sm:p-8 mx-auto max-w-7xl;
+    @apply p-6 sm:p-8 mx-auto max-w-screen-2xl;
   }
 
   .bigster-page-header {
@@ -214,7 +237,10 @@
   }
 }
 
-/* Animation utilities */
+/* ============================================
+   ANIMATION UTILITIES
+   ============================================ */
+
 .animate-fade-in-up {
   animation: fade-in-up 0.4s ease-out;
 }
@@ -294,4 +320,330 @@
     opacity: 1;
     transform: scale(1);
   }
+}
+
+/* ============================================
+   WYSIWYG EDITOR STYLES (TipTap)
+   ============================================ */
+
+.wysiwyg-editor .ProseMirror {
+  padding: 1rem;
+  min-height: 300px;
+  outline: none;
+}
+
+.wysiwyg-editor .ProseMirror > * + * {
+  margin-top: 0.75em;
+}
+
+.wysiwyg-editor .ProseMirror > *:first-child {
+  margin-top: 0;
+}
+
+/* Placeholder */
+.wysiwyg-editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+}
+
+/* Headings */
+.wysiwyg-editor .ProseMirror h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #6c4e06;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.wysiwyg-editor .ProseMirror h2 {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: #6c4e06;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.wysiwyg-editor .ProseMirror h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #6c4e06;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+/* Paragraphs */
+.wysiwyg-editor .ProseMirror p {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: #333;
+  margin-bottom: 0.75rem;
+}
+
+/* Strong/Bold */
+.wysiwyg-editor .ProseMirror strong {
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+/* Italic */
+.wysiwyg-editor .ProseMirror em {
+  font-style: italic;
+}
+
+/* Underline */
+.wysiwyg-editor .ProseMirror u {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Lists */
+.wysiwyg-editor .ProseMirror ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.wysiwyg-editor .ProseMirror ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.wysiwyg-editor .ProseMirror li {
+  margin-bottom: 0.375rem;
+  line-height: 1.6;
+}
+
+.wysiwyg-editor .ProseMirror li p {
+  margin-bottom: 0;
+}
+
+/* Nested lists */
+.wysiwyg-editor .ProseMirror ul ul,
+.wysiwyg-editor .ProseMirror ol ol,
+.wysiwyg-editor .ProseMirror ul ol,
+.wysiwyg-editor .ProseMirror ol ul {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Blockquote */
+.wysiwyg-editor .ProseMirror blockquote {
+  border-left: 4px solid #fde01c;
+  padding: 0.75rem 1rem;
+  margin-left: 0;
+  margin-right: 0;
+  font-style: italic;
+  color: #555;
+  background-color: #fefce8;
+}
+
+.wysiwyg-editor .ProseMirror blockquote p {
+  margin-bottom: 0;
+}
+
+/* Links */
+.wysiwyg-editor .ProseMirror a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.wysiwyg-editor .ProseMirror a:hover {
+  color: #1d4ed8;
+}
+
+/* Horizontal Rule */
+.wysiwyg-editor .ProseMirror hr {
+  border: none;
+  border-top: 2px solid #e5e7eb;
+  margin: 1.5rem 0;
+}
+
+/* Code (inline) */
+.wysiwyg-editor .ProseMirror code {
+  background-color: #f3f4f6;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875em;
+  color: #dc2626;
+}
+
+/* Selection */
+.wysiwyg-editor .ProseMirror ::selection {
+  background-color: rgba(253, 224, 28, 0.4);
+}
+
+/* Read-only state */
+.wysiwyg-editor .ProseMirror[contenteditable="false"] {
+  cursor: default;
+  background-color: #fafafa;
+}
+
+/* ============================================
+   MARKDOWN PREVIEW STYLES (ReactMarkdown)
+   ============================================ */
+
+.markdown-preview {
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: #333;
+}
+
+.markdown-preview > * + * {
+  margin-top: 0.75em;
+}
+
+.markdown-preview > *:first-child {
+  margin-top: 0;
+}
+
+/* Headings */
+.markdown-preview h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #6c4e06;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.2;
+}
+
+.markdown-preview h2 {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: #6c4e06;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.markdown-preview h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #6c4e06;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+}
+
+/* Paragraphs */
+.markdown-preview p {
+  margin-bottom: 0.75rem;
+}
+
+/* Strong/Bold */
+.markdown-preview strong {
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+/* Italic */
+.markdown-preview em {
+  font-style: italic;
+}
+
+/* Underline (HTML tag) */
+.markdown-preview u {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Lists - IMPORTANT: Ensure visibility */
+.markdown-preview ul {
+  list-style-type: disc !important;
+  padding-left: 1.5rem !important;
+  margin-bottom: 1rem;
+  display: block !important;
+}
+
+.markdown-preview ol {
+  list-style-type: decimal !important;
+  padding-left: 1.5rem !important;
+  margin-bottom: 1rem;
+  display: block !important;
+}
+
+.markdown-preview li {
+  margin-bottom: 0.375rem;
+  line-height: 1.6;
+  display: list-item !important;
+}
+
+.markdown-preview li::marker {
+  color: #6c4e06;
+}
+
+/* Nested lists */
+.markdown-preview ul ul,
+.markdown-preview ol ol,
+.markdown-preview ul ol,
+.markdown-preview ol ul {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+/* Blockquote */
+.markdown-preview blockquote {
+  border-left: 4px solid #fde01c;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: #555;
+  background-color: #fefce8;
+}
+
+.markdown-preview blockquote p {
+  margin-bottom: 0;
+}
+
+/* Links */
+.markdown-preview a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.markdown-preview a:hover {
+  color: #1d4ed8;
+}
+
+/* Horizontal Rule */
+.markdown-preview hr {
+  border: none;
+  border-top: 2px solid #e5e7eb;
+  margin: 1.5rem 0;
+}
+
+/* Code (inline) */
+.markdown-preview code {
+  background-color: #f3f4f6;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875em;
+  color: #dc2626;
+}
+
+/* Code blocks */
+.markdown-preview pre {
+  background-color: #f3f4f6;
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+}
+
+.markdown-preview pre code {
+  background-color: transparent;
+  padding: 0;
+  color: inherit;
 }

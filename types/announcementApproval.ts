@@ -1,38 +1,93 @@
-export interface AnnouncementApprovalBase {
+// types/announcementApproval.ts
+
+// ============================================
+// RESPONSE TYPES
+// ============================================
+
+export interface AnnouncementApprovalResponse {
   id: number;
   selezione_id: number;
-  annuncio_id?: number | null;
-  bozza_titolo: string;
-  bozza_descrizione: string;
-  bozza_requisiti?: string | null;
+  testo_markdown: string;
   approvato: boolean;
   data_richiesta: string;
-  data_approvazione?: string | null;
-  note_approvazione?: string | null;
+  data_approvazione: string | null;
+  note_approvazione: string | null;
   data_creazione: string;
   data_modifica: string;
 }
 
-export interface AnnouncementApprovalResponse
-  extends AnnouncementApprovalBase {}
+export interface AnnouncementApprovalDetail
+  extends AnnouncementApprovalResponse {
+  selezione: {
+    id: number;
+    titolo: string;
+    company: {
+      id: number;
+      nome: string;
+    };
+    figura_professionale: {
+      id: number;
+      nome: string;
+    } | null;
+    risorsa_umana?: {
+      id: number;
+      nome: string;
+      cognome: string;
+    } | null;
+  };
+}
+
+export interface AnnouncementApprovalPending
+  extends AnnouncementApprovalResponse {
+  selezione: {
+    id: number;
+    titolo: string;
+    company: {
+      id: number;
+      nome: string;
+    };
+    figura_professionale: {
+      id: number;
+      nome: string;
+    } | null;
+    risorsa_umana: {
+      id: number;
+      nome: string;
+      cognome: string;
+    } | null;
+  };
+}
+
+// ============================================
+// PAYLOAD TYPES
+// ============================================
 
 export interface CreateAnnouncementApprovalPayload {
   selezione_id: number;
-  annuncio_id?: number;
-  bozza_titolo: string;
-  bozza_descrizione: string;
-  bozza_requisiti?: string;
+  testo_markdown: string;
 }
 
 export interface UpdateAnnouncementApprovalPayload {
-  bozza_titolo?: string;
-  bozza_descrizione?: string;
-  bozza_requisiti?: string | null;
-  approvato?: boolean;
-  note_approvazione?: string | null;
+  testo_markdown: string;
 }
 
 export interface ApproveAnnouncementPayload {
+  id: number;
   approvato: boolean;
-  note_approvazione?: string;
+  note_approvazione?: string | null;
+}
+
+// ============================================
+// RESPONSE TYPES (Mutations)
+// ============================================
+
+export interface ApproveAnnouncementResponse {
+  success: boolean;
+  message: string;
+  bozza: AnnouncementApprovalResponse;
+  stato_aggiornato: boolean;
+}
+
+export interface DeleteAnnouncementApprovalResponse {
+  message: string;
 }

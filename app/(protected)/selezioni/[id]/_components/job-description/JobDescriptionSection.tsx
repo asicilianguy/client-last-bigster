@@ -16,6 +16,8 @@ import {
   Loader2,
   Mail,
   X,
+  ArrowRight,
+  Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -25,6 +27,7 @@ import { JobDescriptionPreview } from "./JobDescriptionPreview";
 import { JobDescriptionType } from "@/types/jobDescription";
 import { useJobCollectionData } from "@/hooks/useJobCollectionData";
 import { useSendToClientMutation } from "@/lib/redux/features/job-collections/jobCollectionsApiSlice";
+import { useChangeSelectionStatusMutation } from "@/lib/redux/features/selections/selectionsApiSlice";
 import toast from "react-hot-toast";
 
 interface JobDescriptionSectionProps {
@@ -62,15 +65,25 @@ export function JobDescriptionSection({
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
+  const [isChangeStatusModalOpen, setIsChangeStatusModalOpen] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState("");
   const [emailError, setEmailError] = useState("");
 
   const [sendToClient, { isLoading: isSending }] = useSendToClientMutation();
+  const [changeStatus, { isLoading: isChangingStatus }] =
+    useChangeSelectionStatusMutation();
 
   const isVisible = VISIBLE_STATES.includes(selection.stato as SelectionStatus);
   const isEditable = EDITABLE_STATES.includes(
     selection.stato as SelectionStatus
   );
+
+  // Verifica se lo stato permette l'invio diretto
+  const canSendDirectly =
+    selection.stato === SelectionStatus.PRIMA_CALL_COMPLETATA ||
+    selection.stato === SelectionStatus.RACCOLTA_JOB_IN_APPROVAZIONE_CLIENTE;
+
+  const needsStatusChange = selection.stato === SelectionStatus.HR_ASSEGNATA;
 
   const determineType = (): JobDescriptionType => {
     const figuraNome =
@@ -105,6 +118,17 @@ export function JobDescriptionSection({
     setIsPreviewOpen(true);
   };
 
+  // Handler per il click su "Invia al Cliente"
+  const handleSendClick = () => {
+    if (needsStatusChange) {
+      // Mostra modale per cambiare stato prima
+      setIsChangeStatusModalOpen(true);
+    } else {
+      // Apri direttamente modale invio
+      handleOpenSendModal();
+    }
+  };
+
   const handleOpenSendModal = () => {
     setRecipientEmail(selection.company?.email || "");
     setEmailError("");
@@ -115,6 +139,35 @@ export function JobDescriptionSection({
     setIsSendModalOpen(false);
     setRecipientEmail("");
     setEmailError("");
+  };
+
+  const handleCloseChangeStatusModal = () => {
+    setIsChangeStatusModalOpen(false);
+  };
+
+  // Handler per cambiare stato a PRIMA_CALL_COMPLETATA
+  const handleConfirmStatusChange = async () => {
+    try {
+      await changeStatus({
+        id: selection.id,
+        nuovo_stato: SelectionStatus.PRIMA_CALL_COMPLETATA,
+        note: "Prima call completata - pronto per invio Job Description",
+      }).unwrap();
+
+      toast.success("Stato aggiornato a 'Prima Call Completata'", {
+        duration: 3000,
+      });
+
+      handleCloseChangeStatusModal();
+
+      // Apri direttamente la modale di invio
+      setTimeout(() => {
+        handleOpenSendModal();
+      }, 300);
+    } catch (error: any) {
+      console.error("Errore cambio stato:", error);
+      toast.error(error?.data?.error || "Errore durante il cambio di stato");
+    }
   };
 
   const handleConfirmSend = async () => {
@@ -338,6 +391,28 @@ export function JobDescriptionSection({
                   )}
                 </div>
 
+                {/* Info Box se stato è HR_ASSEGNATA */}
+                {needsStatusChange &&
+                  hasPdf &&
+                  !existingJobCollection?.inviata_al_cliente && (
+                    <div className="p-4 bg-blue-50 border border-blue-200">
+                      <div className="flex items-start gap-3">
+                        <Phone className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-semibold text-blue-800 mb-1">
+                            Prima Call richiesta
+                          </p>
+                          <p className="text-xs text-blue-700">
+                            Per inviare la Job Description al cliente, devi
+                            prima confermare di aver completato la prima call
+                            con lo studio. Clicca su "Invia al Cliente" per
+                            procedere.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                 {/* Azioni */}
                 <div className="flex items-center gap-3">
                   {isEditable && (
@@ -362,7 +437,7 @@ export function JobDescriptionSection({
 
                   {isEditable && !existingJobCollection?.inviata_al_cliente && (
                     <Button
-                      onClick={handleOpenSendModal}
+                      onClick={handleSendClick}
                       disabled={!hasPdf || isSending}
                       variant="outline"
                       className="rounded-none border border-blue-400 text-blue-600 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -450,6 +525,112 @@ export function JobDescriptionSection({
           jobCollectionId={jobCollectionId || undefined}
           mode="preview"
         />
+      )}
+
+      {/* MODALE CAMBIO STATO (Prima Call Completata) */}
+      {isChangeStatusModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={handleCloseChangeStatusModal}
+          />
+
+          <div className="relative bg-bigster-surface border border-bigster-border w-full max-w-lg mx-4 shadow-xl">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-bigster-border bg-bigster-card-bg flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Phone className="h-5 w-5 text-bigster-text" />
+                <h3 className="text-lg font-bold text-bigster-text">
+                  Conferma Prima Call
+                </h3>
+              </div>
+              <button
+                onClick={handleCloseChangeStatusModal}
+                className="p-1 hover:bg-bigster-muted-bg transition-colors"
+                disabled={isChangingStatus}
+              >
+                <X className="h-5 w-5 text-bigster-text-muted" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              <div className="p-4 bg-blue-50 border border-blue-200">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-blue-800 mb-1">
+                      Azione richiesta
+                    </p>
+                    <p className="text-xs text-blue-700">
+                      Per inviare la Job Description al cliente, devi prima
+                      confermare di aver completato la{" "}
+                      <strong>prima call</strong> con lo studio dentistico.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm text-bigster-text">
+                  Confermando, lo stato della selezione passerà da:
+                </p>
+
+                <div className="flex items-center gap-3">
+                  <span className="px-3 py-1.5 bg-yellow-100 text-yellow-800 text-sm font-semibold">
+                    HR Assegnata
+                  </span>
+                  <ArrowRight className="h-4 w-4 text-bigster-text-muted" />
+                  <span className="px-3 py-1.5 bg-green-100 text-green-800 text-sm font-semibold">
+                    Prima Call Completata
+                  </span>
+                </div>
+
+                <p className="text-xs text-bigster-text-muted">
+                  Dopo la conferma, potrai procedere con l'invio della Job
+                  Description al cliente per l'approvazione.
+                </p>
+              </div>
+
+              <div className="p-3 bg-bigster-card-bg border border-bigster-border">
+                <p className="text-xs text-bigster-text-muted">
+                  <strong>Nota:</strong> Assicurati di aver discusso con il
+                  cliente tutte le informazioni presenti nella Job Description
+                  durante la call.
+                </p>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-bigster-border bg-bigster-card-bg flex items-center justify-end gap-3">
+              <Button
+                onClick={handleCloseChangeStatusModal}
+                disabled={isChangingStatus}
+                variant="outline"
+                className="rounded-none border border-bigster-border bg-bigster-surface text-bigster-text hover:bg-bigster-muted-bg"
+              >
+                Annulla
+              </Button>
+              <Button
+                onClick={handleConfirmStatusChange}
+                disabled={isChangingStatus}
+                className="rounded-none bg-bigster-primary text-bigster-primary-text border border-yellow-200 hover:opacity-90"
+              >
+                {isChangingStatus ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Aggiornamento...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Conferma e Procedi
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* MODALE INVIO EMAIL */}

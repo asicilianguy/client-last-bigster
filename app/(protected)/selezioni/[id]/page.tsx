@@ -25,6 +25,7 @@ import { AnnouncementsSection } from "./_components/AnnouncementsSection";
 import { StatusHistorySection } from "./_components/StatusHistorySection";
 import { SelectionDeadlineCard } from "@/app/(protected)/selezioni/_components/SelectionDeadlineCard"; // ← NUOVO IMPORT
 import { JobDescriptionSection } from "./_components/job-description";
+import { AnnouncementApprovalSection } from "./_components/announcement-approval";
 
 export default function SelectionDetailPage() {
   const params = useParams();
@@ -129,6 +130,9 @@ export default function SelectionDetailPage() {
         <SelectionActionsPanel selection={selection} />
 
         <JobDescriptionSection selection={selection} />
+
+        {/* Sezione Bozza Annuncio - visibile dopo RACCOLTA_JOB_APPROVATA_CLIENTE */}
+        <AnnouncementApprovalSection selection={selection} />
 
         {/* Diagramma flusso stato */}
         <StatusFlowDiagram selection={selection} />

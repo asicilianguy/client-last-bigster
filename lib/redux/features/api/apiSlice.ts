@@ -27,6 +27,7 @@ export const apiSlice = createApi({
     "Application",
     "Company",
     "JobCollection",
+    "AnnouncementApproval", // ← NUOVO
   ],
   endpoints: (builder) => ({}),
 });
